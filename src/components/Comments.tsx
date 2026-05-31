@@ -13,9 +13,9 @@ export default function Comments() {
     const script = document.createElement("script");
     script.src = "https://giscus.app/client.js";
     script.setAttribute("data-repo", "polygonyadev/japan-blog");
-    script.setAttribute("data-repo-id", "REPO_ID");
+    script.setAttribute("data-repo-id", "R_kgDOStDIEA");
     script.setAttribute("data-category", "Announcements");
-    script.setAttribute("data-category-id", "CATEGORY_ID");
+    script.setAttribute("data-category-id", "DIC_kwDOStDIEM4C-OHA");
     script.setAttribute("data-mapping", "pathname");
     script.setAttribute("data-strict", "0");
     script.setAttribute("data-reactions-enabled", "1");
