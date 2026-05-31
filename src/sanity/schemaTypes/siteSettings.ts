@@ -19,10 +19,10 @@ export const siteSettingsType = defineType({
       initialValue: true,
     }),
     defineField({
-      name: 'daysInJapan',
-      title: 'Tage in Japan',
-      type: 'number',
-      initialValue: 0,
+      name: 'departureDate',
+      title: 'Abreisedatum nach Japan',
+      type: 'date',
+      description: 'Tage in Japan wird automatisch ab diesem Datum berechnet',
     }),
     defineField({
       name: 'citiesVisited',

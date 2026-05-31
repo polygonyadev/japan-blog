@@ -2,10 +2,18 @@
 import { useEffect, useState } from "react";
 
 interface Props {
-  daysInJapan: number;
+  departureDate?: string | null;
   citiesVisited: number;
   photosUploaded: number;
   postsWritten: number;
+}
+
+function calcDays(departureDate?: string | null): number {
+  if (!departureDate) return 0;
+  const start = new Date(departureDate).getTime();
+  const now = Date.now();
+  if (now < start) return 0;
+  return Math.floor((now - start) / (1000 * 60 * 60 * 24));
 }
 
 function StatItem({ label, value, color }: { label: string; value: number; color: string }) {
@@ -34,7 +42,9 @@ function StatItem({ label, value, color }: { label: string; value: number; color
   );
 }
 
-export default function StatsBar({ daysInJapan, citiesVisited, photosUploaded, postsWritten }: Props) {
+export default function StatsBar({ departureDate, citiesVisited, photosUploaded, postsWritten }: Props) {
+  const daysInJapan = calcDays(departureDate);
+
   return (
     <div className="glass rounded-2xl p-6" style={{ border: "1px solid var(--border)" }}>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">

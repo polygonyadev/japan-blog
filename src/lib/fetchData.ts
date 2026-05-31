@@ -49,5 +49,5 @@ export async function getSiteSettings() {
     const data = await client.fetch(siteSettingsQuery, {}, { next: { revalidate: 60 } })
     if (data) return data
   } catch {}
-  return { statusText: 'Gerade in Japan 🇯🇵', showStatus: true, daysInJapan: 0, citiesVisited: 0, photosUploaded: 0 }
+  return { statusText: 'Gerade in Japan 🇯🇵', showStatus: true, departureDate: null, citiesVisited: 0, photosUploaded: 0 }
 }

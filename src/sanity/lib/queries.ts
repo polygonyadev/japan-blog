@@ -54,7 +54,7 @@ export const siteSettingsQuery = groq`
   *[_type == "siteSettings"][0] {
     statusText,
     showStatus,
-    daysInJapan,
+    departureDate,
     citiesVisited,
     photosUploaded
   }

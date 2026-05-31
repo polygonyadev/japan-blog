@@ -70,7 +70,7 @@ export default async function Home() {
 
       <div className="max-w-6xl mx-auto px-4 flex flex-col gap-12 pb-20">
         <StatsBar
-          daysInJapan={settings.daysInJapan ?? 0}
+          departureDate={settings.departureDate ?? null}
           citiesVisited={settings.citiesVisited ?? 0}
           photosUploaded={settings.photosUploaded ?? 0}
           postsWritten={posts.length}

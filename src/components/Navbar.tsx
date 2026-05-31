@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { MapPin, BookOpen, Image, List, Home, GraduationCap, Sun, Moon } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import BuyMeCoffee from "@/components/BuyMeCoffee";
+import TokyoTime from "@/components/TokyoTime";
 
 const links = [
   { href: "/",            label: "Home",       icon: Home },
@@ -46,6 +47,9 @@ export default function Navbar() {
               </Link>
             );
           })}
+          <div className="hidden lg:block">
+            <TokyoTime />
+          </div>
           <div className="hidden sm:block ml-2">
             <BuyMeCoffee compact />
           </div>
