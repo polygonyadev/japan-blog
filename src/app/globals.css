@@ -1,26 +1,63 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+:root,
+[data-theme="dark"] {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161c2a;
+  --bg-card: #1e2535;
+  --accent-pink: #ff2d6b;
+  --accent-cyan: #0099cc;
+  --accent-gold: #e6a800;
+  --text-primary: #e8edf5;
+  --text-secondary: #7a8699;
+  --border: #252f42;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+[data-theme="light"] {
+  --bg-primary: #f4f6fa;
+  --bg-secondary: #e8ecf4;
+  --bg-card: #ffffff;
+  --accent-pink: #e0004e;
+  --accent-cyan: #0077aa;
+  --accent-gold: #b07d00;
+  --text-primary: #1a1f2e;
+  --text-secondary: #5a6478;
+  --border: #d0d7e6;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  overflow-x: hidden;
 }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-pink); }
+
+[data-theme="dark"] .glass,
+.glass {
+  background: rgba(30, 37, 53, 0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+[data-theme="light"] .glass {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+.glow-pink { box-shadow: 0 0 24px rgba(255,45,107,0.25); }
+.glow-cyan  { box-shadow: 0 0 24px rgba(0,212,255,0.25); }
+
+.leaflet-container { background: #161c2a !important; }
+[data-theme="dark"] .leaflet-tile-pane { filter: brightness(0.75) saturate(0.8); }
+[data-theme="light"] .leaflet-container { background: #e8ecf4 !important; }
