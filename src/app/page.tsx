@@ -75,7 +75,7 @@ export default function Home() {
           </div>
           <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
             <MiniMap
-              markers={POSTS.map(p => ({ lat: p.lat, lng: p.lng, label: p.location, slug: p.slug }))}
+              markers={POSTS.filter(p => p.lat && p.lng).map(p => ({ lat: p.lat!, lng: p.lng!, label: p.location ?? "", slug: p.slug }))}
               height="320px"
             />
           </div>

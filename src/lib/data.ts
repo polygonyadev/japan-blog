@@ -2,21 +2,24 @@ export type Season = "spring" | "summer" | "autumn" | "winter";
 export type Weather = "sunny" | "cloudy" | "rainy" | "snowy" | "foggy";
 
 export interface Post {
-  id: string;
+  id?: string;
+  _id?: string;
   slug: string;
   title: string;
   excerpt: string;
-  content: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  content?: any;
   date: string;
-  location: string;
-  lat: number;
-  lng: number;
-  season: Season;
-  weather: Weather;
-  tags: string[];
-  images: string[];
+  location?: string;
+  lat?: number;
+  lng?: number;
+  season?: Season;
+  weather?: Weather;
+  tags?: string[];
+  images?: string[];
+  coverImage?: string;
   youtubeId?: string;
-  likes: number;
+  likes?: number;
 }
 
 export interface BucketItem {

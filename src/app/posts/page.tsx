@@ -59,7 +59,7 @@ export default function PostsPage() {
           />
           <div className="flex flex-col gap-6">
             {POSTS.map((post, i) => {
-              const season = SEASON_INFO[post.season];
+              const season = post.season ? SEASON_INFO[post.season] : null;
               return (
                 <div key={post.id} className="flex gap-6 items-start">
                   {/* Dot */}
@@ -86,12 +86,14 @@ export default function PostsPage() {
                         </span>
                         <h3 className="font-bold text-base mt-0.5">{post.title}</h3>
                       </div>
-                      <span
-                        className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
-                        style={{ background: `${season.color}22`, color: season.color }}
-                      >
-                        {season.emoji} {season.label}
-                      </span>
+                      {season && (
+                        <span
+                          className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+                          style={{ background: `${season.color}22`, color: season.color }}
+                        >
+                          {season.emoji} {season.label}
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm mt-2 line-clamp-2" style={{ color: "var(--text-secondary)" }}>
                       {post.excerpt}

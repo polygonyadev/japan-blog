@@ -2,15 +2,15 @@
 import { useState } from "react";
 import { POSTS } from "@/lib/data";
 
-const allTags = Array.from(new Set(POSTS.flatMap(p => p.tags)));
-const allLocations = Array.from(new Set(POSTS.map(p => p.location)));
+const allTags = Array.from(new Set(POSTS.flatMap(p => p.tags ?? [])));
+const allLocations = Array.from(new Set(POSTS.map(p => p.location).filter(Boolean))) as string[];
 
 export default function GalleryPage() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
 
   const filtered = POSTS.filter(p => {
-    if (selectedTag && !p.tags.includes(selectedTag)) return false;
+    if (selectedTag && !(p.tags ?? []).includes(selectedTag)) return false;
     if (selectedLocation && p.location !== selectedLocation) return false;
     return true;
   });
@@ -90,8 +90,8 @@ export default function GalleryPage() {
       ) : (
         <div className="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
           {filtered.flatMap(post =>
-            post.images.length > 0
-              ? post.images.map((img, i) => (
+            (post.images ?? []).length > 0
+              ? (post.images ?? []).map((img, i) => (
                   <div
                     key={`${post.id}-${i}`}
                     className="break-inside-avoid rounded-xl overflow-hidden relative group"

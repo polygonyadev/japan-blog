@@ -6,9 +6,9 @@ import { Post, SEASON_INFO, WEATHER_INFO } from "@/lib/data";
 
 export default function PostCard({ post }: { post: Post }) {
   const [liked, setLiked] = useState(false);
-  const [likes, setLikes] = useState(post.likes);
-  const season = SEASON_INFO[post.season];
-  const weather = WEATHER_INFO[post.weather];
+  const [likes, setLikes] = useState(post.likes ?? 0);
+  const season = post.season ? SEASON_INFO[post.season] : null;
+  const weather = post.weather ? WEATHER_INFO[post.weather] : null;
 
   function handleLike(e: React.MouseEvent) {
     e.preventDefault();
@@ -30,22 +30,23 @@ export default function PostCard({ post }: { post: Post }) {
           style={{ background: "linear-gradient(135deg, var(--bg-secondary), var(--bg-card))" }}
         >
           <span className="text-5xl opacity-30 group-hover:opacity-50 transition-opacity">
-            {season.emoji}
+            {season?.emoji ?? "🗾"}
           </span>
-          {/* Season badge */}
-          <span
-            className="absolute top-3 right-3 text-xs px-2 py-0.5 rounded-full font-medium"
-            style={{ background: `${season.color}22`, color: season.color, border: `1px solid ${season.color}44` }}
-          >
-            {season.emoji} {season.label}
-          </span>
+          {season && (
+            <span
+              className="absolute top-3 right-3 text-xs px-2 py-0.5 rounded-full font-medium"
+              style={{ background: `${season.color}22`, color: season.color, border: `1px solid ${season.color}44` }}
+            >
+              {season.emoji} {season.label}
+            </span>
+          )}
         </div>
 
         <div className="p-4 flex flex-col gap-2">
           <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
             <Calendar size={11} />
             <span>{new Date(post.date).toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" })}</span>
-            <span className="ml-auto">{weather.emoji} {weather.label}</span>
+            {weather && <span className="ml-auto">{weather.emoji} {weather.label}</span>}
           </div>
 
           <h3 className="font-bold text-base leading-snug group-hover:text-cyan-300 transition-colors">
@@ -70,7 +71,7 @@ export default function PostCard({ post }: { post: Post }) {
           </div>
 
           <div className="flex flex-wrap gap-1">
-            {post.tags.map(tag => (
+            {(post.tags ?? []).map(tag => (
               <span
                 key={tag}
                 className="text-xs px-2 py-0.5 rounded-full"
