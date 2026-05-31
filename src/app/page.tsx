@@ -89,12 +89,21 @@ export default function Home() {
               Alle ansehen <ArrowRight size={13} />
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {latestPosts.map(p => <PostCard key={p.id} post={p} />)}
-          </div>
+          {latestPosts.length === 0 ? (
+            <div className="text-center py-12 rounded-2xl" style={{ border: "1px dashed var(--border)" }}>
+              <p className="text-4xl mb-3">✈️</p>
+              <p className="font-medium">Die Reise beginnt bald</p>
+              <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>Hier erscheinen die ersten Posts sobald die Reise losgeht.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {latestPosts.map(p => <PostCard key={p.id} post={p} />)}
+            </div>
+          )}
         </section>
 
         {/* Next destinations */}
+        {nextDestinations.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold">Als nächstes geplant 📍</h2>
@@ -119,6 +128,7 @@ export default function Home() {
             ))}
           </div>
         </section>
+        )}
 
         {/* Support */}
         <section className="text-center py-6">
