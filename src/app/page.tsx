@@ -4,38 +4,44 @@ import StatsBar from "@/components/StatsBar";
 import PostCard from "@/components/PostCard";
 import MiniMap from "@/components/MiniMap";
 import BuyMeCoffee from "@/components/BuyMeCoffee";
-import { POSTS, BUCKET_LIST } from "@/lib/data";
+import { getPosts, getBucketItems, getSiteSettings } from "@/lib/fetchData";
+import { type Post } from "@/lib/data";
 
-const nextDestinations = BUCKET_LIST.filter(b => !b.done).slice(0, 3);
+export default async function Home() {
+  const [posts, bucketItems, settings] = await Promise.all([
+    getPosts(),
+    getBucketItems(),
+    getSiteSettings(),
+  ]);
 
-export default function Home() {
-  const latestPosts = POSTS.slice(0, 3);
+  const latestPosts = posts.slice(0, 3);
+  const nextDestinations = bucketItems.filter((b: { done: boolean }) => !b.done).slice(0, 3);
+  const mapMarkers = posts
+    .filter((p: Post) => p.lat && p.lng)
+    .map((p: Post) => ({ lat: p.lat!, lng: p.lng!, label: p.location ?? "", slug: p.slug }));
 
   return (
     <div className="min-h-screen pt-14">
       {/* Hero */}
       <section className="relative overflow-hidden py-20 px-4">
-        <div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
-          aria-hidden
-        >
-          <span className="text-[20rem] font-bold opacity-[0.03] leading-none" style={{ color: "var(--accent-pink)" }}>
-            旅
-          </span>
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none" aria-hidden>
+          <span className="text-[20rem] font-bold opacity-[0.03] leading-none" style={{ color: "var(--accent-pink)" }}>旅</span>
         </div>
 
         <div className="relative max-w-3xl mx-auto text-center flex flex-col items-center gap-6">
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm"
-            style={{ background: "rgba(255,45,107,0.1)", border: "1px solid rgba(255,45,107,0.25)", color: "var(--accent-pink)" }}
-          >
-            <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
-            Gerade in Japan 🇯🇵
-          </div>
+          {settings.showStatus && (
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm"
+              style={{ background: "rgba(255,45,107,0.1)", border: "1px solid rgba(255,45,107,0.25)", color: "var(--accent-pink)" }}
+            >
+              <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
+              {settings.statusText}
+            </div>
+          )}
 
           <h1 className="text-4xl sm:text-6xl font-bold leading-tight">
-            Ein Jahr in{" "}
-            <span style={{ color: "var(--accent-cyan)" }}>Japan</span>
+            Nippon{" "}
+            <span style={{ color: "var(--accent-cyan)" }}>Diary</span>
           </h1>
 
           <p className="text-lg max-w-xl" style={{ color: "var(--text-secondary)" }}>
@@ -63,7 +69,12 @@ export default function Home() {
       </section>
 
       <div className="max-w-6xl mx-auto px-4 flex flex-col gap-12 pb-20">
-        <StatsBar />
+        <StatsBar
+          daysInJapan={settings.daysInJapan ?? 0}
+          citiesVisited={settings.citiesVisited ?? 0}
+          photosUploaded={settings.photosUploaded ?? 0}
+          postsWritten={posts.length}
+        />
 
         {/* Map preview */}
         <section>
@@ -74,10 +85,7 @@ export default function Home() {
             </Link>
           </div>
           <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-            <MiniMap
-              markers={POSTS.filter(p => p.lat && p.lng).map(p => ({ lat: p.lat!, lng: p.lng!, label: p.location ?? "", slug: p.slug }))}
-              height="320px"
-            />
+            <MiniMap markers={mapMarkers} height="320px" />
           </div>
         </section>
 
@@ -97,37 +105,37 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {latestPosts.map(p => <PostCard key={p.id} post={p} />)}
+              {latestPosts.map((p: { slug: string }) => <PostCard key={p.slug} post={p as Parameters<typeof PostCard>[0]["post"]} />)}
             </div>
           )}
         </section>
 
         {/* Next destinations */}
         {nextDestinations.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold">Als nächstes geplant 📍</h2>
-            <Link href="/bucket-list" className="text-sm flex items-center gap-1 transition-colors hover:text-cyan-300" style={{ color: "var(--text-secondary)" }}>
-              Alles zeigen <ArrowRight size={13} />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {nextDestinations.map(item => (
-              <div
-                key={item.id}
-                className="glass rounded-xl p-4 flex flex-col gap-2 hover:scale-[1.02] transition-transform"
-                style={{ border: "1px solid var(--border)" }}
-              >
-                <div className="flex items-center gap-2">
-                  <MapPin size={14} style={{ color: "var(--accent-cyan)" }} />
-                  <span className="font-medium text-sm">{item.title}</span>
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">Als nächstes geplant 📍</h2>
+              <Link href="/bucket-list" className="text-sm flex items-center gap-1 transition-colors hover:text-cyan-300" style={{ color: "var(--text-secondary)" }}>
+                Alles zeigen <ArrowRight size={13} />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {nextDestinations.map((item: { _id: string; title: string; description?: string; location?: string }) => (
+                <div
+                  key={item._id}
+                  className="glass rounded-xl p-4 flex flex-col gap-2 hover:scale-[1.02] transition-transform"
+                  style={{ border: "1px solid var(--border)" }}
+                >
+                  <div className="flex items-center gap-2">
+                    <MapPin size={14} style={{ color: "var(--accent-cyan)" }} />
+                    <span className="font-medium text-sm">{item.title}</span>
+                  </div>
+                  {item.description && <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{item.description}</p>}
+                  {item.location && <span className="text-xs" style={{ color: "var(--accent-cyan)" }}>{item.location}</span>}
                 </div>
-                <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{item.description}</p>
-                <span className="text-xs" style={{ color: "var(--accent-cyan)" }}>{item.location}</span>
-              </div>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
         )}
 
         {/* Support */}

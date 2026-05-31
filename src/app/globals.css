@@ -58,6 +58,8 @@ body {
 .glow-pink { box-shadow: 0 0 24px rgba(255,45,107,0.25); }
 .glow-cyan  { box-shadow: 0 0 24px rgba(0,212,255,0.25); }
 
+/* Leaflet */
+@import "leaflet/dist/leaflet.css";
 .leaflet-container { background: #161c2a !important; }
 [data-theme="dark"] .leaflet-tile-pane { filter: brightness(0.75) saturate(0.8); }
 [data-theme="light"] .leaflet-container { background: #e8ecf4 !important; }

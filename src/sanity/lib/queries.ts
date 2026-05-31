@@ -50,6 +50,16 @@ export const allLessonsQuery = groq`
   }
 `
 
+export const siteSettingsQuery = groq`
+  *[_type == "siteSettings"][0] {
+    statusText,
+    showStatus,
+    daysInJapan,
+    citiesVisited,
+    photosUploaded
+  }
+`
+
 export const allBucketItemsQuery = groq`
   *[_type == "bucketItem"] | order(_createdAt asc) {
     _id,

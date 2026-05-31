@@ -1,5 +1,5 @@
 import { client } from '@/sanity/lib/client'
-import { allPostsQuery, allLessonsQuery, postBySlugQuery, allBucketItemsQuery, allGalleryImagesQuery } from '@/sanity/lib/queries'
+import { allPostsQuery, allLessonsQuery, postBySlugQuery, allBucketItemsQuery, allGalleryImagesQuery, siteSettingsQuery } from '@/sanity/lib/queries'
 import { POSTS, type Post } from '@/lib/data'
 
 export async function getPosts(): Promise<Post[]> {
@@ -42,4 +42,12 @@ export async function getGalleryImages() {
     if (data) return data
   } catch {}
   return []
+}
+
+export async function getSiteSettings() {
+  try {
+    const data = await client.fetch(siteSettingsQuery, {}, { next: { revalidate: 60 } })
+    if (data) return data
+  } catch {}
+  return { statusText: 'Gerade in Japan 🇯🇵', showStatus: true, daysInJapan: 0, citiesVisited: 0, photosUploaded: 0 }
 }
