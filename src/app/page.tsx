@@ -4,14 +4,15 @@ import StatsBar from "@/components/StatsBar";
 import PostCard from "@/components/PostCard";
 import MiniMap from "@/components/MiniMap";
 import BuyMeCoffee from "@/components/BuyMeCoffee";
-import { getPosts, getBucketItems, getSiteSettings } from "@/lib/fetchData";
+import { getPosts, getBucketItems, getSiteSettings, getStats } from "@/lib/fetchData";
 import { type Post } from "@/lib/data";
 
 export default async function Home() {
-  const [posts, bucketItems, settings] = await Promise.all([
+  const [posts, bucketItems, settings, stats] = await Promise.all([
     getPosts(),
     getBucketItems(),
     getSiteSettings(),
+    getStats(),
   ]);
 
   const latestPosts = posts.slice(0, 3);
@@ -71,9 +72,9 @@ export default async function Home() {
       <div className="max-w-6xl mx-auto px-4 flex flex-col gap-12 pb-20">
         <StatsBar
           departureDate={settings.departureDate ?? null}
-          citiesVisited={settings.citiesVisited ?? 0}
-          photosUploaded={settings.photosUploaded ?? 0}
-          postsWritten={posts.length}
+          citiesVisited={stats.citiesCount}
+          photosUploaded={stats.photosCount}
+          postsWritten={stats.postsCount}
         />
 
         {/* Map preview */}

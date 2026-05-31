@@ -24,18 +24,6 @@ export const siteSettingsType = defineType({
       type: 'date',
       description: 'Tage in Japan wird automatisch ab diesem Datum berechnet',
     }),
-    defineField({
-      name: 'citiesVisited',
-      title: 'Städte besucht',
-      type: 'number',
-      initialValue: 0,
-    }),
-    defineField({
-      name: 'photosUploaded',
-      title: 'Fotos hochgeladen',
-      type: 'number',
-      initialValue: 0,
-    }),
   ],
   preview: {
     select: { title: 'statusText' },

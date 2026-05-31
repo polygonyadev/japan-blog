@@ -54,9 +54,15 @@ export const siteSettingsQuery = groq`
   *[_type == "siteSettings"][0] {
     statusText,
     showStatus,
-    departureDate,
-    citiesVisited,
-    photosUploaded
+    departureDate
+  }
+`
+
+export const statsQuery = groq`
+  {
+    "postsCount": count(*[_type == "post"]),
+    "citiesCount": count(array::unique(*[_type == "post"].location)),
+    "photosCount": count(*[_type == "post" && defined(coverImage)])
   }
 `
 
