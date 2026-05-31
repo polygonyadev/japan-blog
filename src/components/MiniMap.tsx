@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useTheme } from "@/components/ThemeProvider";
 
 interface Marker {
@@ -21,6 +22,7 @@ export default function MiniMap({ markers, center = [36.5, 136], zoom = 5, heigh
   const mapRef = useRef<import("leaflet").Map | null>(null);
   const tileRef = useRef<import("leaflet").TileLayer | null>(null);
   const { theme } = useTheme();
+  const router = useRouter();
 
   useEffect(() => {
     if (!tileRef.current || !mapRef.current) return;
@@ -63,10 +65,25 @@ export default function MiniMap({ markers, center = [36.5, 136], zoom = 5, heigh
       });
 
       markers.forEach(m => {
-        const popup = L.popup({ className: "dark-popup" }).setContent(
-          `<div style="background:var(--bg-card);color:var(--text-primary);padding:6px 10px;border-radius:8px;font-size:13px;white-space:nowrap;">${m.label}</div>`
+        const popup = L.popup({ closeButton: false }).setContent(
+          `<div style="padding:6px 10px;font-size:13px;white-space:nowrap;cursor:${m.slug ? "pointer" : "default"}">
+            📝 ${m.label}
+            ${m.slug ? `<div style="font-size:11px;color:var(--accent-cyan);margin-top:3px">→ Post öffnen</div>` : ""}
+          </div>`
         );
-        L.marker([m.lat, m.lng], { icon }).addTo(map).bindPopup(popup);
+        const marker = L.marker([m.lat, m.lng], { icon }).addTo(map).bindPopup(popup);
+        if (m.slug) {
+          const slug = m.slug;
+          marker.on("popupopen", () => {
+            setTimeout(() => {
+              const el = marker.getPopup()?.getElement();
+              if (el) {
+                el.style.cursor = "pointer";
+                el.addEventListener("click", () => router.push(`/posts/${slug}`));
+              }
+            }, 50);
+          });
+        }
       });
     });
     return () => { mapRef.current?.remove(); mapRef.current = null; };

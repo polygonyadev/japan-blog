@@ -8,16 +8,20 @@ export default function LikeButton({ postId, initialLikes }: { postId: string; i
   const [likes, setLikes] = useState(initialLikes);
 
   useEffect(() => {
-    setLiked(localStorage.getItem(key) === "1");
-  }, [key]);
+    const wasLiked = localStorage.getItem(key) === "1";
+    setLiked(wasLiked);
+    // Adjust displayed count to reflect stored like
+    if (wasLiked) setLikes(initialLikes + 1);
+    else setLikes(initialLikes);
+  }, [key, initialLikes]);
 
   function toggle() {
     if (!liked) {
-      setLikes(l => l + 1);
+      setLikes(initialLikes + 1);
       setLiked(true);
       localStorage.setItem(key, "1");
     } else {
-      setLikes(l => l - 1);
+      setLikes(initialLikes);
       setLiked(false);
       localStorage.removeItem(key);
     }
