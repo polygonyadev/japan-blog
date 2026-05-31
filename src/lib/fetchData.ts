@@ -1,5 +1,5 @@
 import { client } from '@/sanity/lib/client'
-import { allPostsQuery, allLessonsQuery, postBySlugQuery, allBucketItemsQuery, allGalleryImagesQuery, siteSettingsQuery, statsQuery } from '@/sanity/lib/queries'
+import { allPostsQuery, allLessonsQuery, postBySlugQuery, allBucketItemsQuery, allGalleryImagesQuery, siteSettingsQuery, statsQuery, allVokabelnQuery, allKanjiQuery, allGrammatikQuery, allPartikelQuery, allSaetzeQuery, japanischSearchQuery } from '@/sanity/lib/queries'
 import { POSTS, type Post } from '@/lib/data'
 
 export async function getPosts(): Promise<Post[]> {
@@ -58,4 +58,25 @@ export async function getStats() {
     if (data) return data
   } catch {}
   return { postsCount: 0, citiesCount: 0, photosCount: 0 }
+}
+
+export async function getVokabeln() {
+  try { return await client.fetch(allVokabelnQuery, {}, { next: { revalidate: 60 } }) } catch { return [] }
+}
+export async function getKanji() {
+  try { return await client.fetch(allKanjiQuery, {}, { next: { revalidate: 60 } }) } catch { return [] }
+}
+export async function getGrammatik() {
+  try { return await client.fetch(allGrammatikQuery, {}, { next: { revalidate: 60 } }) } catch { return [] }
+}
+export async function getPartikel() {
+  try { return await client.fetch(allPartikelQuery, {}, { next: { revalidate: 60 } }) } catch { return [] }
+}
+export async function getSaetze() {
+  try { return await client.fetch(allSaetzeQuery, {}, { next: { revalidate: 60 } }) } catch { return [] }
+}
+export async function searchJapanisch(q: string) {
+  try {
+    return await client.fetch(japanischSearchQuery, { q: `*${q}*` }, { next: { revalidate: 0 } })
+  } catch { return { vokabeln: [], kanji: [], grammatik: [], partikel: [], saetze: [] } }
 }

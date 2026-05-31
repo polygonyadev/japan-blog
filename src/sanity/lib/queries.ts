@@ -103,3 +103,53 @@ export const statsQuery = groq`
     "photosCount": count(*[_type == "post"].photos[]) + count(*[_type == "photo"])
   }
 `
+
+export const allVokabelnQuery = groq`
+  *[_type == "vokabel"] | order(jlpt asc, wort asc) {
+    _id, wort, kana, bedeutung, wortart, jlpt, konjugation, beispiele, notizen
+  }
+`
+
+export const allKanjiQuery = groq`
+  *[_type == "kanji"] | order(jlpt asc, zeichen asc) {
+    _id, zeichen, bedeutung, onYomi, kunYomi, radikal, strichanzahl, jlpt, vokabeln, beispiele, notizen
+  }
+`
+
+export const allGrammatikQuery = groq`
+  *[_type == "grammatik"] | order(jlpt asc, muster asc) {
+    _id, muster, bedeutung, struktur, jlpt, bildung, beispiele, fehler, notizen
+  }
+`
+
+export const allPartikelQuery = groq`
+  *[_type == "partikel"] | order(jlpt asc, partikel asc) {
+    _id, partikel, funktion, jlpt, verwendungen, fehler, notizen
+  }
+`
+
+export const allSaetzeQuery = groq`
+  *[_type == "satz"] | order(jlpt asc, japanisch asc) {
+    _id, japanisch, kana, deutsch, jlpt, kontext, grammatik, notizen
+  }
+`
+
+export const japanischSearchQuery = groq`
+  {
+    "vokabeln": *[_type == "vokabel" && (wort match $q || bedeutung match $q || kana match $q)] {
+      _id, wort, kana, bedeutung, jlpt, "typ": "vokabel"
+    },
+    "kanji": *[_type == "kanji" && (zeichen match $q || bedeutung match $q)] {
+      _id, "wort": zeichen, "kana": onYomi, "bedeutung": bedeutung, jlpt, "typ": "kanji"
+    },
+    "grammatik": *[_type == "grammatik" && (muster match $q || bedeutung match $q)] {
+      _id, "wort": muster, "kana": struktur, "bedeutung": bedeutung, jlpt, "typ": "grammatik"
+    },
+    "partikel": *[_type == "partikel" && (partikel match $q || funktion match $q)] {
+      _id, "wort": partikel, "kana": "", "bedeutung": funktion, jlpt, "typ": "partikel"
+    },
+    "saetze": *[_type == "satz" && (japanisch match $q || deutsch match $q || kana match $q)] {
+      _id, "wort": japanisch, "kana": kana, "bedeutung": deutsch, jlpt, "typ": "satz"
+    }
+  }
+`
