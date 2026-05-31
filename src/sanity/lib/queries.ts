@@ -14,7 +14,7 @@ export const allPostsQuery = groq`
     excerpt,
     tags,
     youtubeId,
-    "coverImage": coverImage.asset->url,
+    "coverImage": photos[0].image.asset->url,
     "likes": 0
   }
 `
@@ -34,7 +34,10 @@ export const postBySlugQuery = groq`
     content,
     tags,
     youtubeId,
-    "coverImage": coverImage.asset->url
+    "photos": photos[]{
+      "url": image.asset->url,
+      caption
+    }
   }
 `
 
@@ -58,14 +61,6 @@ export const siteSettingsQuery = groq`
   }
 `
 
-export const statsQuery = groq`
-  {
-    "postsCount": count(*[_type == "post"]),
-    "citiesCount": count(array::unique(*[_type == "post"].location)),
-    "photosCount": count(*[_type == "post" && defined(coverImage)])
-  }
-`
-
 export const allBucketItemsQuery = groq`
   *[_type == "bucketItem"] | order(_createdAt asc) {
     _id,
@@ -79,12 +74,32 @@ export const allBucketItemsQuery = groq`
 `
 
 export const allGalleryImagesQuery = groq`
-  *[_type == "post" && defined(coverImage)] | order(date desc) {
-    _id,
-    title,
-    location,
-    tags,
-    "url": coverImage.asset->url,
-    "slug": slug.current
+  {
+    "postPhotos": *[_type == "post" && defined(photos) && count(photos) > 0] | order(date desc) {
+      _id,
+      title,
+      location,
+      tags,
+      "slug": slug.current,
+      "images": photos[]{
+        "url": image.asset->url,
+        caption
+      }
+    },
+    "standalonePhotos": *[_type == "photo"] | order(date desc) {
+      _id,
+      "url": image.asset->url,
+      caption,
+      location,
+      tags
+    }
+  }
+`
+
+export const statsQuery = groq`
+  {
+    "postsCount": count(*[_type == "post"]),
+    "citiesCount": count(array::unique(*[_type == "post"].location)),
+    "photosCount": count(*[_type == "post"].photos[]) + count(*[_type == "photo"])
   }
 `

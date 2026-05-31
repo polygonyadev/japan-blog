@@ -78,25 +78,27 @@ export const postType = defineType({
       validation: r => r.required(),
     }),
     defineField({
-      name: 'content',
-      title: 'Inhalt',
+      name: 'photos',
+      title: 'Fotos',
       type: 'array',
-      of: [
-        { type: 'block' },
-        {
-          type: 'image',
-          options: { hotspot: true },
-          fields: [
-            defineField({ name: 'caption', title: 'Bildunterschrift', type: 'string' }),
-          ],
+      description: 'Das erste Foto wird als Vorschaubild verwendet',
+      of: [{
+        type: 'object',
+        fields: [
+          defineField({ name: 'image', title: 'Foto', type: 'image', options: { hotspot: true }, validation: r => r.required() }),
+          defineField({ name: 'caption', title: 'Bildunterschrift', type: 'string' }),
+        ],
+        preview: {
+          select: { media: 'image', title: 'caption' },
+          prepare({ media, title }) { return { media, title: title ?? 'Foto' } },
         },
-      ],
+      }],
     }),
     defineField({
-      name: 'coverImage',
-      title: 'Titelbild',
-      type: 'image',
-      options: { hotspot: true },
+      name: 'content',
+      title: 'Inhalt (Text)',
+      type: 'array',
+      of: [{ type: 'block' }],
     }),
     defineField({
       name: 'youtubeId',
@@ -113,6 +115,6 @@ export const postType = defineType({
     }),
   ],
   preview: {
-    select: { title: 'title', subtitle: 'location', media: 'coverImage' },
+    select: { title: 'title', subtitle: 'location', media: 'photos.0.image' },
   },
 })

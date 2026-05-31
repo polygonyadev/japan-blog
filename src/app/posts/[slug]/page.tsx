@@ -74,11 +74,11 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
   return (
     <div className="min-h-screen pt-14">
-      {/* Cover image */}
-      {post.coverImage && (
+      {/* Cover image — erstes Foto */}
+      {post.photos?.[0]?.url && (
         <div className="w-full h-64 sm:h-96 relative overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" />
+          <img src={post.photos[0].url} alt={post.title} className="w-full h-full object-cover" />
           <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 50%, var(--bg-primary))" }} />
         </div>
       )}
@@ -135,6 +135,28 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
             <p style={{ color: "var(--text-secondary)" }}>{post.excerpt}</p>
           )}
         </div>
+
+        {/* Photo gallery */}
+        {post.photos && post.photos.length > 1 && (
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {post.photos.slice(1).map((photo: { url: string; caption?: string }, i: number) => (
+              <figure key={i}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={photo.url}
+                  alt={photo.caption ?? ""}
+                  className="w-full rounded-xl object-cover"
+                  style={{ border: "1px solid var(--border)" }}
+                />
+                {photo.caption && (
+                  <figcaption className="text-xs mt-1 text-center" style={{ color: "var(--text-secondary)" }}>
+                    {photo.caption}
+                  </figcaption>
+                )}
+              </figure>
+            ))}
+          </div>
+        )}
 
         {/* YouTube */}
         {post.youtubeId && (

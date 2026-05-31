@@ -18,6 +18,7 @@ export interface Post {
   tags?: string[];
   images?: string[];
   coverImage?: string;
+  photos?: { url: string; caption?: string }[];
   youtubeId?: string;
   likes?: number;
 }
