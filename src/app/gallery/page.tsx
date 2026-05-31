@@ -1,17 +1,31 @@
 "use client";
-import { useState } from "react";
-import { POSTS } from "@/lib/data";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 
-const allTags = Array.from(new Set(POSTS.flatMap(p => p.tags ?? [])));
-const allLocations = Array.from(new Set(POSTS.map(p => p.location).filter(Boolean))) as string[];
+interface GalleryImage {
+  _id: string;
+  title: string;
+  location?: string;
+  tags?: string[];
+  url: string;
+  slug: string;
+}
 
 export default function GalleryPage() {
+  const [images, setImages] = useState<GalleryImage[]>([]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
 
-  const filtered = POSTS.filter(p => {
-    if (selectedTag && !(p.tags ?? []).includes(selectedTag)) return false;
-    if (selectedLocation && p.location !== selectedLocation) return false;
+  useEffect(() => {
+    fetch("/api/gallery").then(r => r.json()).then(setImages).catch(() => {});
+  }, []);
+
+  const allTags = Array.from(new Set(images.flatMap(i => i.tags ?? [])));
+  const allLocations = Array.from(new Set(images.map(i => i.location).filter(Boolean))) as string[];
+
+  const filtered = images.filter(img => {
+    if (selectedTag && !(img.tags ?? []).includes(selectedTag)) return false;
+    if (selectedLocation && img.location !== selectedLocation) return false;
     return true;
   });
 
@@ -25,104 +39,66 @@ export default function GalleryPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col gap-3 mb-8">
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-xs font-medium mr-1" style={{ color: "var(--text-secondary)" }}>Ort:</span>
-          <button
-            onClick={() => setSelectedLocation(null)}
-            className="text-xs px-3 py-1 rounded-full transition-all"
-            style={{
-              background: !selectedLocation ? "rgba(255,45,107,0.15)" : "rgba(255,255,255,0.04)",
-              color: !selectedLocation ? "var(--accent-pink)" : "var(--text-secondary)",
-              border: `1px solid ${!selectedLocation ? "rgba(255,45,107,0.4)" : "var(--border)"}`,
-            }}
-          >
-            Alle
-          </button>
-          {allLocations.map(loc => (
-            <button
-              key={loc}
-              onClick={() => setSelectedLocation(loc === selectedLocation ? null : loc)}
-              className="text-xs px-3 py-1 rounded-full transition-all"
-              style={{
-                background: selectedLocation === loc ? "rgba(255,45,107,0.15)" : "rgba(255,255,255,0.04)",
-                color: selectedLocation === loc ? "var(--accent-pink)" : "var(--text-secondary)",
-                border: `1px solid ${selectedLocation === loc ? "rgba(255,45,107,0.4)" : "var(--border)"}`,
-              }}
-            >
-              {loc}
+      {images.length > 0 && (
+        <div className="flex flex-col gap-3 mb-8">
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-xs font-medium mr-1" style={{ color: "var(--text-secondary)" }}>Ort:</span>
+            <button onClick={() => setSelectedLocation(null)} className="text-xs px-3 py-1 rounded-full transition-all"
+              style={{ background: !selectedLocation ? "rgba(255,45,107,0.15)" : "rgba(255,255,255,0.04)", color: !selectedLocation ? "var(--accent-pink)" : "var(--text-secondary)", border: `1px solid ${!selectedLocation ? "rgba(255,45,107,0.4)" : "var(--border)"}` }}>
+              Alle
             </button>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-xs font-medium mr-1" style={{ color: "var(--text-secondary)" }}>Thema:</span>
-          <button
-            onClick={() => setSelectedTag(null)}
-            className="text-xs px-3 py-1 rounded-full transition-all"
-            style={{
-              background: !selectedTag ? "rgba(0,212,255,0.1)" : "rgba(255,255,255,0.04)",
-              color: !selectedTag ? "var(--accent-cyan)" : "var(--text-secondary)",
-              border: `1px solid ${!selectedTag ? "rgba(0,212,255,0.3)" : "var(--border)"}`,
-            }}
-          >
-            Alle
-          </button>
-          {allTags.map(tag => (
-            <button
-              key={tag}
-              onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
-              className="text-xs px-3 py-1 rounded-full transition-all"
-              style={{
-                background: selectedTag === tag ? "rgba(0,212,255,0.1)" : "rgba(255,255,255,0.04)",
-                color: selectedTag === tag ? "var(--accent-cyan)" : "var(--text-secondary)",
-                border: `1px solid ${selectedTag === tag ? "rgba(0,212,255,0.3)" : "var(--border)"}`,
-              }}
-            >
-              #{tag}
+            {allLocations.map(loc => (
+              <button key={loc} onClick={() => setSelectedLocation(loc === selectedLocation ? null : loc)} className="text-xs px-3 py-1 rounded-full transition-all"
+                style={{ background: selectedLocation === loc ? "rgba(255,45,107,0.15)" : "rgba(255,255,255,0.04)", color: selectedLocation === loc ? "var(--accent-pink)" : "var(--text-secondary)", border: `1px solid ${selectedLocation === loc ? "rgba(255,45,107,0.4)" : "var(--border)"}` }}>
+                {loc}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-xs font-medium mr-1" style={{ color: "var(--text-secondary)" }}>Thema:</span>
+            <button onClick={() => setSelectedTag(null)} className="text-xs px-3 py-1 rounded-full transition-all"
+              style={{ background: !selectedTag ? "rgba(0,212,255,0.1)" : "rgba(255,255,255,0.04)", color: !selectedTag ? "var(--accent-cyan)" : "var(--text-secondary)", border: `1px solid ${!selectedTag ? "rgba(0,212,255,0.3)" : "var(--border)"}` }}>
+              Alle
             </button>
-          ))}
+            {allTags.map(tag => (
+              <button key={tag} onClick={() => setSelectedTag(tag === selectedTag ? null : tag)} className="text-xs px-3 py-1 rounded-full transition-all"
+                style={{ background: selectedTag === tag ? "rgba(0,212,255,0.1)" : "rgba(255,255,255,0.04)", color: selectedTag === tag ? "var(--accent-cyan)" : "var(--text-secondary)", border: `1px solid ${selectedTag === tag ? "rgba(0,212,255,0.3)" : "var(--border)"}` }}>
+                #{tag}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Gallery grid */}
-      {filtered.length === 0 ? (
-        <p style={{ color: "var(--text-secondary)" }}>Keine Fotos gefunden.</p>
+      {images.length === 0 ? (
+        <div className="text-center py-16 rounded-2xl" style={{ border: "1px dashed var(--border)" }}>
+          <p className="text-4xl mb-3">📷</p>
+          <p className="font-medium">Noch keine Fotos vorhanden</p>
+          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
+            Fotos erscheinen hier sobald Posts mit Titelbildern veröffentlicht werden.
+          </p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <p style={{ color: "var(--text-secondary)" }}>Keine Fotos für diese Kombination.</p>
       ) : (
         <div className="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
-          {filtered.flatMap(post =>
-            (post.images ?? []).length > 0
-              ? (post.images ?? []).map((img, i) => (
-                  <div
-                    key={`${post.id}-${i}`}
-                    className="break-inside-avoid rounded-xl overflow-hidden relative group"
-                    style={{ border: "1px solid var(--border)" }}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img} alt={post.title} className="w-full object-cover" />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                      <span className="text-xs font-medium">{post.location}</span>
-                    </div>
-                  </div>
-                ))
-              : [
-                  <div
-                    key={post.id}
-                    className="break-inside-avoid rounded-xl overflow-hidden relative group flex items-center justify-center"
-                    style={{
-                      border: "1px solid var(--border)",
-                      background: "var(--bg-card)",
-                      minHeight: "120px",
-                      aspectRatio: Math.random() > 0.5 ? "4/3" : "3/4",
-                    }}
-                  >
-                    <div className="text-center p-4">
-                      <div className="text-3xl mb-2">📷</div>
-                      <div className="text-xs" style={{ color: "var(--text-secondary)" }}>{post.location}</div>
-                      <div className="text-xs mt-1 font-medium">{post.title}</div>
-                    </div>
-                  </div>,
-                ]
-          )}
+          {filtered.map(img => (
+            <Link
+              key={img._id}
+              href={`/posts/${img.slug}`}
+              className="break-inside-avoid rounded-xl overflow-hidden relative group block"
+              style={{ border: "1px solid var(--border)" }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={img.url} alt={img.title} className="w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                <div>
+                  <p className="text-xs font-medium text-white">{img.title}</p>
+                  {img.location && <p className="text-xs text-white/70">{img.location}</p>}
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
       )}
     </div>

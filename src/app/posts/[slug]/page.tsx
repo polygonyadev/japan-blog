@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
-import { ArrowLeft, MapPin, Calendar, Heart } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar } from "lucide-react";
 import Link from "next/link";
 import { PortableText } from "@portabletext/react";
 import { getPostBySlug, getPosts } from "@/lib/fetchData";
+import Comments from "@/components/Comments";
 import { SEASON_INFO, WEATHER_INFO } from "@/lib/data";
 import LikeButton from "@/components/LikeButton";
 
@@ -164,6 +165,9 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
             ))}
           </div>
         )}
+
+        {/* Comments */}
+        <Comments />
 
         {/* Navigation */}
         <div className="mt-10 pt-6" style={{ borderTop: "1px solid var(--border)" }}>

@@ -49,3 +49,26 @@ export const allLessonsQuery = groq`
     phrases
   }
 `
+
+export const allBucketItemsQuery = groq`
+  *[_type == "bucketItem"] | order(_createdAt asc) {
+    _id,
+    title,
+    description,
+    location,
+    lat,
+    lng,
+    done
+  }
+`
+
+export const allGalleryImagesQuery = groq`
+  *[_type == "post" && defined(coverImage)] | order(date desc) {
+    _id,
+    title,
+    location,
+    tags,
+    "url": coverImage.asset->url,
+    "slug": slug.current
+  }
+`
