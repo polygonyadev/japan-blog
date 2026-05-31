@@ -24,14 +24,18 @@ export default function PostCard({ post }: { post: Post }) {
         onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--accent-cyan)")}
         onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--border)")}
       >
-        {/* Image placeholder / cover */}
-        <div
-          className="h-40 relative overflow-hidden flex items-center justify-center"
+        {/* Cover image or placeholder */}
+        <div className="h-40 relative overflow-hidden flex items-center justify-center"
           style={{ background: "linear-gradient(135deg, var(--bg-secondary), var(--bg-card))" }}
         >
-          <span className="text-5xl opacity-30 group-hover:opacity-50 transition-opacity">
-            {season?.emoji ?? "🗾"}
-          </span>
+          {post.coverImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+          ) : (
+            <span className="text-5xl opacity-30 group-hover:opacity-50 transition-opacity">
+              {season?.emoji ?? "🗾"}
+            </span>
+          )}
           {season && (
             <span
               className="absolute top-3 right-3 text-xs px-2 py-0.5 rounded-full font-medium"
