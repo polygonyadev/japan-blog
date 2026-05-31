@@ -18,7 +18,7 @@ export default function BuyMeCoffee({ compact = false }: { compact?: boolean }) 
       }}
     >
       <Coffee size={16} />
-      {!compact && <span>Support on Ko-fi</span>}
+      <span>{compact ? "Support me" : "Support on Ko-fi"}</span>
     </Link>
   );
 }
