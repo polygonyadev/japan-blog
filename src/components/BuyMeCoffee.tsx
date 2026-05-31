@@ -17,8 +17,8 @@ export default function BuyMeCoffee({ compact = false }: { compact?: boolean }) 
         boxShadow: "0 2px 12px rgba(255,94,91,0.3)",
       }}
     >
-      <Coffee size={16} />
-      <span>{compact ? "Support me" : "Support on Ko-fi"}</span>
+      {!compact && <Coffee size={14} />}
+      <span style={{ fontSize: compact ? "11px" : "13px" }}>{compact ? "Support me" : "Support on Ko-fi"}</span>
     </Link>
   );
 }

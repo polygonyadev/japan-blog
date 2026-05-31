@@ -22,13 +22,12 @@ export default function TokyoTime() {
 
   return (
     <div
-      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm glass"
-      style={{ border: "1px solid var(--border)" }}
+      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg glass"
+      style={{ border: "1px solid var(--border)", fontSize: "11px" }}
     >
-      <Clock size={13} style={{ color: "var(--accent-cyan)" }} />
-      <span style={{ color: "var(--text-secondary)" }}>Tōkyō</span>
+      <Clock size={11} style={{ color: "var(--accent-cyan)" }} />
+      <span style={{ color: "var(--text-secondary)" }}>🇯🇵</span>
       <span className="font-mono font-medium tabular-nums">{time}</span>
-      <span className="text-xs" style={{ color: "var(--text-secondary)" }}>{date}</span>
     </div>
   );
 }
