@@ -6,6 +6,8 @@ import { getPostBySlug, getPosts } from "@/lib/fetchData";
 import Comments from "@/components/Comments";
 import { SEASON_INFO, WEATHER_INFO } from "@/lib/data";
 import LikeButton from "@/components/LikeButton";
+import PostHeroImage from "@/components/PostHeroImage";
+import PostPhotos from "@/components/PostPhotos";
 
 export async function generateStaticParams() {
   const posts = await getPosts();
@@ -74,13 +76,9 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
   return (
     <div className="min-h-screen pt-14">
-      {/* Cover image — erstes Foto */}
+      {/* Cover image — erstes Foto, klickbar */}
       {post.photos?.[0]?.url && (
-        <div className="w-full h-64 sm:h-96 relative overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={post.photos[0].url} alt={post.title} className="w-full h-full object-cover" />
-          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 50%, var(--bg-primary))" }} />
-        </div>
+        <PostHeroImage url={post.photos[0].url} title={post.title} />
       )}
 
       <div className="max-w-2xl mx-auto px-4 py-10">
@@ -136,27 +134,8 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           )}
         </div>
 
-        {/* Photo gallery */}
-        {post.photos && post.photos.length > 1 && (
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {post.photos.slice(1).map((photo: { url: string; caption?: string }, i: number) => (
-              <figure key={i}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={photo.url}
-                  alt={photo.caption ?? ""}
-                  className="w-full rounded-xl object-cover"
-                  style={{ border: "1px solid var(--border)" }}
-                />
-                {photo.caption && (
-                  <figcaption className="text-xs mt-1 text-center" style={{ color: "var(--text-secondary)" }}>
-                    {photo.caption}
-                  </figcaption>
-                )}
-              </figure>
-            ))}
-          </div>
-        )}
+        {/* Photo gallery with lightbox */}
+        <PostPhotos photos={post.photos ?? []} />
 
         {/* YouTube */}
         {post.youtubeId && (

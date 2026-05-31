@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Lightbox from "@/components/Lightbox";
 
 interface GalleryItem {
   url: string;
@@ -15,6 +16,9 @@ export default function GalleryPage() {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  // standalone = photos without a post link, these open in lightbox
+  const standaloneFiltered = (filteredItems: GalleryItem[]) => filteredItems.filter(i => !i.slug);
 
   useEffect(() => {
     fetch("/api/gallery").then(r => r.json()).then(setItems).catch(() => {});
@@ -89,27 +93,47 @@ export default function GalleryPage() {
       ) : filtered.length === 0 ? (
         <p style={{ color: "var(--text-secondary)" }}>Keine Fotos für diese Kombination.</p>
       ) : (
-        <div className="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
-          {filtered.map((img, i) => {
-            const inner = (
-              <div className="relative group">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img.url} alt={img.caption ?? img.title ?? ""} className="w-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                  <div>
-                    {(img.title || img.caption) && <p className="text-xs font-medium text-white">{img.title ?? img.caption}</p>}
-                    {img.location && <p className="text-xs text-white/70">{img.location}</p>}
+        <>
+          <div className="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
+            {filtered.map((img, i) => {
+              const inner = (
+                <div className="relative group cursor-pointer">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img.url} alt={img.caption ?? img.title ?? ""} className="w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                    <div>
+                      {(img.title || img.caption) && <p className="text-xs font-medium text-white">{img.title ?? img.caption}</p>}
+                      {img.location && <p className="text-xs text-white/70">{img.location}</p>}
+                      {img.slug && <p className="text-xs text-white/50 mt-1">→ Post öffnen</p>}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
+              );
+
+              return (
+                <div key={i} className="break-inside-avoid rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
+                  {img.slug
+                    ? <Link href={`/posts/${img.slug}`}>{inner}</Link>
+                    : <div onClick={() => setLightboxIndex(standaloneFiltered(filtered).findIndex(s => s.url === img.url))}>{inner}</div>
+                  }
+                </div>
+              );
+            })}
+          </div>
+
+          {lightboxIndex !== null && (() => {
+            const sa = standaloneFiltered(filtered);
             return (
-              <div key={i} className="break-inside-avoid rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-                {img.slug ? <Link href={`/posts/${img.slug}`}>{inner}</Link> : inner}
-              </div>
+              <Lightbox
+                images={sa}
+                index={lightboxIndex}
+                onClose={() => setLightboxIndex(null)}
+                onNext={() => setLightboxIndex(i => i !== null && i < sa.length - 1 ? i + 1 : i)}
+                onPrev={() => setLightboxIndex(i => i !== null && i > 0 ? i - 1 : i)}
+              />
             );
-          })}
-        </div>
+          })()}
+        </>
       )}
     </div>
   );
