@@ -1,9 +1,11 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { GraduationCap, Search, BookOpen, X } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type JLPT = "N5" | "N4" | "N3" | "N2" | "N1";
-type Tab = "lektionen" | "vokabel" | "kanji" | "grammatik" | "partikel" | "satz";
+type Tab = "lektionen" | "vokabel" | "kanji" | "grammatik" | "partikel" | "satz" | "notizen";
 
 const JLPT_LEVELS: JLPT[] = ["N5","N4","N3","N2","N1"];
 const JLPT_COLOR: Record<JLPT, string> = { N5:"#00d4ff", N4:"#66e0a0", N3:"#ffd166", N2:"#ff9944", N1:"#ff2d6b" };
@@ -16,6 +18,7 @@ const TABS: { id: Tab; label: string; emoji: string }[] = [
   { id: "grammatik", label: "Grammatik",  emoji: "🔤" },
   { id: "partikel",  label: "Partikel",   emoji: "🔗" },
   { id: "satz",      label: "Sätze",      emoji: "💬" },
+  { id: "notizen",   label: "Notizen",    emoji: "📋" },
 ];
 
 // ─── Small reusable components ───────────────────────────────────────────────
@@ -49,6 +52,26 @@ function ExampleTable({ rows }: { rows: { japanisch?: string; kana?: string; deu
         ))}
       </tbody>
     </table>
+  );
+}
+
+function MarkdownBlock({ content }: { content: string }) {
+  return (
+    <div>
+      <ReactMarkdown remarkPlugins={[remarkGfm]}
+        components={{
+          table: (props) => <table className="w-full text-sm border-collapse mb-3" {...props} />,
+          th: (props) => <th className="text-left py-1.5 pr-4 text-xs font-semibold" style={{ borderBottom:"1px solid var(--border)", color:"var(--accent-cyan)" }} {...props} />,
+          td: (props) => <td className="py-1.5 pr-4 text-sm" style={{ borderBottom:"1px solid var(--border)" }} {...props} />,
+          code: (props) => <code className="px-1.5 py-0.5 rounded text-xs font-mono" style={{ background:"var(--bg-card)", color:"var(--accent-cyan)" }} {...props} />,
+          h2: (props) => <h2 className="text-base font-bold mt-4 mb-2" style={{ color:"var(--accent-cyan)" }} {...props} />,
+          h3: (props) => <h3 className="text-sm font-semibold mt-3 mb-1" {...props} />,
+          p: (props) => <p className="text-sm mb-2 leading-relaxed" style={{ color:"var(--text-secondary)" }} {...props} />,
+          strong: (props) => <strong className="font-bold" style={{ color:"var(--text-primary)" }} {...props} />,
+        }}>
+        {content}
+      </ReactMarkdown>
+    </div>
   );
 }
 
@@ -186,6 +209,7 @@ function VokabelSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) {
           )}
           {v.beispiele?.length > 0 && (<><SectionLabel>Beispiele</SectionLabel><ExampleTable rows={v.beispiele} /></>)}
           {v.notizen && (<><SectionLabel>Notizen</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{v.notizen}</p></>)}
+          {v.markdown && (<><SectionLabel>Markdown</SectionLabel><MarkdownBlock content={v.markdown} /></>)}
         </Card>
       ))}
     </div>
@@ -230,6 +254,7 @@ function KanjiSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) {
           )}
           {k.beispiele?.length > 0 && (<><SectionLabel>Beispiele</SectionLabel><ExampleTable rows={k.beispiele} /></>)}
           {k.notizen && (<><SectionLabel>Notizen</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{k.notizen}</p></>)}
+          {k.markdown && (<><SectionLabel>Markdown</SectionLabel><MarkdownBlock content={k.markdown} /></>)}
         </Card>
       ))}
     </div>
@@ -281,6 +306,7 @@ function GrammatikSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) 
           {g.beispiele?.length > 0 && (<><SectionLabel>Beispiele</SectionLabel><ExampleTable rows={g.beispiele} /></>)}
           {g.fehler && (<><SectionLabel>Häufige Fehler</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{g.fehler}</p></>)}
           {g.notizen && (<><SectionLabel>Notizen</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{g.notizen}</p></>)}
+          {g.markdown && (<><SectionLabel>Markdown</SectionLabel><MarkdownBlock content={g.markdown} /></>)}
         </Card>
       ))}
     </div>
@@ -318,6 +344,7 @@ function PartikelSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) {
           ))}
           {p.fehler && (<><SectionLabel>Häufige Fehler</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{p.fehler}</p></>)}
           {p.notizen && (<><SectionLabel>Notizen</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{p.notizen}</p></>)}
+          {p.markdown && (<><SectionLabel>Markdown</SectionLabel><MarkdownBlock content={p.markdown} /></>)}
         </Card>
       ))}
     </div>
@@ -344,6 +371,7 @@ function SatzSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) {
           {s.kontext && <p className="text-xs mt-2 px-2 py-1 rounded-lg" style={{ background:"var(--bg-card)", color:"var(--text-secondary)", border:"1px solid var(--border)" }}>📍 {s.kontext}</p>}
           {s.grammatik && (<><SectionLabel>Grammatik</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{s.grammatik}</p></>)}
           {s.notizen && (<><SectionLabel>Notizen</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{s.notizen}</p></>)}
+          {s.markdown && (<><SectionLabel>Markdown</SectionLabel><MarkdownBlock content={s.markdown} /></>)}
         </Card>
       ))}
     </div>
@@ -379,12 +407,55 @@ function SearchResults({ results }: { results: Record<string, SearchResult[]> })
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-interface Props {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  lessons: any[]; vokabeln: any[]; kanji: any[]; grammatik: any[]; partikel: any[]; saetze: any[];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function NotizenSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) {
+  const TYPE_EMOJI: Record<string, string> = { vokabel:'📝', kanji:'漢', grammatik:'🔤', partikel:'🔗', satz:'💬', sonstiges:'📋' };
+  const filtered = items.filter((n: { jlpt?: string }) => !jlpt || n.jlpt === jlpt);
+  if (filtered.length === 0) return <EmptyState tab="Notizen" />;
+  return (
+    <div className="flex flex-col gap-4">
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+      {filtered.map((n: any) => (
+        <Card key={n._id}>
+          <div className="flex items-start justify-between gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">{TYPE_EMOJI[n.typ] ?? '📋'}</span>
+              <h3 className="font-bold text-base">{n.titel}</h3>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {n.jlpt && <JlptBadge level={n.jlpt} />}
+              {(n.tags ?? []).map((t: string) => (
+                <span key={t} className="text-xs px-2 py-0.5 rounded-full" style={{ background:"rgba(255,45,107,0.08)", color:"var(--accent-pink)" }}>#{t}</span>
+              ))}
+            </div>
+          </div>
+          <div className="prose-sm" style={{ color: "var(--text-primary)" }}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}
+              components={{
+                table: (props) => <table className="w-full text-sm border-collapse mb-3" {...props} />,
+                th: (props) => <th className="text-left py-1.5 pr-4 text-xs font-semibold" style={{ borderBottom: "1px solid var(--border)", color: "var(--accent-cyan)" }} {...props} />,
+                td: (props) => <td className="py-1.5 pr-4 text-sm" style={{ borderBottom: "1px solid var(--border)" }} {...props} />,
+                code: (props) => <code className="px-1.5 py-0.5 rounded text-xs font-mono" style={{ background: "var(--bg-card)", color: "var(--accent-cyan)" }} {...props} />,
+                h2: (props) => <h2 className="text-base font-bold mt-4 mb-2" style={{ color: "var(--accent-cyan)" }} {...props} />,
+                h3: (props) => <h3 className="text-sm font-semibold mt-3 mb-1" {...props} />,
+                p: (props) => <p className="text-sm mb-2 leading-relaxed" style={{ color: "var(--text-secondary)" }} {...props} />,
+                strong: (props) => <strong className="font-bold" style={{ color: "var(--text-primary)" }} {...props} />,
+              }}>
+              {n.inhalt}
+            </ReactMarkdown>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
 }
 
-export default function JapanischClient({ lessons, vokabeln, kanji, grammatik, partikel, saetze }: Props) {
+interface Props {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  lessons: any[]; vokabeln: any[]; kanji: any[]; grammatik: any[]; partikel: any[]; saetze: any[]; notizen: any[];
+}
+
+export default function JapanischClient({ lessons, vokabeln, kanji, grammatik, partikel, saetze, notizen }: Props) {
   const [tab, setTab] = useState<Tab>("lektionen");
   const [jlpt, setJlpt] = useState<JLPT | null>(null);
   const [query, setQuery] = useState("");
@@ -406,7 +477,7 @@ export default function JapanischClient({ lessons, vokabeln, kanji, grammatik, p
 
   const counts: Record<Tab, number> = {
     lektionen: lessons.length, vokabel: vokabeln.length, kanji: kanji.length,
-    grammatik: grammatik.length, partikel: partikel.length, satz: saetze.length,
+    grammatik: grammatik.length, partikel: partikel.length, satz: saetze.length, notizen: notizen.length,
   };
 
   return (
@@ -483,6 +554,7 @@ export default function JapanischClient({ lessons, vokabeln, kanji, grammatik, p
           {tab === "grammatik" && <GrammatikSection items={grammatik} jlpt={jlpt} />}
           {tab === "partikel"  && <PartikelSection  items={partikel} jlpt={jlpt} />}
           {tab === "satz"      && <SatzSection      items={saetze}   jlpt={jlpt} />}
+          {tab === "notizen"   && <NotizenSection   items={notizen}  jlpt={jlpt} />}
 
           {/* Coming soon */}
           <div className="mt-10 p-6 rounded-2xl text-center" style={{ background:"var(--bg-card)", border:"1px dashed var(--border)" }}>

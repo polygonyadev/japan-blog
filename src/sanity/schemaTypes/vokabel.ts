@@ -26,8 +26,7 @@ export const vokabelType = defineType({
       options: { list: ['N5','N4','N3','N2','N1'].map(v => ({ title: v, value: v })) },
     }),
     defineField({
-      name: 'konjugation', title: 'Konjugation / Formen',
-      type: 'array',
+      name: 'konjugation', title: 'Konjugation / Formen', type: 'array',
       description: 'z.B. Grundform, Verneinung, Vergangenheit, て-Form...',
       of: [{
         type: 'object',
@@ -40,8 +39,7 @@ export const vokabelType = defineType({
       }],
     }),
     defineField({
-      name: 'beispiele', title: 'Beispielsätze',
-      type: 'array',
+      name: 'beispiele', title: 'Beispielsätze', type: 'array',
       of: [{
         type: 'object',
         fields: [
@@ -53,9 +51,13 @@ export const vokabelType = defineType({
       }],
     }),
     defineField({ name: 'notizen', title: 'Notizen', type: 'text', rows: 3 }),
+    defineField({
+      name: 'markdown', title: 'Markdown-Inhalt (Obsidian)', type: 'text', rows: 15,
+      description: 'Obsidian-Inhalt direkt einfügen — wird auf der Website gerendert',
+    }),
   ],
   preview: {
     select: { title: 'wort', subtitle: 'bedeutung' },
-    prepare({ title, subtitle }) { return { title, subtitle: `${subtitle}` } },
+    prepare({ title, subtitle }) { return { title, subtitle } },
   },
 })

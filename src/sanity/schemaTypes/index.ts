@@ -9,7 +9,9 @@ import { kanjiType } from './kanji'
 import { grammatikType } from './grammatik'
 import { partikelType } from './partikel'
 import { satzType } from './satz'
+import { notizType } from './notiz'
+import { communityType } from './community'
 
 export const schema: { types: SchemaTypeDefinition[] } = {
-  types: [postType, lessonType, bucketItemType, siteSettingsType, photoType, vokabelType, kanjiType, grammatikType, partikelType, satzType],
+  types: [postType, lessonType, bucketItemType, siteSettingsType, photoType, vokabelType, kanjiType, grammatikType, partikelType, satzType, notizType, communityType],
 }

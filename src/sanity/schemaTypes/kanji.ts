@@ -7,17 +7,16 @@ export const kanjiType = defineType({
   fields: [
     defineField({ name: 'zeichen', title: 'Kanji-Zeichen', type: 'string', validation: r => r.required() }),
     defineField({ name: 'bedeutung', title: 'Bedeutung (Deutsch)', type: 'string', validation: r => r.required() }),
-    defineField({ name: 'onYomi', title: 'On-Yomi (音読み)', type: 'string', description: 'z.B. ワ, カイ' }),
-    defineField({ name: 'kunYomi', title: 'Kun-Yomi (訓読み)', type: 'string', description: 'z.B. はなす, はなし' }),
-    defineField({ name: 'radikal', title: 'Radikal', type: 'string', description: 'z.B. 言 (Sprechen)' }),
+    defineField({ name: 'onYomi', title: 'On-Yomi (音読み)', type: 'string' }),
+    defineField({ name: 'kunYomi', title: 'Kun-Yomi (訓読み)', type: 'string' }),
+    defineField({ name: 'radikal', title: 'Radikal', type: 'string' }),
     defineField({ name: 'strichanzahl', title: 'Strichanzahl', type: 'number' }),
     defineField({
       name: 'jlpt', title: 'JLPT-Level', type: 'string',
       options: { list: ['N5','N4','N3','N2','N1'].map(v => ({ title: v, value: v })) },
     }),
     defineField({
-      name: 'vokabeln', title: 'Vokabeln mit diesem Kanji',
-      type: 'array',
+      name: 'vokabeln', title: 'Vokabeln mit diesem Kanji', type: 'array',
       of: [{
         type: 'object',
         fields: [
@@ -29,8 +28,7 @@ export const kanjiType = defineType({
       }],
     }),
     defineField({
-      name: 'beispiele', title: 'Beispielsätze',
-      type: 'array',
+      name: 'beispiele', title: 'Beispielsätze', type: 'array',
       of: [{
         type: 'object',
         fields: [
@@ -42,6 +40,10 @@ export const kanjiType = defineType({
       }],
     }),
     defineField({ name: 'notizen', title: 'Notizen / Aufbau / Etymologie', type: 'text', rows: 4 }),
+    defineField({
+      name: 'markdown', title: 'Markdown-Inhalt (Obsidian)', type: 'text', rows: 15,
+      description: 'Obsidian-Inhalt direkt einfügen — wird auf der Website gerendert',
+    }),
   ],
   preview: {
     select: { title: 'zeichen', subtitle: 'bedeutung' },

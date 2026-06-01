@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MapPin, BookOpen, Image, List, Home, GraduationCap, Sun, Moon } from "lucide-react";
+import { MapPin, BookOpen, Image, List, Home, GraduationCap, Sun, Moon, MessageCircle } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import BuyMeCoffee from "@/components/BuyMeCoffee";
 import TokyoTime from "@/components/TokyoTime";
@@ -13,6 +13,7 @@ const links = [
   { href: "/gallery",     label: "Galerie",    icon: Image },
   { href: "/bucket-list", label: "Bucket List",icon: List },
   { href: "/japanisch",   label: "Japanisch",  icon: GraduationCap },
+  { href: "/community",  label: "Community",  icon: MessageCircle },
 ];
 
 export default function Navbar() {

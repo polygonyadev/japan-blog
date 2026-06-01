@@ -1,9 +1,9 @@
-import { getLessons, getVokabeln, getKanji, getGrammatik, getPartikel, getSaetze } from "@/lib/fetchData";
+import { getLessons, getVokabeln, getKanji, getGrammatik, getPartikel, getSaetze, getNotizen } from "@/lib/fetchData";
 import JapanischClient from "./JapanischClient";
 
 export default async function JapanischPage() {
-  const [lessons, vokabeln, kanji, grammatik, partikel, saetze] = await Promise.all([
-    getLessons(), getVokabeln(), getKanji(), getGrammatik(), getPartikel(), getSaetze(),
+  const [lessons, vokabeln, kanji, grammatik, partikel, saetze, notizen] = await Promise.all([
+    getLessons(), getVokabeln(), getKanji(), getGrammatik(), getPartikel(), getSaetze(), getNotizen(),
   ]);
   return (
     <JapanischClient
@@ -13,6 +13,7 @@ export default async function JapanischPage() {
       grammatik={grammatik}
       partikel={partikel}
       saetze={saetze}
+      notizen={notizen}
     />
   );
 }

@@ -1,5 +1,5 @@
 import { client } from '@/sanity/lib/client'
-import { allPostsQuery, allLessonsQuery, postBySlugQuery, allBucketItemsQuery, allGalleryImagesQuery, siteSettingsQuery, statsQuery, allVokabelnQuery, allKanjiQuery, allGrammatikQuery, allPartikelQuery, allSaetzeQuery, japanischSearchQuery } from '@/sanity/lib/queries'
+import { allPostsQuery, allLessonsQuery, postBySlugQuery, allBucketItemsQuery, allGalleryImagesQuery, siteSettingsQuery, statsQuery, allVokabelnQuery, allKanjiQuery, allGrammatikQuery, allPartikelQuery, allSaetzeQuery, japanischSearchQuery, allNotizenQuery, allCommunityQuery } from '@/sanity/lib/queries'
 import { POSTS, type Post } from '@/lib/data'
 
 export async function getPosts(): Promise<Post[]> {
@@ -79,4 +79,11 @@ export async function searchJapanisch(q: string) {
   try {
     return await client.fetch(japanischSearchQuery, { q: `*${q}*` }, { next: { revalidate: 0 } })
   } catch { return { vokabeln: [], kanji: [], grammatik: [], partikel: [], saetze: [] } }
+}
+
+export async function getNotizen() {
+  try { return await client.fetch(allNotizenQuery, {}, { next: { revalidate: 60 } }) } catch { return [] }
+}
+export async function getCommunity() {
+  try { return await client.fetch(allCommunityQuery, {}, { next: { revalidate: 30 } }) } catch { return [] }
 }
