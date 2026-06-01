@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { GraduationCap, Search, BookOpen, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { DetailModal, MarkdownContent } from "@/components/DetailModal";
 
 type JLPT = "N5" | "N4" | "N3" | "N2" | "N1";
 type Tab = "lektionen" | "vokabel" | "kanji" | "grammatik" | "partikel" | "satz" | "notizen";
@@ -75,9 +76,13 @@ function MarkdownBlock({ content }: { content: string }) {
   );
 }
 
-function Card({ children }: { children: React.ReactNode }) {
+function Card({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
   return (
-    <div className="glass rounded-2xl p-5" style={{ border: "1px solid var(--border)" }}>
+    <div
+      className={`glass rounded-2xl p-5 transition-all duration-200 ${onClick ? "cursor-pointer hover:scale-[1.01]" : ""}`}
+      style={{ border: "1px solid var(--border)" }}
+      onClick={onClick}
+    >
       {children}
     </div>
   );
@@ -171,211 +176,247 @@ function LektionenSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) 
   );
 }
 
+// ─── Modal detail views ───────────────────────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function VokabelDetail({ v }: { v: any }) {
+  return <>
+    <div className="flex items-start justify-between gap-2 mb-4">
+      <div>
+        <span className="text-3xl font-bold">{v.wort}</span>
+        {v.kana && <span className="text-lg ml-3" style={{ color:"var(--accent-cyan)" }}>{v.kana}</span>}
+        <p className="mt-1" style={{ color:"var(--text-secondary)" }}>{v.bedeutung}</p>
+      </div>
+      <div className="flex flex-col items-end gap-1">
+        {v.jlpt && <JlptBadge level={v.jlpt} />}
+        {v.wortart && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background:"var(--bg-card)", color:"var(--text-secondary)", border:"1px solid var(--border)" }}>{v.wortart}</span>}
+      </div>
+    </div>
+    {v.konjugation?.length > 0 && <><SectionLabel>Konjugation</SectionLabel>
+      <table className="w-full text-sm border-collapse mb-3"><tbody>
+        {v.konjugation.map((k: { form: string; japanisch: string; kana?: string }, i: number) => (
+          <tr key={i} style={{ borderBottom:"1px solid var(--border)" }}>
+            <td className="py-1.5 pr-3 text-xs" style={{ color:"var(--text-secondary)" }}>{k.form}</td>
+            <td className="py-1.5 pr-3 font-medium">{k.japanisch}</td>
+            <td className="py-1.5 italic text-xs" style={{ color:"var(--accent-cyan)" }}>{k.kana}</td>
+          </tr>))}
+      </tbody></table></>}
+    {(v.beispiele?.length ?? 0) > 0 && <><SectionLabel>Beispiele</SectionLabel><ExampleTable rows={v.beispiele ?? []} /></>}
+    {v.notizen && <><SectionLabel>Notizen</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{v.notizen}</p></>}
+    {v.markdown && <><SectionLabel>Vollständige Notiz</SectionLabel><MarkdownContent content={v.markdown} /></>}
+  </>
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function KanjiDetail({ k }: { k: any }) {
+  return <>
+    <div className="flex items-start justify-between gap-2 mb-4">
+      <div className="flex items-center gap-4">
+        <span className="text-6xl font-bold" style={{ color:"var(--accent-pink)" }}>{k.zeichen}</span>
+        <div>
+          <p className="font-bold text-lg">{k.bedeutung}</p>
+          {k.onYomi && <p className="text-sm" style={{ color:"var(--text-secondary)" }}>音読み: {k.onYomi}</p>}
+          {k.kunYomi && <p className="text-sm" style={{ color:"var(--text-secondary)" }}>訓読み: {k.kunYomi}</p>}
+          {k.radikal && <p className="text-sm" style={{ color:"var(--text-secondary)" }}>Radikal: {k.radikal}</p>}
+          {k.strichanzahl && <p className="text-sm" style={{ color:"var(--text-secondary)" }}>{k.strichanzahl} Striche</p>}
+        </div>
+      </div>
+      {k.jlpt && <JlptBadge level={k.jlpt} />}
+    </div>
+    {k.vokabeln?.length > 0 && <><SectionLabel>Vokabeln</SectionLabel>
+      <div className="flex flex-wrap gap-2 mb-3">
+        {k.vokabeln.map((v: { wort: string; kana?: string; bedeutung?: string }, i: number) => (
+          <span key={i} className="text-sm px-2 py-1 rounded-lg" style={{ background:"var(--bg-card)", border:"1px solid var(--border)" }}>
+            {v.wort}{v.kana && <span style={{ color:"var(--accent-cyan)" }}> ({v.kana})</span>}{v.bedeutung && <span style={{ color:"var(--text-secondary)" }}> — {v.bedeutung}</span>}
+          </span>))}
+      </div></>}
+    {(k.beispiele?.length ?? 0) > 0 && <><SectionLabel>Beispiele</SectionLabel><ExampleTable rows={k.beispiele ?? []} /></>}
+    {k.notizen && <><SectionLabel>Notizen</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{k.notizen}</p></>}
+    {k.markdown && <><SectionLabel>Vollständige Notiz</SectionLabel><MarkdownContent content={k.markdown} /></>}
+  </>
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function GrammatikDetail({ g }: { g: any }) {
+  return <>
+    <div className="flex items-start justify-between gap-2 mb-2">
+      <h3 className="text-2xl font-bold">{g.muster}</h3>
+      {g.jlpt && <JlptBadge level={g.jlpt} />}
+    </div>
+    <p className="mb-3" style={{ color:"var(--text-secondary)" }}>{g.bedeutung}</p>
+    {g.struktur && <div className="mb-4 px-3 py-2 rounded-lg text-sm font-mono" style={{ background:"var(--bg-card)", border:"1px solid var(--border)", color:"var(--accent-cyan)" }}>{g.struktur}</div>}
+    {g.bildung?.length > 0 && <><SectionLabel>Bildung</SectionLabel>
+      <table className="w-full text-sm border-collapse mb-3"><thead>
+        <tr style={{ borderBottom:"1px solid var(--border)" }}>
+          {["Wortart","Bildung","Beispiel"].map(h => <th key={h} className="text-left py-1.5 pr-4 text-xs" style={{ color:"var(--text-secondary)" }}>{h}</th>)}
+        </tr></thead><tbody>
+        {g.bildung.map((b: { wortart: string; bildung: string; beispiel?: string }, i: number) => (
+          <tr key={i} style={{ borderBottom:"1px solid var(--border)" }}>
+            <td className="py-1.5 pr-4 text-xs" style={{ color:"var(--text-secondary)" }}>{b.wortart}</td>
+            <td className="py-1.5 pr-4">{b.bildung}</td>
+            <td className="py-1.5 italic text-xs" style={{ color:"var(--accent-cyan)" }}>{b.beispiel}</td>
+          </tr>))}
+      </tbody></table></>}
+    {(g.beispiele?.length ?? 0) > 0 && <><SectionLabel>Beispiele</SectionLabel><ExampleTable rows={g.beispiele ?? []} /></>}
+    {g.fehler && <><SectionLabel>Häufige Fehler</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{g.fehler}</p></>}
+    {g.notizen && <><SectionLabel>Notizen</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{g.notizen}</p></>}
+    {g.markdown && <><SectionLabel>Vollständige Notiz</SectionLabel><MarkdownContent content={g.markdown} /></>}
+  </>
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function PartikelDetail({ p }: { p: any }) {
+  return <>
+    <div className="flex items-start gap-4 mb-4">
+      <span className="text-5xl font-bold" style={{ color:"var(--accent-pink)" }}>{p.partikel}</span>
+      <div>
+        <p className="font-bold text-lg">{p.funktion}</p>
+        {p.jlpt && <JlptBadge level={p.jlpt} />}
+      </div>
+    </div>
+    {p.verwendungen?.map((v: { titel: string; struktur?: string; beispiele?: { japanisch: string; kana: string; deutsch: string }[] }, i: number) => (
+      <div key={i} className="mb-4">
+        <SectionLabel>{i+1}. {v.titel}</SectionLabel>
+        {v.struktur && <div className="mb-2 px-3 py-1.5 rounded-lg text-sm font-mono" style={{ background:"var(--bg-card)", border:"1px solid var(--border)", color:"var(--accent-cyan)" }}>{v.struktur}</div>}
+        {(v.beispiele?.length ?? 0) > 0 && <ExampleTable rows={v.beispiele ?? []} />}
+      </div>))}
+    {p.fehler && <><SectionLabel>Häufige Fehler</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{p.fehler}</p></>}
+    {p.notizen && <><SectionLabel>Notizen</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{p.notizen}</p></>}
+    {p.markdown && <><SectionLabel>Vollständige Notiz</SectionLabel><MarkdownContent content={p.markdown} /></>}
+  </>
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function SatzDetail({ s }: { s: any }) {
+  return <>
+    <div className="mb-4">
+      <p className="text-2xl font-medium">{s.japanisch}</p>
+      {s.kana && <p className="text-base italic mt-1" style={{ color:"var(--accent-cyan)" }}>{s.kana}</p>}
+      <p className="mt-2" style={{ color:"var(--text-secondary)" }}>{s.deutsch}</p>
+      {s.jlpt && <div className="mt-2"><JlptBadge level={s.jlpt} /></div>}
+    </div>
+    {s.kontext && <p className="text-sm px-3 py-2 rounded-lg mb-4" style={{ background:"var(--bg-card)", color:"var(--text-secondary)", border:"1px solid var(--border)" }}>📍 {s.kontext}</p>}
+    {s.grammatik && <><SectionLabel>Grammatik</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{s.grammatik}</p></>}
+    {s.notizen && <><SectionLabel>Notizen</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{s.notizen}</p></>}
+    {s.markdown && <><SectionLabel>Vollständige Notiz</SectionLabel><MarkdownContent content={s.markdown} /></>}
+  </>
+}
+
+// ─── Compact sections with click-to-open modal ───────────────────────────────
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function VokabelSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) {
+  const [selected, setSelected] = useState<unknown>(null);
   const filtered = items.filter((v: { jlpt?: string }) => !jlpt || v.jlpt === jlpt);
   if (filtered.length === 0) return <EmptyState tab="Vokabeln" />;
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      {filtered.map((v: any) => (
-        <Card key={v._id}>
-          <div className="flex items-start justify-between gap-2 mb-3">
+  return <>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      {filtered.map((v: { _id: string; wort: string; kana?: string; bedeutung: string; jlpt?: string; wortart?: string }) => (
+        <Card key={v._id} onClick={() => setSelected(v)}>
+          <div className="flex items-start justify-between gap-2">
             <div>
-              <span className="text-2xl font-bold">{v.wort}</span>
+              <span className="text-xl font-bold">{v.wort}</span>
               {v.kana && <span className="text-sm ml-2" style={{ color:"var(--accent-cyan)" }}>{v.kana}</span>}
               <p className="text-sm mt-0.5" style={{ color:"var(--text-secondary)" }}>{v.bedeutung}</p>
             </div>
-            <div className="flex flex-col items-end gap-1">
+            <div className="flex flex-col items-end gap-1 flex-shrink-0">
               {v.jlpt && <JlptBadge level={v.jlpt} />}
-              {v.wortart && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background:"var(--bg-card)", color:"var(--text-secondary)", border:"1px solid var(--border)" }}>{v.wortart}</span>}
+              {v.wortart && <span className="text-xs" style={{ color:"var(--text-secondary)" }}>{v.wortart}</span>}
             </div>
           </div>
-          {v.konjugation?.length > 0 && (
-            <>
-              <SectionLabel>Konjugation</SectionLabel>
-              <table className="w-full text-sm border-collapse">
-                <tbody>
-                  {v.konjugation.map((k: { form: string; japanisch: string; kana?: string }, i: number) => (
-                    <tr key={i} style={{ borderBottom:"1px solid var(--border)" }}>
-                      <td className="py-1.5 pr-3 text-xs" style={{ color:"var(--text-secondary)" }}>{k.form}</td>
-                      <td className="py-1.5 pr-3 font-medium">{k.japanisch}</td>
-                      <td className="py-1.5 italic text-xs" style={{ color:"var(--accent-cyan)" }}>{k.kana}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
-          )}
-          {v.beispiele?.length > 0 && (<><SectionLabel>Beispiele</SectionLabel><ExampleTable rows={v.beispiele} /></>)}
-          {v.notizen && (<><SectionLabel>Notizen</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{v.notizen}</p></>)}
-          {v.markdown && (<><SectionLabel>Markdown</SectionLabel><MarkdownBlock content={v.markdown} /></>)}
-        </Card>
-      ))}
+        </Card>))}
     </div>
-  );
+    {selected && <DetailModal onClose={() => setSelected(null)}><VokabelDetail v={selected} /></DetailModal>}
+  </>
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function KanjiSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) {
+  const [selected, setSelected] = useState<unknown>(null);
   const filtered = items.filter((k: { jlpt?: string }) => !jlpt || k.jlpt === jlpt);
   if (filtered.length === 0) return <EmptyState tab="Kanji" />;
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      {filtered.map((k: any) => (
-        <Card key={k._id}>
-          <div className="flex items-start justify-between gap-2 mb-3">
-            <div className="flex items-center gap-3">
-              <span className="text-5xl font-bold" style={{ color:"var(--accent-pink)" }}>{k.zeichen}</span>
-              <div>
-                <p className="font-bold">{k.bedeutung}</p>
-                {k.onYomi && <p className="text-xs mt-0.5" style={{ color:"var(--text-secondary)" }}>音: {k.onYomi}</p>}
-                {k.kunYomi && <p className="text-xs" style={{ color:"var(--text-secondary)" }}>訓: {k.kunYomi}</p>}
-              </div>
-            </div>
-            <div className="flex flex-col items-end gap-1">
+  return <>
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      {filtered.map((k: { _id: string; zeichen: string; bedeutung: string; onYomi?: string; kunYomi?: string; jlpt?: string }) => (
+        <Card key={k._id} onClick={() => setSelected(k)}>
+          <div className="text-center">
+            <div className="text-4xl font-bold mb-1" style={{ color:"var(--accent-pink)" }}>{k.zeichen}</div>
+            <p className="text-sm font-medium">{k.bedeutung}</p>
+            <div className="flex justify-center gap-2 mt-1 flex-wrap">
               {k.jlpt && <JlptBadge level={k.jlpt} />}
-              {k.strichanzahl && <span className="text-xs" style={{ color:"var(--text-secondary)" }}>{k.strichanzahl} Striche</span>}
-              {k.radikal && <span className="text-xs" style={{ color:"var(--text-secondary)" }}>Rad: {k.radikal}</span>}
             </div>
+            {k.onYomi && <p className="text-xs mt-1" style={{ color:"var(--text-secondary)" }}>音: {k.onYomi}</p>}
+            {k.kunYomi && <p className="text-xs" style={{ color:"var(--text-secondary)" }}>訓: {k.kunYomi}</p>}
           </div>
-          {k.vokabeln?.length > 0 && (
-            <>
-              <SectionLabel>Vokabeln</SectionLabel>
-              <div className="flex flex-wrap gap-2">
-                {k.vokabeln.map((v: { wort: string; kana?: string; bedeutung?: string }, i: number) => (
-                  <span key={i} className="text-sm px-2 py-0.5 rounded-lg" style={{ background:"var(--bg-card)", border:"1px solid var(--border)" }}>
-                    {v.wort} {v.kana && <span style={{ color:"var(--accent-cyan)" }}>({v.kana})</span>} {v.bedeutung && <span style={{ color:"var(--text-secondary)" }}>— {v.bedeutung}</span>}
-                  </span>
-                ))}
-              </div>
-            </>
-          )}
-          {k.beispiele?.length > 0 && (<><SectionLabel>Beispiele</SectionLabel><ExampleTable rows={k.beispiele} /></>)}
-          {k.notizen && (<><SectionLabel>Notizen</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{k.notizen}</p></>)}
-          {k.markdown && (<><SectionLabel>Markdown</SectionLabel><MarkdownBlock content={k.markdown} /></>)}
-        </Card>
-      ))}
+        </Card>))}
     </div>
-  );
+    {selected && <DetailModal onClose={() => setSelected(null)}><KanjiDetail k={selected} /></DetailModal>}
+  </>
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function GrammatikSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) {
+  const [selected, setSelected] = useState<unknown>(null);
   const filtered = items.filter((g: { jlpt?: string }) => !jlpt || g.jlpt === jlpt);
   if (filtered.length === 0) return <EmptyState tab="Grammatik" />;
-  return (
-    <div className="flex flex-col gap-4">
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      {filtered.map((g: any) => (
-        <Card key={g._id}>
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <h3 className="text-xl font-bold">{g.muster}</h3>
+  return <>
+    <div className="flex flex-col gap-3">
+      {filtered.map((g: { _id: string; muster: string; bedeutung: string; struktur?: string; jlpt?: string }) => (
+        <Card key={g._id} onClick={() => setSelected(g)}>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              <span className="font-bold text-lg">{g.muster}</span>
+              <p className="text-sm mt-0.5" style={{ color:"var(--text-secondary)" }}>{g.bedeutung}</p>
+              {g.struktur && <p className="text-xs mt-1 font-mono" style={{ color:"var(--accent-cyan)" }}>{g.struktur}</p>}
+            </div>
             {g.jlpt && <JlptBadge level={g.jlpt} />}
           </div>
-          <p style={{ color:"var(--text-secondary)" }} className="text-sm">{g.bedeutung}</p>
-          {g.struktur && (
-            <div className="mt-3 px-3 py-2 rounded-lg text-sm font-mono" style={{ background:"var(--bg-card)", border:"1px solid var(--border)", color:"var(--accent-cyan)" }}>
-              {g.struktur}
-            </div>
-          )}
-          {g.bildung?.length > 0 && (
-            <>
-              <SectionLabel>Bildung</SectionLabel>
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr style={{ borderBottom:"1px solid var(--border)" }}>
-                    <th className="text-left py-1.5 pr-4 text-xs" style={{ color:"var(--text-secondary)" }}>Wortart</th>
-                    <th className="text-left py-1.5 pr-4 text-xs" style={{ color:"var(--text-secondary)" }}>Bildung</th>
-                    <th className="text-left py-1.5 text-xs" style={{ color:"var(--text-secondary)" }}>Beispiel</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {g.bildung.map((b: { wortart: string; bildung: string; beispiel?: string }, i: number) => (
-                    <tr key={i} style={{ borderBottom:"1px solid var(--border)" }}>
-                      <td className="py-1.5 pr-4 text-xs" style={{ color:"var(--text-secondary)" }}>{b.wortart}</td>
-                      <td className="py-1.5 pr-4">{b.bildung}</td>
-                      <td className="py-1.5 italic text-xs" style={{ color:"var(--accent-cyan)" }}>{b.beispiel}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
-          )}
-          {g.beispiele?.length > 0 && (<><SectionLabel>Beispiele</SectionLabel><ExampleTable rows={g.beispiele} /></>)}
-          {g.fehler && (<><SectionLabel>Häufige Fehler</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{g.fehler}</p></>)}
-          {g.notizen && (<><SectionLabel>Notizen</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{g.notizen}</p></>)}
-          {g.markdown && (<><SectionLabel>Markdown</SectionLabel><MarkdownBlock content={g.markdown} /></>)}
-        </Card>
-      ))}
+        </Card>))}
     </div>
-  );
+    {selected && <DetailModal onClose={() => setSelected(null)}><GrammatikDetail g={selected} /></DetailModal>}
+  </>
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function PartikelSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) {
+  const [selected, setSelected] = useState<unknown>(null);
   const filtered = items.filter((p: { jlpt?: string }) => !jlpt || p.jlpt === jlpt);
   if (filtered.length === 0) return <EmptyState tab="Partikel" />;
-  return (
-    <div className="flex flex-col gap-4">
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      {filtered.map((p: any) => (
-        <Card key={p._id}>
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <div className="flex items-center gap-3">
-              <span className="text-4xl font-bold" style={{ color:"var(--accent-pink)" }}>{p.partikel}</span>
-              <div>
-                <p className="font-bold">{p.funktion}</p>
-                {p.jlpt && <JlptBadge level={p.jlpt} />}
-              </div>
-            </div>
+  return <>
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      {filtered.map((p: { _id: string; partikel: string; funktion: string; jlpt?: string }) => (
+        <Card key={p._id} onClick={() => setSelected(p)}>
+          <div className="text-center">
+            <div className="text-4xl font-bold mb-1" style={{ color:"var(--accent-pink)" }}>{p.partikel}</div>
+            <p className="text-sm" style={{ color:"var(--text-secondary)" }}>{p.funktion}</p>
+            {p.jlpt && <div className="flex justify-center mt-2"><JlptBadge level={p.jlpt} /></div>}
           </div>
-          {p.verwendungen?.length > 0 && p.verwendungen.map((v: { titel: string; struktur?: string; beispiele?: { japanisch: string; kana: string; deutsch: string }[] }, i: number) => (
-            <div key={i} className="mt-4">
-              <SectionLabel>{i + 1}. {v.titel}</SectionLabel>
-              {v.struktur && (
-                <div className="mb-2 px-3 py-1.5 rounded-lg text-sm font-mono" style={{ background:"var(--bg-card)", border:"1px solid var(--border)", color:"var(--accent-cyan)" }}>
-                  {v.struktur}
-                </div>
-              )}
-              {(v.beispiele?.length ?? 0) > 0 && <ExampleTable rows={v.beispiele ?? []} />}
-            </div>
-          ))}
-          {p.fehler && (<><SectionLabel>Häufige Fehler</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{p.fehler}</p></>)}
-          {p.notizen && (<><SectionLabel>Notizen</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{p.notizen}</p></>)}
-          {p.markdown && (<><SectionLabel>Markdown</SectionLabel><MarkdownBlock content={p.markdown} /></>)}
-        </Card>
-      ))}
+        </Card>))}
     </div>
-  );
+    {selected && <DetailModal onClose={() => setSelected(null)}><PartikelDetail p={selected} /></DetailModal>}
+  </>
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function SatzSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) {
+  const [selected, setSelected] = useState<unknown>(null);
   const filtered = items.filter((s: { jlpt?: string }) => !jlpt || s.jlpt === jlpt);
   if (filtered.length === 0) return <EmptyState tab="Sätze" />;
-  return (
+  return <>
     <div className="flex flex-col gap-3">
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      {filtered.map((s: any) => (
-        <Card key={s._id}>
-          <div className="flex items-start justify-between gap-2 mb-2">
+      {filtered.map((s: { _id: string; japanisch: string; kana?: string; deutsch: string; jlpt?: string }) => (
+        <Card key={s._id} onClick={() => setSelected(s)}>
+          <div className="flex items-start justify-between gap-2">
             <div className="flex-1">
-              <p className="text-xl font-medium">{s.japanisch}</p>
-              {s.kana && <p className="text-sm italic mt-0.5" style={{ color:"var(--accent-cyan)" }}>{s.kana}</p>}
+              <p className="font-medium">{s.japanisch}</p>
+              {s.kana && <p className="text-xs italic mt-0.5" style={{ color:"var(--accent-cyan)" }}>{s.kana}</p>}
               <p className="text-sm mt-1" style={{ color:"var(--text-secondary)" }}>{s.deutsch}</p>
             </div>
             {s.jlpt && <JlptBadge level={s.jlpt} />}
           </div>
-          {s.kontext && <p className="text-xs mt-2 px-2 py-1 rounded-lg" style={{ background:"var(--bg-card)", color:"var(--text-secondary)", border:"1px solid var(--border)" }}>📍 {s.kontext}</p>}
-          {s.grammatik && (<><SectionLabel>Grammatik</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{s.grammatik}</p></>)}
-          {s.notizen && (<><SectionLabel>Notizen</SectionLabel><p className="text-sm" style={{ color:"var(--text-secondary)" }}>{s.notizen}</p></>)}
-          {s.markdown && (<><SectionLabel>Markdown</SectionLabel><MarkdownBlock content={s.markdown} /></>)}
-        </Card>
-      ))}
+        </Card>))}
     </div>
-  );
+    {selected && <DetailModal onClose={() => setSelected(null)}><SatzDetail s={selected} /></DetailModal>}
+  </>
 }
 
 // ─── Search results ───────────────────────────────────────────────────────────

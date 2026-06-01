@@ -106,31 +106,31 @@ export const statsQuery = groq`
 
 export const allVokabelnQuery = groq`
   *[_type == "vokabel"] | order(jlpt asc, wort asc) {
-    _id, wort, kana, bedeutung, wortart, jlpt, konjugation, beispiele, notizen
+    _id, wort, kana, bedeutung, wortart, jlpt, konjugation, beispiele, notizen, markdown
   }
 `
 
 export const allKanjiQuery = groq`
   *[_type == "kanji"] | order(jlpt asc, zeichen asc) {
-    _id, zeichen, bedeutung, onYomi, kunYomi, radikal, strichanzahl, jlpt, vokabeln, beispiele, notizen
+    _id, zeichen, bedeutung, onYomi, kunYomi, radikal, strichanzahl, jlpt, vokabeln, beispiele, notizen, markdown
   }
 `
 
 export const allGrammatikQuery = groq`
   *[_type == "grammatik"] | order(jlpt asc, muster asc) {
-    _id, muster, bedeutung, struktur, jlpt, bildung, beispiele, fehler, notizen
+    _id, muster, bedeutung, struktur, jlpt, bildung, beispiele, fehler, notizen, markdown
   }
 `
 
 export const allPartikelQuery = groq`
   *[_type == "partikel"] | order(jlpt asc, partikel asc) {
-    _id, partikel, funktion, jlpt, verwendungen, fehler, notizen
+    _id, partikel, funktion, jlpt, verwendungen, fehler, notizen, markdown
   }
 `
 
 export const allSaetzeQuery = groq`
   *[_type == "satz"] | order(jlpt asc, japanisch asc) {
-    _id, japanisch, kana, deutsch, jlpt, kontext, grammatik, notizen
+    _id, japanisch, kana, deutsch, jlpt, kontext, grammatik, notizen, markdown
   }
 `
 
