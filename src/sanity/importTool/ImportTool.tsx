@@ -22,13 +22,13 @@ interface Preview {
 }
 
 const TYPES = [
+  { value: 'notiz',     label: '📋 Lektion' },       // → Tab "Lektionen" auf der Website
+  { value: 'lesson',    label: '📚 Nützliches' },     // → Tab "Nützliches" auf der Website
   { value: 'grammatik', label: '🔤 Grammatik' },
   { value: 'kanji',     label: '漢 Kanji' },
-  { value: 'vokabel',   label: '📝 Vokabel' },
+  { value: 'vokabel',   label: '📝 Vokabeln' },
   { value: 'partikel',  label: '🔗 Partikel' },
-  { value: 'satz',      label: '💬 Satz' },
-  { value: 'lesson',    label: '📚 Lektion' },
-  { value: 'notiz',     label: '📋 Notiz' },
+  { value: 'satz',      label: '💬 Sätze' },
 ]
 
 const TYP_EMOJI: Record<string, string> = {
