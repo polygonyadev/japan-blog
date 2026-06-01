@@ -152,7 +152,7 @@ export const japanischSearchQuery = groq`
       _id, "wort": japanisch, "kana": kana, "bedeutung": deutsch, jlpt, "typ": "satz"
     },
     "lektionen": *[_type == "notiz" && (titel match $q || inhalt match $q)] {
-      _id, "wort": titel, "kana": "", "bedeutung": typ, jlpt, "typ": "lektion"
+      _id, "wort": titel, "kana": "", "bedeutung": typ, jlpt, "typ": "notiz"
     }
   }
 `

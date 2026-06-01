@@ -458,7 +458,7 @@ function SearchResults({ results, allData }: { results: Record<string, SearchRes
   const [selected, setSelected] = useState<any>(null);
   const [selectedTyp, setSelectedTyp] = useState<string>("");
 
-  const TYPE_LABEL: Record<string, string> = { vokabel:"Vokabel", kanji:"Kanji", grammatik:"Grammatik", partikel:"Partikel", satz:"Satz", lektion:"Lektion" };
+  const TYPE_LABEL: Record<string, string> = { vokabel:"Vokabel", kanji:"Kanji", grammatik:"Grammatik", partikel:"Partikel", satz:"Satz", lektion:"Lektion", notiz:"Lektion" };
   const all = Object.entries(results).flatMap(([, items]) => items);
   if (all.length === 0) return <p className="text-center py-8" style={{ color:"var(--text-secondary)" }}>Keine Ergebnisse gefunden.</p>;
 
@@ -479,7 +479,8 @@ function SearchResults({ results, allData }: { results: Record<string, SearchRes
       case "grammatik": return <GrammatikDetail g={selected} />;
       case "partikel":  return <PartikelDetail p={selected} />;
       case "satz":      return <SatzDetail s={selected} />;
-      case "lektion":   return <>
+      case "lektion":
+      case "notiz": return <>
         <div className="flex items-start justify-between gap-2 mb-4">
           <h2 className="font-bold text-xl">{selected.titel}</h2>
           {selected.jlpt && <JlptBadge level={selected.jlpt} />}

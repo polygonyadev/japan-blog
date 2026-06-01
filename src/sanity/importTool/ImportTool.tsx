@@ -76,8 +76,11 @@ function mapToSanity(data: Record<string, string>, content: string, filename: st
       return { _type: 'satz', japanisch: data.japanisch || title, kana: data.kana || '', deutsch: data.deutsch || '', jlpt, markdown }
     case 'lesson':
       return { _type: 'lesson', title, jlpt, description: data.bedeutung || '', phrases: [] }
-    case 'notiz':
-      return { _type: 'notiz', titel: title, typ: 'sonstiges', jlpt, inhalt: markdown }
+    case 'notiz': {
+      // Try to detect typ from filename or folder name
+      const detectedTyp = ['grammatik','kanji','vokabel','partikel','satz'].find(t => filename.toLowerCase().includes(t)) ?? 'sonstiges'
+      return { _type: 'notiz', titel: title, typ: detectedTyp, jlpt, inhalt: markdown }
+    }
     default:
       return null
   }
