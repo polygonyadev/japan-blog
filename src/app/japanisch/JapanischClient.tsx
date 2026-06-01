@@ -453,15 +453,51 @@ function SatzSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) {
 
 interface SearchResult { _id: string; wort: string; kana: string; bedeutung: string; jlpt: string; typ: string }
 
-function SearchResults({ results }: { results: Record<string, SearchResult[]> }) {
+function SearchResults({ results, allData }: { results: Record<string, SearchResult[]>; allData: Record<string, unknown[]> }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [selected, setSelected] = useState<any>(null);
+  const [selectedTyp, setSelectedTyp] = useState<string>("");
+
   const TYPE_LABEL: Record<string, string> = { vokabel:"Vokabel", kanji:"Kanji", grammatik:"Grammatik", partikel:"Partikel", satz:"Satz", lektion:"Lektion" };
   const all = Object.entries(results).flatMap(([, items]) => items);
   if (all.length === 0) return <p className="text-center py-8" style={{ color:"var(--text-secondary)" }}>Keine Ergebnisse gefunden.</p>;
+
+  function openResult(r: SearchResult) {
+    // Find the full document from allData
+    const typeMap: Record<string, string> = { vokabel:"vokabeln", kanji:"kanji", grammatik:"grammatik", partikel:"partikel", satz:"saetze", lektion:"notizen" };
+    const dataKey = typeMap[r.typ];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fullDoc = dataKey ? (allData[dataKey] as any[])?.find((d: any) => d._id === r._id) : null;
+    if (fullDoc) { setSelected(fullDoc); setSelectedTyp(r.typ); }
+  }
+
+  function renderModal() {
+    if (!selected) return null;
+    switch (selectedTyp) {
+      case "vokabel":   return <VokabelDetail v={selected} />;
+      case "kanji":     return <KanjiDetail k={selected} />;
+      case "grammatik": return <GrammatikDetail g={selected} />;
+      case "partikel":  return <PartikelDetail p={selected} />;
+      case "satz":      return <SatzDetail s={selected} />;
+      case "lektion":   return <>
+        <div className="flex items-start justify-between gap-2 mb-4">
+          <h2 className="font-bold text-xl">{selected.titel}</h2>
+          {selected.jlpt && <JlptBadge level={selected.jlpt} />}
+        </div>
+        {selected.inhalt && <MarkdownContent content={selected.inhalt} />}
+      </>;
+      default: return null;
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-3">
-      {all.map(r => (
-        <div key={r._id} className="glass rounded-xl p-4 flex items-center gap-4" style={{ border:"1px solid var(--border)" }}>
-          <div className="flex-1">
+    <>
+      <div className="flex flex-col gap-3">
+        {all.map(r => (
+          <div key={r._id}
+            className="glass rounded-xl p-4 cursor-pointer transition-all hover:scale-[1.01]"
+            style={{ border: "1px solid var(--border)" }}
+            onClick={() => openResult(r)}>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-bold text-lg">{r.wort}</span>
               {r.kana && <span className="text-sm italic" style={{ color:"var(--accent-cyan)" }}>{r.kana}</span>}
@@ -470,9 +506,14 @@ function SearchResults({ results }: { results: Record<string, SearchResult[]> })
             </div>
             <p className="text-sm mt-0.5" style={{ color:"var(--text-secondary)" }}>{r.bedeutung}</p>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+      {selected && (
+        <DetailModal onClose={() => setSelected(null)}>
+          {renderModal()}
+        </DetailModal>
+      )}
+    </>
   );
 }
 
@@ -603,7 +644,12 @@ export default function JapanischClient({ lessons, vokabeln, kanji, grammatik, p
             <Search size={13} />
             {searching ? "Suche..." : `Ergebnisse für „${query}"`}
           </p>
-          {!searching && searchResults && <SearchResults results={searchResults} />}
+          {!searching && searchResults && (
+            <SearchResults
+              results={searchResults}
+              allData={{ vokabeln, kanji, grammatik, partikel, saetze, notizen }}
+            />
+          )}
         </div>
       ) : (
         <>
