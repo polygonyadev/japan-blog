@@ -136,20 +136,23 @@ export const allSaetzeQuery = groq`
 
 export const japanischSearchQuery = groq`
   {
-    "vokabeln": *[_type == "vokabel" && (wort match $q || bedeutung match $q || kana match $q)] {
+    "vokabeln": *[_type == "vokabel" && (wort match $q || bedeutung match $q || kana match $q || markdown match $q)] {
       _id, wort, kana, bedeutung, jlpt, "typ": "vokabel"
     },
-    "kanji": *[_type == "kanji" && (zeichen match $q || bedeutung match $q)] {
+    "kanji": *[_type == "kanji" && (zeichen match $q || bedeutung match $q || onYomi match $q || kunYomi match $q || markdown match $q)] {
       _id, "wort": zeichen, "kana": onYomi, "bedeutung": bedeutung, jlpt, "typ": "kanji"
     },
-    "grammatik": *[_type == "grammatik" && (muster match $q || bedeutung match $q)] {
+    "grammatik": *[_type == "grammatik" && (muster match $q || bedeutung match $q || struktur match $q || markdown match $q)] {
       _id, "wort": muster, "kana": struktur, "bedeutung": bedeutung, jlpt, "typ": "grammatik"
     },
-    "partikel": *[_type == "partikel" && (partikel match $q || funktion match $q)] {
+    "partikel": *[_type == "partikel" && (partikel match $q || funktion match $q || markdown match $q)] {
       _id, "wort": partikel, "kana": "", "bedeutung": funktion, jlpt, "typ": "partikel"
     },
-    "saetze": *[_type == "satz" && (japanisch match $q || deutsch match $q || kana match $q)] {
+    "saetze": *[_type == "satz" && (japanisch match $q || deutsch match $q || kana match $q || markdown match $q)] {
       _id, "wort": japanisch, "kana": kana, "bedeutung": deutsch, jlpt, "typ": "satz"
+    },
+    "lektionen": *[_type == "notiz" && (titel match $q || inhalt match $q)] {
+      _id, "wort": titel, "kana": "", "bedeutung": typ, jlpt, "typ": "lektion"
     }
   }
 `

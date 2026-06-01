@@ -58,8 +58,11 @@ function ReplyForm({ postId, onSent }: { postId: string; onSent: () => void }) {
   }
 
   if (sent) return (
-    <div className="mt-3 p-3 rounded-xl text-sm" style={{ background: "rgba(0,212,255,0.06)", border: "1px solid rgba(0,212,255,0.2)" }}>
-      ✅ Antwort gesendet — erscheint nach kurzer Prüfung.
+    <div className="mt-3 p-4 rounded-xl" style={{ background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.3)" }}>
+      <p className="font-semibold text-sm mb-1" style={{ color: "var(--accent-cyan)" }}>✅ Antwort gesendet!</p>
+      <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+        Deine Antwort wird kurz geprüft und erscheint danach hier. Danke fürs Mitmachen! 🙏
+      </p>
     </div>
   );
 

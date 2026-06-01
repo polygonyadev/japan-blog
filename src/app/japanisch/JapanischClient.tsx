@@ -454,7 +454,7 @@ function SatzSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) {
 interface SearchResult { _id: string; wort: string; kana: string; bedeutung: string; jlpt: string; typ: string }
 
 function SearchResults({ results }: { results: Record<string, SearchResult[]> }) {
-  const TYPE_LABEL: Record<string, string> = { vokabel:"Vokabel", kanji:"Kanji", grammatik:"Grammatik", partikel:"Partikel", satz:"Satz" };
+  const TYPE_LABEL: Record<string, string> = { vokabel:"Vokabel", kanji:"Kanji", grammatik:"Grammatik", partikel:"Partikel", satz:"Satz", lektion:"Lektion" };
   const all = Object.entries(results).flatMap(([, items]) => items);
   if (all.length === 0) return <p className="text-center py-8" style={{ color:"var(--text-secondary)" }}>Keine Ergebnisse gefunden.</p>;
   return (
