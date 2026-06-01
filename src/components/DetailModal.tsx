@@ -22,8 +22,8 @@ export function DetailModal({ onClose, children }: Props) {
       style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
       onClick={onClose}>
       <div
-        className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl glass"
-        style={{ border: "1px solid var(--border)" }}
+        className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl"
+        style={{ background: "var(--bg-secondary)", border: "1px solid var(--border)", boxShadow: "0 25px 60px rgba(0,0,0,0.4)" }}
         onClick={e => e.stopPropagation()}
       >
         <button onClick={onClose}
