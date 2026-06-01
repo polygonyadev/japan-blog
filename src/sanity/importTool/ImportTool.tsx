@@ -27,11 +27,12 @@ const TYPES = [
   { value: 'vokabel',   label: '📝 Vokabel' },
   { value: 'partikel',  label: '🔗 Partikel' },
   { value: 'satz',      label: '💬 Satz' },
+  { value: 'lesson',    label: '📚 Lektion' },
   { value: 'notiz',     label: '📋 Notiz' },
 ]
 
 const TYP_EMOJI: Record<string, string> = {
-  grammatik: '🔤', kanji: '漢', vokabel: '📝', partikel: '🔗', satz: '💬', notiz: '📋',
+  grammatik: '🔤', kanji: '漢', vokabel: '📝', partikel: '🔗', satz: '💬', lesson: '📚', notiz: '📋',
 }
 
 function parseFrontmatter(raw: string): { data: Record<string, string>; content: string; hasFrontmatter: boolean } {
@@ -73,6 +74,8 @@ function mapToSanity(data: Record<string, string>, content: string, filename: st
       return { _type: 'partikel', partikel: data.partikel || title, funktion: data.bedeutung || '', jlpt, markdown }
     case 'satz':
       return { _type: 'satz', japanisch: data.japanisch || title, kana: data.kana || '', deutsch: data.deutsch || '', jlpt, markdown }
+    case 'lesson':
+      return { _type: 'lesson', title, jlpt, description: data.bedeutung || '', phrases: [] }
     case 'notiz':
       return { _type: 'notiz', titel: title, typ: 'sonstiges', jlpt, inhalt: markdown }
     default:
@@ -143,7 +146,7 @@ export function ImportTool() {
   }
 
   const JLPT_COLOR: Record<string, string> = { N5: '#00d4ff', N4: '#66e0a0', N3: '#ffd166', N2: '#ff9944', N1: '#ff2d6b' }
-  const TYPE_COLOR: Record<string, string> = { grammatik: '#7c4dff', kanji: '#ff2d6b', vokabel: '#0099cc', partikel: '#ff9944', satz: '#2e7d32', notiz: '#888' }
+  const TYPE_COLOR: Record<string, string> = { grammatik: '#7c4dff', kanji: '#ff2d6b', vokabel: '#0099cc', partikel: '#ff9944', satz: '#2e7d32', lesson: '#00b894', notiz: '#888' }
 
   const s = {
     wrap:    { padding: '2rem', maxWidth: '860px', margin: '0 auto', fontFamily: 'system-ui, sans-serif' } as React.CSSProperties,
