@@ -13,13 +13,13 @@ const JLPT_COLOR: Record<JLPT, string> = { N5:"#00d4ff", N4:"#66e0a0", N3:"#ffd1
 const JLPT_DESC: Record<JLPT, string> = { N5:"Einsteiger", N4:"Grundkenntnisse", N3:"Mittelstufe", N2:"Fortgeschritten", N1:"Fliessend" };
 
 const TABS: { id: Tab; label: string; emoji: string }[] = [
+  { id: "notizen",   label: "Lektionen",  emoji: "📋" },
   { id: "lektionen", label: "Nützliches", emoji: "📚" },
-  { id: "vokabel",   label: "Vokabeln",   emoji: "📝" },
-  { id: "kanji",     label: "Kanji",      emoji: "漢" },
   { id: "grammatik", label: "Grammatik",  emoji: "🔤" },
   { id: "partikel",  label: "Partikel",   emoji: "🔗" },
   { id: "satz",      label: "Sätze",      emoji: "💬" },
-  { id: "notizen",   label: "Lektionen",  emoji: "📋" },
+  { id: "vokabel",   label: "Vokabeln",   emoji: "📝" },
+  { id: "kanji",     label: "Kanji",      emoji: "漢" },
 ];
 
 // ─── Small reusable components ───────────────────────────────────────────────
@@ -536,7 +536,7 @@ interface Props {
 }
 
 export default function JapanischClient({ lessons, vokabeln, kanji, grammatik, partikel, saetze, notizen }: Props) {
-  const [tab, setTab] = useState<Tab>("lektionen");
+  const [tab, setTab] = useState<Tab>("notizen");
   const [jlpt, setJlpt] = useState<JLPT | null>(null);
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);

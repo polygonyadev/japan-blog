@@ -2,7 +2,7 @@ import { defineField, defineType } from 'sanity'
 
 export const notizType = defineType({
   name: 'notiz',
-  title: 'Notiz',
+  title: 'Lektion',
   type: 'document',
   fields: [
     defineField({ name: 'titel', title: 'Titel', type: 'string', validation: r => r.required() }),

@@ -2,7 +2,7 @@ import { defineField, defineType } from 'sanity'
 
 export const lessonType = defineType({
   name: 'lesson',
-  title: 'Japanisch Lektion',
+  title: 'Nützliches',
   type: 'document',
   fields: [
     defineField({
