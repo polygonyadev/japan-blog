@@ -142,7 +142,7 @@ export default async function Home() {
         {/* Support */}
         <section className="text-center py-6">
           <p className="text-sm mb-3" style={{ color: "var(--text-secondary)" }}>
-            Gefällt dir was du siehst? Du kannst meine Reise unterstützen ☕
+            Gefällt dir was du siehst? Du kannst mein Abenteuer unterstützen ☕
           </p>
           <BuyMeCoffee />
         </section>
