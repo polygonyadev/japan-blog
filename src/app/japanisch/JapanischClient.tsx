@@ -13,13 +13,13 @@ const JLPT_COLOR: Record<JLPT, string> = { N5:"#00d4ff", N4:"#66e0a0", N3:"#ffd1
 const JLPT_DESC: Record<JLPT, string> = { N5:"Einsteiger", N4:"Grundkenntnisse", N3:"Mittelstufe", N2:"Fortgeschritten", N1:"Fliessend" };
 
 const TABS: { id: Tab; label: string; emoji: string }[] = [
-  { id: "lektionen", label: "Lektionen",  emoji: "📚" },
+  { id: "lektionen", label: "Nützliches", emoji: "📚" },
   { id: "vokabel",   label: "Vokabeln",   emoji: "📝" },
   { id: "kanji",     label: "Kanji",      emoji: "漢" },
   { id: "grammatik", label: "Grammatik",  emoji: "🔤" },
   { id: "partikel",  label: "Partikel",   emoji: "🔗" },
   { id: "satz",      label: "Sätze",      emoji: "💬" },
-  { id: "notizen",   label: "Notizen",    emoji: "📋" },
+  { id: "notizen",   label: "Lektionen",  emoji: "📋" },
 ];
 
 // ─── Small reusable components ───────────────────────────────────────────────
@@ -126,7 +126,32 @@ function JlptFilter({ active, onChange }: { active: JLPT | null; onChange: (v: J
 // ─── Tab content sections ─────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+function LektionDetail({ lesson }: { lesson: any }) {
+  return <>
+    <div className="flex items-start gap-3 mb-4">
+      <span className="text-3xl">{lesson.emoji ?? "📚"}</span>
+      <div className="flex-1">
+        <div className="flex items-center gap-2 flex-wrap mb-1">
+          <h2 className="font-bold text-xl">{lesson.title}</h2>
+          {lesson.jlpt && <JlptBadge level={lesson.jlpt} />}
+          {(lesson.tags ?? []).map((t: string) => (
+            <span key={t} className="text-xs px-2 py-0.5 rounded-full" style={{ background:"rgba(255,45,107,0.08)", color:"var(--accent-pink)" }}>#{t}</span>
+          ))}
+        </div>
+        {lesson.description && <p style={{ color:"var(--text-secondary)" }}>{lesson.description}</p>}
+      </div>
+    </div>
+    {(lesson.phrases ?? []).length > 0 && (
+      <><SectionLabel>Phrasen</SectionLabel>
+      <ExampleTable rows={(lesson.phrases ?? []).map((p: { jp: string; romaji: string; de: string }) => ({ japanisch: p.jp, kana: p.romaji, deutsch: p.de }))} /></>
+    )}
+  </>
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function LektionenSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [selected, setSelected] = useState<any>(null);
   const allTags = Array.from(new Set(items.flatMap((l: { tags?: string[] }) => l.tags ?? [])));
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const filtered = items.filter((l: { jlpt?: string; tags?: string[] }) => {
@@ -149,29 +174,34 @@ function LektionenSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) 
           ))}
         </div>
       )}
-      {filtered.length === 0 ? <EmptyState tab="Lektionen" /> : (
-        <div className="flex flex-col gap-4">
+      {filtered.length === 0 ? <EmptyState tab="Nützliches" /> : (
+        <div className="flex flex-col gap-3">
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           {filtered.map((lesson: any) => (
-            <Card key={lesson._id}>
-              <div className="flex items-start gap-3 mb-3">
-                <span className="text-2xl">{lesson.emoji ?? "📚"}</span>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-bold text-base">{lesson.title}</h3>
-                    {lesson.jlpt && <JlptBadge level={lesson.jlpt} />}
-                    {(lesson.tags ?? []).map((t: string) => (
-                      <span key={t} className="text-xs px-2 py-0.5 rounded-full" style={{ background:"rgba(255,45,107,0.08)", color:"var(--accent-pink)" }}>#{t}</span>
-                    ))}
+            <Card key={lesson._id} onClick={() => setSelected(lesson)}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 flex-1">
+                  <span className="text-2xl">{lesson.emoji ?? "📚"}</span>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-bold text-base">{lesson.title}</h3>
+                      {lesson.jlpt && <JlptBadge level={lesson.jlpt} />}
+                      {(lesson.tags ?? []).map((t: string) => (
+                        <span key={t} className="text-xs px-2 py-0.5 rounded-full" style={{ background:"rgba(255,45,107,0.08)", color:"var(--accent-pink)" }}>#{t}</span>
+                      ))}
+                    </div>
+                    {lesson.description && <p className="text-sm mt-0.5" style={{ color:"var(--text-secondary)" }}>{lesson.description}</p>}
+                    {(lesson.phrases ?? []).length > 0 && (
+                      <p className="text-xs mt-1" style={{ color:"var(--text-secondary)" }}>{(lesson.phrases ?? []).length} Phrasen</p>
+                    )}
                   </div>
-                  {lesson.description && <p className="text-sm mt-0.5" style={{ color:"var(--text-secondary)" }}>{lesson.description}</p>}
                 </div>
               </div>
-              <ExampleTable rows={(lesson.phrases ?? []).map((p: { jp: string; romaji: string; de: string }) => ({ japanisch: p.jp, kana: p.romaji, deutsch: p.de }))} />
             </Card>
           ))}
         </div>
       )}
+      {selected && <DetailModal onClose={() => setSelected(null)}><LektionDetail lesson={selected} /></DetailModal>}
     </div>
   );
 }
@@ -450,16 +480,18 @@ function SearchResults({ results }: { results: Record<string, SearchResult[]> })
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function NotizenSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) {
+  const [selected, setSelected] = useState<unknown>(null);
   const TYPE_EMOJI: Record<string, string> = { vokabel:'📝', kanji:'漢', grammatik:'🔤', partikel:'🔗', satz:'💬', sonstiges:'📋' };
   const filtered = items.filter((n: { jlpt?: string }) => !jlpt || n.jlpt === jlpt);
-  if (filtered.length === 0) return <EmptyState tab="Notizen" />;
+  if (filtered.length === 0) return <EmptyState tab="Lektionen" />;
   return (
-    <div className="flex flex-col gap-4">
+    <>
+    <div className="flex flex-col gap-3">
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       {filtered.map((n: any) => (
-        <Card key={n._id}>
-          <div className="flex items-start justify-between gap-2 mb-4">
-            <div className="flex items-center gap-2">
+        <Card key={n._id} onClick={() => setSelected(n)}>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2 flex-1">
               <span className="text-lg">{TYPE_EMOJI[n.typ] ?? '📋'}</span>
               <h3 className="font-bold text-base">{n.titel}</h3>
             </div>
@@ -470,24 +502,31 @@ function NotizenSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) {
               ))}
             </div>
           </div>
-          <div className="prose-sm" style={{ color: "var(--text-primary)" }}>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}
-              components={{
-                table: (props) => <table className="w-full text-sm border-collapse mb-3" {...props} />,
-                th: (props) => <th className="text-left py-1.5 pr-4 text-xs font-semibold" style={{ borderBottom: "1px solid var(--border)", color: "var(--accent-cyan)" }} {...props} />,
-                td: (props) => <td className="py-1.5 pr-4 text-sm" style={{ borderBottom: "1px solid var(--border)" }} {...props} />,
-                code: (props) => <code className="px-1.5 py-0.5 rounded text-xs font-mono" style={{ background: "var(--bg-card)", color: "var(--accent-cyan)" }} {...props} />,
-                h2: (props) => <h2 className="text-base font-bold mt-4 mb-2" style={{ color: "var(--accent-cyan)" }} {...props} />,
-                h3: (props) => <h3 className="text-sm font-semibold mt-3 mb-1" {...props} />,
-                p: (props) => <p className="text-sm mb-2 leading-relaxed" style={{ color: "var(--text-secondary)" }} {...props} />,
-                strong: (props) => <strong className="font-bold" style={{ color: "var(--text-primary)" }} {...props} />,
-              }}>
-              {n.inhalt}
-            </ReactMarkdown>
-          </div>
         </Card>
       ))}
     </div>
+    {selected && (
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      <DetailModal onClose={() => setSelected(null)}>
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        {(() => { const n = selected as any; return <>
+          <div className="flex items-start justify-between gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">{TYPE_EMOJI[n.typ] ?? '📋'}</span>
+              <h2 className="font-bold text-xl">{n.titel}</h2>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {n.jlpt && <JlptBadge level={n.jlpt} />}
+              {(n.tags ?? []).map((t: string) => (
+                <span key={t} className="text-xs px-2 py-0.5 rounded-full" style={{ background:"rgba(255,45,107,0.08)", color:"var(--accent-pink)" }}>#{t}</span>
+              ))}
+            </div>
+          </div>
+          {n.inhalt && <MarkdownContent content={n.inhalt} />}
+        </> })()}
+      </DetailModal>
+    )}
+    </>
   );
 }
 
