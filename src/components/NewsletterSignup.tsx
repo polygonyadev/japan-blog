@@ -60,6 +60,9 @@ export default function NewsletterSignup() {
             </button>
           </div>
           {error && <p className="text-xs" style={{ color: "var(--accent-pink)" }}>{error}</p>}
+          <a href="/abmelden" className="text-xs text-center transition-colors hover:underline" style={{ color: "var(--text-secondary)" }}>
+            {t.unsubLink}
+          </a>
         </form>
       )}
     </div>
