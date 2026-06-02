@@ -30,15 +30,6 @@ export default async function Home() {
         </div>
 
         <div className="relative max-w-3xl mx-auto text-center flex flex-col items-center gap-6">
-          {settings.showStatus && (
-            <div
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm"
-              style={{ background: "rgba(255,45,107,0.1)", border: "1px solid rgba(255,45,107,0.25)", color: "var(--accent-pink)" }}
-            >
-              <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
-              {settings.statusText}
-            </div>
-          )}
 
           <h1 className="text-4xl sm:text-6xl font-bold leading-tight">
             Nippon{" "}
