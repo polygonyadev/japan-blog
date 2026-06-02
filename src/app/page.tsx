@@ -4,6 +4,7 @@ import StatsBar from "@/components/StatsBar";
 import PostCard from "@/components/PostCard";
 import MiniMap from "@/components/MiniMap";
 import BuyMeCoffee from "@/components/BuyMeCoffee";
+import TokyoTime from "@/components/TokyoTime";
 import { getPosts, getBucketItems, getSiteSettings, getStats } from "@/lib/fetchData";
 import { type Post } from "@/lib/data";
 
@@ -31,10 +32,13 @@ export default async function Home() {
 
         <div className="relative max-w-3xl mx-auto text-center flex flex-col items-center gap-6">
 
-          <h1 className="text-4xl sm:text-6xl font-bold leading-tight">
-            Nippon{" "}
-            <span style={{ color: "var(--accent-cyan)" }}>Diary</span>
-          </h1>
+          <div className="flex items-center gap-3 flex-wrap justify-center">
+            <h1 className="text-4xl sm:text-6xl font-bold leading-tight">
+              Nippon{" "}
+              <span style={{ color: "var(--accent-cyan)" }}>Diary</span>
+            </h1>
+            <TokyoTime />
+          </div>
 
           <p className="text-lg max-w-xl" style={{ color: "var(--text-secondary)" }}>
             Fotos, Geschichten und Abenteuer aus dem Land der aufgehenden Sonne —

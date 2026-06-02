@@ -5,7 +5,6 @@ import { MapPin, BookOpen, Image, List, Home, GraduationCap, Sun, Moon, MessageC
 import { useTheme } from "@/components/ThemeProvider";
 import { useLanguage } from "@/components/LanguageProvider";
 import BuyMeCoffee from "@/components/BuyMeCoffee";
-import TokyoTime from "@/components/TokyoTime";
 
 export default function Navbar() {
   const path = usePathname();
@@ -42,10 +41,6 @@ export default function Navbar() {
             );
           })}
 
-          {/* Tokyo time */}
-          <div className="hidden lg:block mx-1">
-            <TokyoTime />
-          </div>
 
           {/* Language toggle */}
           <button onClick={toggleLang}
