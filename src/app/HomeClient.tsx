@@ -1,10 +1,9 @@
 "use client";
 import Link from "next/link";
-import { ArrowRight, MapPin, Mail } from "lucide-react";
+import { ArrowRight, MapPin, Mail, Coffee } from "lucide-react";
 import StatsBar from "@/components/StatsBar";
 import PostCard from "@/components/PostCard";
 import MiniMap from "@/components/MiniMap";
-import BuyMeCoffee from "@/components/BuyMeCoffee";
 import TokyoTime from "@/components/TokyoTime";
 import { useLanguage } from "@/components/LanguageProvider";
 import { type Post } from "@/lib/data";
@@ -130,22 +129,27 @@ export default function HomeClient({ posts, bucketItems, settings, stats }: Prop
           </section>
         )}
 
-        {/* Newsletter CTA */}
+        {/* Newsletter + Support CTA */}
         <section className="text-center py-6">
-          <p className="text-sm mb-3" style={{ color: "var(--text-secondary)" }}>{t.newsletterText}</p>
-          <Link
-            href="/community#newsletter"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 hover:scale-105 glow-cyan"
-            style={{ background: "var(--accent-cyan)", color: "#0d1117" }}
-          >
-            <Mail size={15} /> {t.newsletterTitle}
-          </Link>
-        </section>
-
-        {/* Support */}
-        <section className="text-center pb-6">
-          <p className="text-sm mb-3" style={{ color: "var(--text-secondary)" }}>{t.supportText}</p>
-          <BuyMeCoffee />
+          <p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>{t.supportText}</p>
+          <div className="flex gap-3 justify-center flex-wrap">
+            <Link
+              href="/community#newsletter"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 hover:scale-105 glow-cyan"
+              style={{ background: "var(--accent-cyan)", color: "#0d1117", minWidth: "180px" }}
+            >
+              <Mail size={15} /> {t.newsletterTitle}
+            </Link>
+            <Link
+              href="https://ko-fi.com/davidae"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 hover:scale-105"
+              style={{ background: "#FF5E5B", color: "#ffffff", boxShadow: "0 2px 12px rgba(255,94,91,0.3)", minWidth: "180px" }}
+            >
+              <Coffee size={15} /> Support on Ko-fi
+            </Link>
+          </div>
         </section>
       </div>
     </div>
