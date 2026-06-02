@@ -1,10 +1,12 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { useTheme } from "@/components/ThemeProvider";
+import { useLanguage } from "@/components/LanguageProvider";
 
 export default function Comments() {
   const ref = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!ref.current) return;
@@ -30,10 +32,10 @@ export default function Comments() {
 
   return (
     <div className="mt-10 pt-8" style={{ borderTop: "1px solid var(--border)" }}>
-      <h2 className="text-xl font-bold mb-6">Kommentare</h2>
+      <h2 className="text-xl font-bold mb-6">{t.comments}</h2>
       <div ref={ref} />
       <p className="text-xs mt-4 text-center" style={{ color: "var(--text-secondary)" }}>
-        Kommentare werden über GitHub Discussions gespeichert. Ein GitHub-Account ist zum Kommentieren nötig.
+        {t.commentsHint}
       </p>
     </div>
   );

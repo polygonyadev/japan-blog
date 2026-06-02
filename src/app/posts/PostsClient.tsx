@@ -3,20 +3,22 @@ import { useState } from "react";
 import { LayoutGrid, List, MapPin } from "lucide-react";
 import Link from "next/link";
 import PostCard from "@/components/PostCard";
+import { useLanguage } from "@/components/LanguageProvider";
 import { SEASON_INFO, type Post } from "@/lib/data";
 
 type View = "grid" | "timeline";
 
 export default function PostsClient({ posts }: { posts: Post[] }) {
   const [view, setView] = useState<View>("grid");
+  const { t } = useLanguage();
 
   return (
     <div className="min-h-screen pt-14 max-w-6xl mx-auto px-4 py-10">
       <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Alle Posts</h1>
+          <h1 className="text-3xl font-bold">{t.allPostsTitle}</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-            {posts.length} Einträge aus Japan
+            {t.entriesFromJapan(posts.length)}
           </p>
         </div>
         <div className="flex gap-2">
@@ -32,7 +34,7 @@ export default function PostsClient({ posts }: { posts: Post[] }) {
               }}
             >
               {v === "grid" ? <LayoutGrid size={14} /> : <List size={14} />}
-              {v === "grid" ? "Grid" : "Timeline"}
+              {v === "grid" ? t.grid : t.timeline}
             </button>
           ))}
         </div>
@@ -41,8 +43,8 @@ export default function PostsClient({ posts }: { posts: Post[] }) {
       {posts.length === 0 && (
         <div className="text-center py-16 rounded-2xl" style={{ border: "1px dashed var(--border)" }}>
           <p className="text-4xl mb-3">✈️</p>
-          <p className="font-medium">Noch keine Posts</p>
-          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>Die Reise beginnt bald.</p>
+          <p className="font-medium">{t.noPostsTitle}</p>
+          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>{t.noPostsText}</p>
         </div>
       )}
 

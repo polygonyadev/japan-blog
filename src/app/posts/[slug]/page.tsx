@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
-import { ArrowLeft, MapPin, Calendar } from "lucide-react";
-import Link from "next/link";
+import { MapPin, Calendar } from "lucide-react";
 import { getPostBySlug, getPosts } from "@/lib/fetchData";
 import Comments from "@/components/Comments";
 import { SEASON_INFO, WEATHER_INFO } from "@/lib/data";
 import LikeButton from "@/components/LikeButton";
 import PostContent from "@/components/PostContent";
+import { BackLinkTop, BackLinkBottom } from "@/components/BackLink";
 import PostHeroImage from "@/components/PostHeroImage";
 import PostPhotos from "@/components/PostPhotos";
 
@@ -83,13 +83,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
       <div className="max-w-2xl mx-auto px-4 py-10">
         {/* Back */}
-        <Link
-          href="/posts"
-          className="inline-flex items-center gap-2 text-sm mb-6 transition-colors hover:text-cyan-300"
-          style={{ color: "var(--text-secondary)" }}
-        >
-          <ArrowLeft size={14} /> Alle Posts
-        </Link>
+        <BackLinkTop />
 
         {/* Meta */}
         <div className="flex flex-wrap gap-2 mb-4 items-center">
@@ -171,13 +165,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
         {/* Navigation */}
         <div className="mt-10 pt-6" style={{ borderTop: "1px solid var(--border)" }}>
-          <Link
-            href="/posts"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all hover:scale-105 glass"
-            style={{ border: "1px solid var(--border)" }}
-          >
-            <ArrowLeft size={14} /> Zurück zu allen Posts
-          </Link>
+          <BackLinkBottom />
         </div>
       </div>
     </div>

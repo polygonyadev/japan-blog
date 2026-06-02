@@ -4,6 +4,7 @@ import { GraduationCap, Search, BookOpen, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { DetailModal, MarkdownContent } from "@/components/DetailModal";
+import { useLanguage } from "@/components/LanguageProvider";
 
 type JLPT = "N5" | "N4" | "N3" | "N2" | "N1";
 type Tab = "lektionen" | "vokabel" | "kanji" | "grammatik" | "partikel" | "satz" | "notizen";
@@ -12,14 +13,14 @@ const JLPT_LEVELS: JLPT[] = ["N5","N4","N3","N2","N1"];
 const JLPT_COLOR: Record<JLPT, string> = { N5:"#00d4ff", N4:"#66e0a0", N3:"#ffd166", N2:"#ff9944", N1:"#ff2d6b" };
 const JLPT_DESC: Record<JLPT, string> = { N5:"Einsteiger", N4:"Grundkenntnisse", N3:"Mittelstufe", N2:"Fortgeschritten", N1:"Fliessend" };
 
-const TABS: { id: Tab; label: string; emoji: string }[] = [
-  { id: "notizen",   label: "Lektionen",  emoji: "📋" },
-  { id: "lektionen", label: "Nützliches", emoji: "📚" },
-  { id: "grammatik", label: "Grammatik",  emoji: "🔤" },
-  { id: "partikel",  label: "Partikel",   emoji: "🔗" },
-  { id: "satz",      label: "Sätze",      emoji: "💬" },
-  { id: "vokabel",   label: "Vokabeln",   emoji: "📝" },
-  { id: "kanji",     label: "Kanji",      emoji: "漢" },
+const TABS: { id: Tab; labelKey: string; emoji: string }[] = [
+  { id: "notizen",   labelKey: "tabLessons",   emoji: "📋" },
+  { id: "lektionen", labelKey: "tabUseful",    emoji: "📚" },
+  { id: "grammatik", labelKey: "tabGrammar",   emoji: "🔤" },
+  { id: "partikel",  labelKey: "tabParticles", emoji: "🔗" },
+  { id: "satz",      labelKey: "tabSentences", emoji: "💬" },
+  { id: "vokabel",   labelKey: "tabVocab",     emoji: "📝" },
+  { id: "kanji",     labelKey: "tabKanji",     emoji: "漢" },
 ];
 
 // ─── Small reusable components ───────────────────────────────────────────────
@@ -88,13 +89,15 @@ function Card({ children, onClick }: { children: React.ReactNode; onClick?: () =
   );
 }
 
-function EmptyState({ tab }: { tab: string }) {
+function EmptyState({ tab }: { tab?: string }) {
+  const { t } = useLanguage();
+  void tab;
   return (
     <div className="text-center py-16 rounded-2xl" style={{ border: "1px dashed var(--border)" }}>
       <p className="text-4xl mb-3">🈳</p>
-      <p className="font-medium">Noch keine {tab} eingetragen</p>
+      <p className="font-medium">{t.noEntriesYet}</p>
       <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-        Füge Einträge im Studio hinzu.
+        {t.addInStudio}
       </p>
     </div>
   );
@@ -103,13 +106,14 @@ function EmptyState({ tab }: { tab: string }) {
 // ─── JLPT Filter ─────────────────────────────────────────────────────────────
 
 function JlptFilter({ active, onChange }: { active: JLPT | null; onChange: (v: JLPT | null) => void }) {
+  const { t } = useLanguage();
   return (
     <div className="flex flex-wrap gap-2 items-center mb-6">
       <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>JLPT:</span>
       <button onClick={() => onChange(null)}
         className="text-xs px-3 py-1 rounded-full transition-all"
         style={{ background: !active ? "rgba(255,255,255,0.1)" : "transparent", color: !active ? "var(--text-primary)" : "var(--text-secondary)", border: `1px solid ${!active ? "rgba(255,255,255,0.25)" : "var(--border)"}` }}>
-        Alle
+        {t.allFilter}
       </button>
       {JLPT_LEVELS.map(level => (
         <button key={level} onClick={() => onChange(active === level ? null : level)}
@@ -150,6 +154,7 @@ function LektionDetail({ lesson }: { lesson: any }) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function LektionenSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) {
+  const { t } = useLanguage();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selected, setSelected] = useState<any>(null);
   const allTags = Array.from(new Set(items.flatMap((l: { tags?: string[] }) => l.tags ?? [])));
@@ -164,17 +169,17 @@ function LektionenSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) 
     <div>
       {allTags.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-6 items-center">
-          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>Thema:</span>
+          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>{t.themeFilter}</span>
           {[null, ...allTags].map(tag => (
             <button key={tag ?? "all"} onClick={() => setActiveTag(tag)}
               className="text-xs px-3 py-1 rounded-full transition-all"
               style={{ background: activeTag === tag ? "rgba(255,45,107,0.15)" : "transparent", color: activeTag === tag ? "var(--accent-pink)" : "var(--text-secondary)", border: `1px solid ${activeTag === tag ? "rgba(255,45,107,0.4)" : "var(--border)"}` }}>
-              {tag ? `#${tag}` : "Alle"}
+              {tag ? `#${tag}` : t.allFilter}
             </button>
           ))}
         </div>
       )}
-      {filtered.length === 0 ? <EmptyState tab="Nützliches" /> : (
+      {filtered.length === 0 ? <EmptyState /> : (
         <div className="flex flex-col gap-3">
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           {filtered.map((lesson: any) => (
@@ -454,13 +459,14 @@ function SatzSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) {
 interface SearchResult { _id: string; wort: string; kana: string; bedeutung: string; jlpt: string; typ: string }
 
 function SearchResults({ results, allData }: { results: Record<string, SearchResult[]>; allData: Record<string, unknown[]> }) {
+  const { t } = useLanguage();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selected, setSelected] = useState<any>(null);
   const [selectedTyp, setSelectedTyp] = useState<string>("");
 
   const TYPE_LABEL: Record<string, string> = { vokabel:"Vokabel", kanji:"Kanji", grammatik:"Grammatik", partikel:"Partikel", satz:"Satz", lektion:"Lektion", notiz:"Lektion" };
   const all = Object.entries(results).flatMap(([, items]) => items);
-  if (all.length === 0) return <p className="text-center py-8" style={{ color:"var(--text-secondary)" }}>Keine Ergebnisse gefunden.</p>;
+  if (all.length === 0) return <p className="text-center py-8" style={{ color:"var(--text-secondary)" }}>{t.noResults}</p>;
 
   function openResult(r: SearchResult) {
     // Find the full document from allData
@@ -578,6 +584,7 @@ interface Props {
 }
 
 export default function JapanischClient({ lessons, vokabeln, kanji, grammatik, partikel, saetze, notizen }: Props) {
+  const { t } = useLanguage();
   const [tab, setTab] = useState<Tab>("notizen");
   const [jlpt, setJlpt] = useState<JLPT | null>(null);
   const [query, setQuery] = useState("");
@@ -607,10 +614,10 @@ export default function JapanischClient({ lessons, vokabeln, kanji, grammatik, p
       {/* Header */}
       <div className="flex items-center gap-3 mb-2">
         <GraduationCap size={28} style={{ color:"var(--accent-cyan)" }} />
-        <h1 className="text-3xl font-bold">Japanisch lernen</h1>
+        <h1 className="text-3xl font-bold">{t.japaneseTitle}</h1>
       </div>
       <p className="mb-6" style={{ color:"var(--text-secondary)" }}>
-        Lektionen, Vokabeln, Kanji, Grammatik und mehr — gesammelt auf meiner Reise.
+        {t.japaneseSubtitle}
       </p>
 
       {/* Hiragana strip */}
@@ -627,7 +634,7 @@ export default function JapanischClient({ lessons, vokabeln, kanji, grammatik, p
           type="text"
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="Suchen über alle Typen... (z.B. 食べる, essen, は)"
+          placeholder={t.searchPlaceholder}
           className="w-full pl-9 pr-9 py-2.5 rounded-xl text-sm outline-none"
           style={{ background:"var(--bg-card)", border:"1px solid var(--border)", color:"var(--text-primary)" }}
         />
@@ -643,7 +650,7 @@ export default function JapanischClient({ lessons, vokabeln, kanji, grammatik, p
         <div>
           <p className="text-sm mb-4 flex items-center gap-2" style={{ color:"var(--text-secondary)" }}>
             <Search size={13} />
-            {searching ? "Suche..." : `Ergebnisse für „${query}"`}
+            {searching ? t.searching : t.resultsFor(query)}
           </p>
           {!searching && searchResults && (
             <SearchResults
@@ -656,15 +663,15 @@ export default function JapanischClient({ lessons, vokabeln, kanji, grammatik, p
         <>
           {/* Tabs */}
           <div className="flex flex-wrap gap-1 mb-6 p-1 rounded-xl" style={{ background:"var(--bg-card)", border:"1px solid var(--border)" }}>
-            {TABS.map(t => (
-              <button key={t.id} onClick={() => setTab(t.id)}
+            {TABS.map(tabItem => (
+              <button key={tabItem.id} onClick={() => setTab(tabItem.id)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all flex-1 justify-center"
-                style={{ background: tab === t.id ? "var(--accent-cyan)" : "transparent", color: tab === t.id ? "#0d1117" : "var(--text-secondary)", fontWeight: tab === t.id ? 600 : 400 }}>
-                <span>{t.emoji}</span>
-                <span className="hidden sm:inline">{t.label}</span>
-                {counts[t.id] > 0 && (
-                  <span className="text-xs rounded-full px-1.5" style={{ background: tab === t.id ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.1)" }}>
-                    {counts[t.id]}
+                style={{ background: tab === tabItem.id ? "var(--accent-cyan)" : "transparent", color: tab === tabItem.id ? "#0d1117" : "var(--text-secondary)", fontWeight: tab === tabItem.id ? 600 : 400 }}>
+                <span>{tabItem.emoji}</span>
+                <span className="hidden sm:inline">{(t as Record<string, string>)[tabItem.labelKey]}</span>
+                {counts[tabItem.id] > 0 && (
+                  <span className="text-xs rounded-full px-1.5" style={{ background: tab === tabItem.id ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.1)" }}>
+                    {counts[tabItem.id]}
                   </span>
                 )}
               </button>
@@ -686,8 +693,8 @@ export default function JapanischClient({ lessons, vokabeln, kanji, grammatik, p
           {/* Coming soon */}
           <div className="mt-10 p-6 rounded-2xl text-center" style={{ background:"var(--bg-card)", border:"1px dashed var(--border)" }}>
             <BookOpen size={24} className="mx-auto mb-2" style={{ color:"var(--text-secondary)" }} />
-            <p className="font-medium">Mehr Inhalte kommen laufend dazu</p>
-            <p className="text-sm mt-1" style={{ color:"var(--text-secondary)" }}>Ich lerne selbst jeden Tag und teile es hier.</p>
+            <p className="font-medium">{t.moreComingSoon}</p>
+            <p className="text-sm mt-1" style={{ color:"var(--text-secondary)" }}>{t.learnEveryday}</p>
           </div>
         </>
       )}

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { MessageCircle, Lightbulb, HelpCircle, Send, Clock, Reply, ChevronDown, ChevronUp } from "lucide-react";
 import NewsletterSignup from "@/components/NewsletterSignup";
+import { useLanguage } from "@/components/LanguageProvider";
 
 interface Reply { _key?: string; name: string; message: string; createdAt?: string }
 interface Post { _id: string; name: string; message: string; kategorie?: string; createdAt?: string; antworten?: Reply[] }
@@ -36,6 +37,7 @@ function Avatar({ name, color }: { name: string; color: string }) {
 }
 
 function ReplyForm({ postId, onSent }: { postId: string; onSent: () => void }) {
+  const { t } = useLanguage();
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -60,9 +62,9 @@ function ReplyForm({ postId, onSent }: { postId: string; onSent: () => void }) {
 
   if (sent) return (
     <div className="mt-3 p-4 rounded-xl" style={{ background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.3)" }}>
-      <p className="font-semibold text-sm mb-1" style={{ color: "var(--accent-cyan)" }}>✅ Antwort gesendet!</p>
+      <p className="font-semibold text-sm mb-1" style={{ color: "var(--accent-cyan)" }}>✅ {t.replySent}</p>
       <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-        Deine Antwort wird kurz geprüft und erscheint danach hier. Danke fürs Mitmachen! 🙏
+        {t.replySentText}
       </p>
     </div>
   );
@@ -71,13 +73,13 @@ function ReplyForm({ postId, onSent }: { postId: string; onSent: () => void }) {
     <form onSubmit={submit} className="mt-3 flex flex-col gap-2">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <input value={name} onChange={e => setName(e.target.value)} maxLength={50}
-          placeholder="Dein Name"
+          placeholder={t.yourName}
           className="px-3 py-2 rounded-xl text-sm outline-none"
           style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
         />
         <div className="sm:col-span-2 flex gap-2">
           <input value={message} onChange={e => setMessage(e.target.value)} maxLength={500}
-            placeholder="Deine Antwort..."
+            placeholder={t.yourReply}
             className="flex-1 px-3 py-2 rounded-xl text-sm outline-none"
             style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
           />
@@ -94,6 +96,7 @@ function ReplyForm({ postId, onSent }: { postId: string; onSent: () => void }) {
 }
 
 function PostCard({ post }: { post: Post }) {
+  const { t } = useLanguage();
   const [showReply, setShowReply] = useState(false);
   const [showReplies, setShowReplies] = useState(true);
   const kat = post.kategorie ?? "allgemein";
@@ -131,7 +134,7 @@ function PostCard({ post }: { post: Post }) {
             className="flex items-center gap-1.5 text-xs mb-2 transition-colors"
             style={{ color: "var(--text-secondary)" }}>
             {showReplies ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-            {replyCount} Antwort{replyCount > 1 ? "en" : ""}
+            {t.replies(replyCount)}
           </button>
 
           {showReplies && (
@@ -162,7 +165,7 @@ function PostCard({ post }: { post: Post }) {
         <button onClick={() => setShowReply(v => !v)}
           className="flex items-center gap-1.5 text-xs transition-all hover:scale-105 px-3 py-1.5 rounded-lg"
           style={{ color: showReply ? "var(--accent-cyan)" : "var(--text-secondary)", background: showReply ? "rgba(0,212,255,0.08)" : "transparent", border: `1px solid ${showReply ? "rgba(0,212,255,0.3)" : "transparent"}` }}>
-          <Reply size={13} /> Antworten
+          <Reply size={13} /> {t.reply}
         </button>
       </div>
 
@@ -174,6 +177,7 @@ function PostCard({ post }: { post: Post }) {
 }
 
 export default function CommunityClient({ initialPosts }: { initialPosts: Post[] }) {
+  const { t } = useLanguage();
   const [posts] = useState(initialPosts);
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
@@ -205,47 +209,47 @@ export default function CommunityClient({ initialPosts }: { initialPosts: Post[]
     <div className="min-h-screen pt-14 max-w-3xl mx-auto px-4 py-10">
       <div className="flex items-center gap-3 mb-2">
         <MessageCircle size={28} style={{ color: "var(--accent-cyan)" }} />
-        <h1 className="text-3xl font-bold">Community</h1>
+        <h1 className="text-3xl font-bold">{t.communityTitle}</h1>
       </div>
       <p className="mb-8" style={{ color: "var(--text-secondary)" }}>
-        Stell Fragen, teile Tipps oder diskutiere — kein Account nötig.
+        {t.communitySubtitle}
       </p>
 
       {/* New post form */}
       <div className="glass rounded-2xl p-6 mb-8" style={{ border: "1px solid var(--border)" }}>
-        <h2 className="font-bold text-lg mb-4">Neuer Beitrag</h2>
+        <h2 className="font-bold text-lg mb-4">{t.newPost}</h2>
         {sent ? (
           <div className="text-center py-6">
             <p className="text-2xl mb-2">✅</p>
-            <p className="font-medium">Danke! Dein Beitrag erscheint nach kurzer Prüfung.</p>
+            <p className="font-medium">{t.thankYou}</p>
             <button onClick={() => setSent(false)} className="mt-4 text-sm underline" style={{ color: "var(--accent-cyan)" }}>
-              Weiteren Beitrag schreiben
+              {t.anotherPost}
             </button>
           </div>
         ) : (
           <form onSubmit={submit} className="flex flex-col gap-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-medium mb-1 block" style={{ color: "var(--text-secondary)" }}>Name *</label>
-                <input value={name} onChange={e => setName(e.target.value)} maxLength={50} placeholder="Dein Name"
+                <label className="text-xs font-medium mb-1 block" style={{ color: "var(--text-secondary)" }}>{t.nameLabel} *</label>
+                <input value={name} onChange={e => setName(e.target.value)} maxLength={50} placeholder={t.yourName}
                   className="w-full px-3 py-2 rounded-xl text-sm outline-none"
                   style={{ background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
               </div>
               <div>
-                <label className="text-xs font-medium mb-1 block" style={{ color: "var(--text-secondary)" }}>Kategorie</label>
+                <label className="text-xs font-medium mb-1 block" style={{ color: "var(--text-secondary)" }}>{t.category}</label>
                 <select value={kategorie} onChange={e => setKategorie(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl text-sm outline-none"
                   style={{ background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-primary)" }}>
-                  <option value="allgemein">💬 Allgemein</option>
-                  <option value="tipp">💡 Tipp</option>
-                  <option value="frage">❓ Frage</option>
+                  <option value="allgemein">{t.catGeneral}</option>
+                  <option value="tipp">{t.catTip}</option>
+                  <option value="frage">{t.catQuestion}</option>
                 </select>
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium mb-1 block" style={{ color: "var(--text-secondary)" }}>Nachricht *</label>
+              <label className="text-xs font-medium mb-1 block" style={{ color: "var(--text-secondary)" }}>{t.messageLabel} *</label>
               <textarea value={message} onChange={e => setMessage(e.target.value)} maxLength={1000} rows={3}
-                placeholder="Dein Beitrag..."
+                placeholder={t.yourPost}
                 className="w-full px-3 py-2 rounded-xl text-sm outline-none resize-none"
                 style={{ background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
             </div>
@@ -253,7 +257,7 @@ export default function CommunityClient({ initialPosts }: { initialPosts: Post[]
             <button type="submit" disabled={sending || !name.trim() || !message.trim()}
               className="self-end flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all hover:scale-105 disabled:opacity-50"
               style={{ background: "var(--accent-cyan)", color: "#0d1117" }}>
-              <Send size={14} /> {sending ? "Wird gesendet..." : "Beitrag senden"}
+              <Send size={14} /> {sending ? t.sending : t.send}
             </button>
           </form>
         )}
@@ -266,7 +270,7 @@ export default function CommunityClient({ initialPosts }: { initialPosts: Post[]
             <button key={k ?? "all"} onClick={() => setFilter(k)}
               className="text-xs px-3 py-1 rounded-full transition-all"
               style={{ background: filter === k ? "rgba(0,212,255,0.1)" : "transparent", color: filter === k ? "var(--accent-cyan)" : "var(--text-secondary)", border: `1px solid ${filter === k ? "rgba(0,212,255,0.3)" : "var(--border)"}` }}>
-              {k === null ? "Alle" : k === "allgemein" ? "💬 Allgemein" : k === "tipp" ? "💡 Tipps" : "❓ Fragen"}
+              {k === null ? t.allFilter : k === "allgemein" ? t.catGeneral : k === "tipp" ? t.filterTips : t.filterQuestions}
               {k !== null && ` (${posts.filter(p => p.kategorie === k).length})`}
             </button>
           ))}
@@ -283,7 +287,7 @@ export default function CommunityClient({ initialPosts }: { initialPosts: Post[]
         {filtered.length === 0 ? (
           <div className="text-center py-12 rounded-2xl" style={{ border: "1px dashed var(--border)" }}>
             <p className="text-4xl mb-3">💬</p>
-            <p style={{ color: "var(--text-secondary)" }}>Noch keine Beiträge — sei der Erste!</p>
+            <p style={{ color: "var(--text-secondary)" }}>{t.noPosts}</p>
           </div>
         ) : (
           filtered.map(post => <PostCard key={post._id} post={post} />)

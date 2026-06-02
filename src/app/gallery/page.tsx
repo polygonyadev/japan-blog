@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Lightbox from "@/components/Lightbox";
+import { useLanguage } from "@/components/LanguageProvider";
 
 interface GalleryItem {
   url: string;
@@ -17,6 +18,7 @@ export default function GalleryPage() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const { t } = useLanguage();
   // standalone = photos without a post link, these open in lightbox
   const standaloneFiltered = (filteredItems: GalleryItem[]) => filteredItems.filter(i => !i.slug);
 
@@ -49,17 +51,17 @@ export default function GalleryPage() {
   return (
     <div className="min-h-screen pt-14 max-w-6xl mx-auto px-4 py-10">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">Galerie 📸</h1>
+        <h1 className="text-3xl font-bold">{t.galleryTitle}</h1>
         <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-          {items.length > 0 ? `${items.length} Fotos` : "Alle Fotos"} — filterbar nach Ort und Thema
+          {t.gallerySubtitle}
         </p>
       </div>
 
       {items.length > 0 && (
         <div className="flex flex-col gap-3 mb-8">
           <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs font-medium mr-1" style={{ color: "var(--text-secondary)" }}>Ort:</span>
-            <FilterBtn active={!selectedLocation} onClick={() => setSelectedLocation(null)}>Alle</FilterBtn>
+            <span className="text-xs font-medium mr-1" style={{ color: "var(--text-secondary)" }}>{t.place}</span>
+            <FilterBtn active={!selectedLocation} onClick={() => setSelectedLocation(null)}>{t.allFilter}</FilterBtn>
             {allLocations.map(loc => (
               <FilterBtn key={loc} active={selectedLocation === loc} onClick={() => setSelectedLocation(loc === selectedLocation ? null : loc)}>
                 {loc}
@@ -67,10 +69,10 @@ export default function GalleryPage() {
             ))}
           </div>
           <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs font-medium mr-1" style={{ color: "var(--text-secondary)" }}>Thema:</span>
+            <span className="text-xs font-medium mr-1" style={{ color: "var(--text-secondary)" }}>{t.topic}</span>
             <button onClick={() => setSelectedTag(null)} className="text-xs px-3 py-1 rounded-full transition-all"
               style={{ background: !selectedTag ? "rgba(0,212,255,0.1)" : "rgba(255,255,255,0.04)", color: !selectedTag ? "var(--accent-cyan)" : "var(--text-secondary)", border: `1px solid ${!selectedTag ? "rgba(0,212,255,0.3)" : "var(--border)"}` }}>
-              Alle
+              {t.allFilter}
             </button>
             {allTags.map(tag => (
               <button key={tag} onClick={() => setSelectedTag(tag === selectedTag ? null : tag)} className="text-xs px-3 py-1 rounded-full transition-all"
@@ -85,10 +87,8 @@ export default function GalleryPage() {
       {items.length === 0 ? (
         <div className="text-center py-16 rounded-2xl" style={{ border: "1px dashed var(--border)" }}>
           <p className="text-4xl mb-3">📷</p>
-          <p className="font-medium">Noch keine Fotos vorhanden</p>
-          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-            Fotos erscheinen hier sobald Posts oder Galerie-Fotos im Studio veröffentlicht werden.
-          </p>
+          <p className="font-medium">{t.noPhotos}</p>
+          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>{t.noPhotosText}</p>
         </div>
       ) : filtered.length === 0 ? (
         <p style={{ color: "var(--text-secondary)" }}>Keine Fotos für diese Kombination.</p>

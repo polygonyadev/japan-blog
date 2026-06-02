@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useLanguage } from "@/components/LanguageProvider";
 
 interface Props {
   departureDate?: string | null;
@@ -44,6 +45,7 @@ function StatItem({ label, value, color }: { label: string; value: number; color
 }
 
 export default function StatsBar({ departureDate, citiesVisited, photosUploaded, postsWritten }: Props) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("stats-open") === "1";
@@ -64,16 +66,16 @@ export default function StatsBar({ departureDate, citiesVisited, photosUploaded,
         className="w-full flex items-center justify-between px-6 py-3 transition-colors hover:opacity-80"
         style={{ color: "var(--text-secondary)" }}
       >
-        <span className="text-xs uppercase tracking-widest font-medium">Reise-Stats</span>
+        <span className="text-xs uppercase tracking-widest font-medium">{t.statsLabel}</span>
         {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
       </button>
 
       {open && (
         <div className="px-6 pb-5 grid grid-cols-2 sm:grid-cols-4 gap-6" style={{ borderTop: "1px solid var(--border)" }}>
-          <StatItem label="Tage in Japan" value={daysInJapan}    color="var(--accent-cyan)" />
-          <StatItem label="Städte"        value={citiesVisited}  color="var(--accent-pink)" />
-          <StatItem label="Fotos"         value={photosUploaded} color="var(--accent-gold)" />
-          <StatItem label="Posts"         value={postsWritten}   color="var(--accent-cyan)" />
+          <StatItem label={t.daysInJapan} value={daysInJapan}    color="var(--accent-cyan)" />
+          <StatItem label={t.cities}      value={citiesVisited}  color="var(--accent-pink)" />
+          <StatItem label={t.photos}      value={photosUploaded} color="var(--accent-gold)" />
+          <StatItem label={t.postsCount}  value={postsWritten}   color="var(--accent-cyan)" />
         </div>
       )}
     </div>

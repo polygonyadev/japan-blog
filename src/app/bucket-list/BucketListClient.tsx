@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { MapPin, CheckCircle2, Circle } from "lucide-react";
+import { useLanguage } from "@/components/LanguageProvider";
 
 interface BucketItem {
   _id: string;
@@ -13,6 +14,7 @@ interface BucketItem {
 export default function BucketListClient({ initialItems }: { initialItems: BucketItem[] }) {
   const [items, setItems] = useState(initialItems);
   const done = items.filter(i => i.done).length;
+  const { t } = useLanguage();
 
   function toggle(id: string) {
     setItems(prev => prev.map(i => i._id === id ? { ...i, done: !i.done } : i));
@@ -21,15 +23,15 @@ export default function BucketListClient({ initialItems }: { initialItems: Bucke
   return (
     <div className="min-h-screen pt-14 max-w-4xl mx-auto px-4 py-10">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Bucket List 🎯</h1>
+        <h1 className="text-3xl font-bold">{t.bucketListTitle}</h1>
         <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-          Was ich in Japan noch erleben möchte
+          {t.bucketListSubtitle}
         </p>
 
         {items.length > 0 && (
           <div className="mt-4">
             <div className="flex justify-between text-xs mb-1.5" style={{ color: "var(--text-secondary)" }}>
-              <span>{done} von {items.length} erledigt</span>
+              <span>{done} / {items.length} {t.done}</span>
               <span>{Math.round((done / items.length) * 100)}%</span>
             </div>
             <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--bg-card)" }}>
@@ -48,9 +50,9 @@ export default function BucketListClient({ initialItems }: { initialItems: Bucke
       {items.length === 0 ? (
         <div className="text-center py-16 rounded-2xl" style={{ border: "1px dashed var(--border)" }}>
           <p className="text-4xl mb-3">🗺️</p>
-          <p className="font-medium">Noch keine Ziele eingetragen</p>
+          <p className="font-medium">{t.noBucketItems}</p>
           <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-            Füge Einträge im Studio unter "Bucket List Eintrag" hinzu.
+            {t.addInStudio}
           </p>
         </div>
       ) : (
@@ -93,7 +95,7 @@ export default function BucketListClient({ initialItems }: { initialItems: Bucke
 
       {items.length > 0 && (
         <p className="text-xs mt-6 text-center" style={{ color: "var(--text-secondary)" }}>
-          Klicke auf einen Eintrag um ihn als erledigt zu markieren
+          {t.clickToMark}
         </p>
       )}
     </div>
