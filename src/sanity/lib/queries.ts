@@ -12,6 +12,7 @@ export const allPostsQuery = groq`
     season,
     weather,
     excerpt,
+    excerptEN,
     tags,
     youtubeId,
     "coverImage": photos[0].image.asset->url,
@@ -31,7 +32,9 @@ export const postBySlugQuery = groq`
     season,
     weather,
     excerpt,
+    excerptEN,
     content,
+    contentEN,
     tags,
     youtubeId,
     "photos": photos[]{

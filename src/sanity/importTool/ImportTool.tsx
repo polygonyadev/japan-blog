@@ -22,8 +22,9 @@ interface Preview {
 }
 
 const TYPES = [
-  { value: 'notiz',     label: '📋 Lektion' },       // → Tab "Lektionen" auf der Website
-  { value: 'lesson',    label: '📚 Nützliches' },     // → Tab "Nützliches" auf der Website
+  { value: 'post',      label: '✍️ Blog Post' },
+  { value: 'notiz',     label: '📋 Lektion' },
+  { value: 'lesson',    label: '📚 Nützliches' },
   { value: 'grammatik', label: '🔤 Grammatik' },
   { value: 'kanji',     label: '漢 Kanji' },
   { value: 'vokabel',   label: '📝 Vokabeln' },
@@ -32,7 +33,7 @@ const TYPES = [
 ]
 
 const TYP_EMOJI: Record<string, string> = {
-  grammatik: '🔤', kanji: '漢', vokabel: '📝', partikel: '🔗', satz: '💬', lesson: '📚', notiz: '📋',
+  post: '✍️', grammatik: '🔤', kanji: '漢', vokabel: '📝', partikel: '🔗', satz: '💬', lesson: '📚', notiz: '📋',
 }
 
 function parseFrontmatter(raw: string): { data: Record<string, string>; content: string; hasFrontmatter: boolean } {
@@ -64,6 +65,28 @@ function mapToSanity(data: Record<string, string>, content: string, filename: st
   const title = filename.replace(/_/g, ' ')
 
   switch (typ) {
+    case 'post': {
+      // Split content into DE and EN sections
+      const deMatch = content.match(/## 🇩🇪 Deutsch\n([\s\S]*?)(?=## 🇬🇧 English|## Notizen|$)/)
+      const enMatch = content.match(/## 🇬🇧 English\n([\s\S]*?)(?=## Notizen|$)/)
+      const deContent = deMatch ? cleanBody(deMatch[1]) : cleanBody(content)
+      const enContent = enMatch ? cleanBody(enMatch[1]).replace(/^\*\(Optional.*?\)\*\n?/, '').trim() : ''
+      return {
+        _type: 'post',
+        title: data.title || title,
+        slug: { _type: 'slug', current: (data.title || title).toLowerCase().replace(/[^a-z0-9äöü]+/g, '-').replace(/^-|-$/g, '') },
+        date: data.date || new Date().toISOString().split('T')[0],
+        location: data.location || '',
+        lat: data.lat ? parseFloat(data.lat) : undefined,
+        lng: data.lng ? parseFloat(data.lng) : undefined,
+        season: data.season || undefined,
+        weather: data.weather || undefined,
+        excerpt: data.excerpt || deContent.slice(0, 200),
+        excerptEN: data.excerptEN || (enContent ? enContent.slice(0, 200) : undefined),
+        tags: data.tags ? data.tags.replace(/[\[\]]/g, '').split(',').map((t: string) => t.trim()).filter(Boolean) : [],
+        youtubeId: data.youtubeId || undefined,
+      }
+    }
     case 'grammatik':
       return { _type: 'grammatik', muster: data.muster || title, bedeutung: data.bedeutung || '', jlpt, markdown }
     case 'kanji':
@@ -137,8 +160,10 @@ export function ImportTool() {
         continue
       }
       try {
-        await client.create(p.doc)
-        newResults.push({ file: p.file, status: 'ok', message: `${p.doc._type} erfolgreich erstellt` })
+        // Create as draft by prefixing ID with "drafts."
+        const draftId = `drafts.${Math.random().toString(36).slice(2)}`
+        await client.create({ ...p.doc, _id: draftId })
+        newResults.push({ file: p.file, status: 'ok', message: `${p.doc._type} als Entwurf erstellt — bitte im Studio prüfen & publizieren` })
       } catch (err: unknown) {
         newResults.push({ file: p.file, status: 'error', message: err instanceof Error ? err.message : 'Fehler' })
       }

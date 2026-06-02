@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { LanguageProvider } from "@/components/LanguageProvider";
 
 export const metadata: Metadata = {
   title: "Nippon Diary",
@@ -16,8 +17,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="de" data-theme="light">
       <body>
         <ThemeProvider>
-          <Navbar />
-          <main>{children}</main>
+          <LanguageProvider>
+            <Navbar />
+            <main>{children}</main>
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

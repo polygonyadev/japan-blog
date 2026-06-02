@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { MessageCircle, Lightbulb, HelpCircle, Send, Clock, Reply, ChevronDown, ChevronUp } from "lucide-react";
+import NewsletterSignup from "@/components/NewsletterSignup";
 
 interface Reply { _key?: string; name: string; message: string; createdAt?: string }
 interface Post { _id: string; name: string; message: string; kategorie?: string; createdAt?: string; antworten?: Reply[] }
@@ -271,6 +272,11 @@ export default function CommunityClient({ initialPosts }: { initialPosts: Post[]
           ))}
         </div>
       )}
+
+      {/* Newsletter */}
+      <div className="mb-8">
+        <NewsletterSignup />
+      </div>
 
       {/* Posts */}
       <div className="flex flex-col gap-4">

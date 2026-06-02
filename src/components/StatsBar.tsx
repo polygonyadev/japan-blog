@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface Props {
   departureDate?: string | null;
@@ -43,16 +44,38 @@ function StatItem({ label, value, color }: { label: string; value: number; color
 }
 
 export default function StatsBar({ departureDate, citiesVisited, photosUploaded, postsWritten }: Props) {
+  const [open, setOpen] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("stats-open") === "1";
+  });
   const daysInJapan = calcDays(departureDate);
 
+  function toggle() {
+    setOpen(v => {
+      localStorage.setItem("stats-open", !v ? "1" : "0");
+      return !v;
+    });
+  }
+
   return (
-    <div className="glass rounded-2xl p-6" style={{ border: "1px solid var(--border)" }}>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-        <StatItem label="Tage in Japan" value={daysInJapan}    color="var(--accent-cyan)" />
-        <StatItem label="Städte"        value={citiesVisited}  color="var(--accent-pink)" />
-        <StatItem label="Fotos"         value={photosUploaded} color="var(--accent-gold)" />
-        <StatItem label="Posts"         value={postsWritten}   color="var(--accent-cyan)" />
-      </div>
+    <div className="glass rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
+      <button
+        onClick={toggle}
+        className="w-full flex items-center justify-between px-6 py-3 transition-colors hover:opacity-80"
+        style={{ color: "var(--text-secondary)" }}
+      >
+        <span className="text-xs uppercase tracking-widest font-medium">Reise-Stats</span>
+        {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+      </button>
+
+      {open && (
+        <div className="px-6 pb-5 grid grid-cols-2 sm:grid-cols-4 gap-6" style={{ borderTop: "1px solid var(--border)" }}>
+          <StatItem label="Tage in Japan" value={daysInJapan}    color="var(--accent-cyan)" />
+          <StatItem label="Städte"        value={citiesVisited}  color="var(--accent-pink)" />
+          <StatItem label="Fotos"         value={photosUploaded} color="var(--accent-gold)" />
+          <StatItem label="Posts"         value={postsWritten}   color="var(--accent-cyan)" />
+        </div>
+      )}
     </div>
   );
 }

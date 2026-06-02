@@ -11,7 +11,8 @@ import { partikelType } from './partikel'
 import { satzType } from './satz'
 import { notizType } from './notiz'
 import { communityType } from './community'
+import { newsletterType } from './newsletter'
 
 export const schema: { types: SchemaTypeDefinition[] } = {
-  types: [postType, lessonType, bucketItemType, siteSettingsType, photoType, vokabelType, kanjiType, grammatikType, partikelType, satzType, notizType, communityType],
+  types: [postType, lessonType, bucketItemType, siteSettingsType, photoType, vokabelType, kanjiType, grammatikType, partikelType, satzType, notizType, communityType, newsletterType],
 }

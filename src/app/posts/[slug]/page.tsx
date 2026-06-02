@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import { ArrowLeft, MapPin, Calendar } from "lucide-react";
 import Link from "next/link";
-import { PortableText } from "@portabletext/react";
 import { getPostBySlug, getPosts } from "@/lib/fetchData";
 import Comments from "@/components/Comments";
 import { SEASON_INFO, WEATHER_INFO } from "@/lib/data";
 import LikeButton from "@/components/LikeButton";
+import PostContent from "@/components/PostContent";
 import PostHeroImage from "@/components/PostHeroImage";
 import PostPhotos from "@/components/PostPhotos";
 
@@ -125,14 +125,13 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           </div>
         </div>
 
-        {/* Content */}
-        <div className="prose-custom text-base leading-relaxed">
-          {post.content ? (
-            <PortableText value={post.content} components={portableComponents as Parameters<typeof PortableText>[0]["components"]} />
-          ) : (
-            <p style={{ color: "var(--text-secondary)" }}>{post.excerpt}</p>
-          )}
-        </div>
+        {/* Content — DE/EN */}
+        <PostContent
+          content={post.content}
+          contentEN={post.contentEN}
+          excerpt={post.excerpt}
+          excerptEN={post.excerptEN}
+        />
 
         {/* Photo gallery with lightbox */}
         <PostPhotos photos={post.photos ?? []} />

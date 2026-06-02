@@ -71,11 +71,18 @@ export const postType = defineType({
     }),
     defineField({
       name: 'excerpt',
-      title: 'Kurzbeschreibung',
+      title: 'Kurzbeschreibung (DE)',
       type: 'text',
       rows: 3,
-      description: 'Erscheint in der Post-Vorschau',
+      description: 'Erscheint in der Post-Vorschau (Deutsch)',
       validation: r => r.required(),
+    }),
+    defineField({
+      name: 'excerptEN',
+      title: 'Kurzbeschreibung (EN)',
+      type: 'text',
+      rows: 3,
+      description: 'Optional — English preview text',
     }),
     defineField({
       name: 'photos',
@@ -96,8 +103,15 @@ export const postType = defineType({
     }),
     defineField({
       name: 'content',
-      title: 'Inhalt (Text)',
+      title: 'Inhalt (DE)',
       type: 'array',
+      of: [{ type: 'block' }],
+    }),
+    defineField({
+      name: 'contentEN',
+      title: 'Inhalt (EN)',
+      type: 'array',
+      description: 'Optional — English content',
       of: [{ type: 'block' }],
     }),
     defineField({

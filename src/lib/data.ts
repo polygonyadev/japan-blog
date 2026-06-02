@@ -7,6 +7,8 @@ export interface Post {
   slug: string;
   title: string;
   excerpt: string;
+  excerptEN?: string;
+  contentEN?: unknown;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   content?: any;
   date: string;

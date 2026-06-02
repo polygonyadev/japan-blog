@@ -3,11 +3,14 @@ import Link from "next/link";
 import { useState } from "react";
 import { Heart, MapPin, Calendar } from "lucide-react";
 import { Post, SEASON_INFO, WEATHER_INFO } from "@/lib/data";
+import { useLanguage } from "@/components/LanguageProvider";
 
 export default function PostCard({ post }: { post: Post }) {
+  const { lang } = useLanguage();
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(post.likes ?? 0);
   const season = post.season ? SEASON_INFO[post.season] : null;
+  const excerpt = (lang === "en" && post.excerptEN) ? post.excerptEN : post.excerpt;
   const weather = post.weather ? WEATHER_INFO[post.weather] : null;
 
   function handleLike(e: React.MouseEvent) {
@@ -58,7 +61,7 @@ export default function PostCard({ post }: { post: Post }) {
           </h3>
 
           <p className="text-sm line-clamp-2" style={{ color: "var(--text-secondary)" }}>
-            {post.excerpt}
+            {excerpt}
           </p>
 
           <div className="flex items-center gap-2 mt-1">
