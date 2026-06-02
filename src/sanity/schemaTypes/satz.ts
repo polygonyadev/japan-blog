@@ -1,11 +1,12 @@
 import { defineField, defineType } from 'sanity'
+import { uniqueCheck } from '../lib/uniqueCheck'
 
 export const satzType = defineType({
   name: 'satz',
   title: 'Satz',
   type: 'document',
   fields: [
-    defineField({ name: 'japanisch', title: 'Japanisch', type: 'string', validation: r => r.required() }),
+    defineField({ name: 'japanisch', title: 'Japanisch', type: 'string', validation: r => r.required().custom(uniqueCheck('satz', 'japanisch', 'Dieser Satz')) }),
     defineField({ name: 'kana', title: 'Kana (Aussprache)', type: 'string' }),
     defineField({ name: 'deutsch', title: 'Deutsch', type: 'string', validation: r => r.required() }),
     defineField({

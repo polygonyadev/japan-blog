@@ -1,11 +1,12 @@
 import { defineField, defineType } from 'sanity'
+import { uniqueCheck } from '../lib/uniqueCheck'
 
 export const partikelType = defineType({
   name: 'partikel',
   title: 'Partikel',
   type: 'document',
   fields: [
-    defineField({ name: 'partikel', title: 'Partikel', type: 'string', validation: r => r.required() }),
+    defineField({ name: 'partikel', title: 'Partikel', type: 'string', validation: r => r.required().custom(uniqueCheck('partikel', 'partikel', 'Diese Partikel')) }),
     defineField({ name: 'funktion', title: 'Funktion / Kurzbeschreibung', type: 'string', validation: r => r.required() }),
     defineField({
       name: 'jlpt', title: 'JLPT-Level', type: 'string',

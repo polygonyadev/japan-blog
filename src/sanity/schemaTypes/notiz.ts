@@ -1,11 +1,12 @@
 import { defineField, defineType } from 'sanity'
+import { uniqueCheck } from '../lib/uniqueCheck'
 
 export const notizType = defineType({
   name: 'notiz',
   title: 'Lektion',
   type: 'document',
   fields: [
-    defineField({ name: 'titel', title: 'Titel', type: 'string', validation: r => r.required() }),
+    defineField({ name: 'titel', title: 'Titel', type: 'string', validation: r => r.required().custom(uniqueCheck('notiz', 'titel', 'Diese Lektion')) }),
     defineField({
       name: 'typ', title: 'Typ', type: 'string',
       options: {

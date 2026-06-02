@@ -1,11 +1,12 @@
 import { defineField, defineType } from 'sanity'
+import { uniqueCheck } from '../lib/uniqueCheck'
 
 export const vokabelType = defineType({
   name: 'vokabel',
   title: 'Vokabel',
   type: 'document',
   fields: [
-    defineField({ name: 'wort', title: 'Wort (Kanji/Kana)', type: 'string', validation: r => r.required() }),
+    defineField({ name: 'wort', title: 'Wort (Kanji/Kana)', type: 'string', validation: r => r.required().custom(uniqueCheck('vokabel', 'wort', 'Diese Vokabel')) }),
     defineField({ name: 'kana', title: 'Kana (Aussprache)', type: 'string' }),
     defineField({ name: 'bedeutung', title: 'Bedeutung (Deutsch)', type: 'string', validation: r => r.required() }),
     defineField({

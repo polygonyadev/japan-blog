@@ -1,11 +1,12 @@
 import { defineField, defineType } from 'sanity'
+import { uniqueCheck } from '../lib/uniqueCheck'
 
 export const kanjiType = defineType({
   name: 'kanji',
   title: 'Kanji',
   type: 'document',
   fields: [
-    defineField({ name: 'zeichen', title: 'Kanji-Zeichen', type: 'string', validation: r => r.required() }),
+    defineField({ name: 'zeichen', title: 'Kanji-Zeichen', type: 'string', validation: r => r.required().custom(uniqueCheck('kanji', 'zeichen', 'Dieses Kanji')) }),
     defineField({ name: 'bedeutung', title: 'Bedeutung (Deutsch)', type: 'string', validation: r => r.required() }),
     defineField({ name: 'onYomi', title: 'On-Yomi (音読み)', type: 'string' }),
     defineField({ name: 'kunYomi', title: 'Kun-Yomi (訓読み)', type: 'string' }),

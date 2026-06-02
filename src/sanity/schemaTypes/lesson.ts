@@ -1,4 +1,5 @@
 import { defineField, defineType } from 'sanity'
+import { uniqueCheck } from '../lib/uniqueCheck'
 
 export const lessonType = defineType({
   name: 'lesson',
@@ -9,7 +10,7 @@ export const lessonType = defineType({
       name: 'title',
       title: 'Titel',
       type: 'string',
-      validation: r => r.required(),
+      validation: r => r.required().custom(uniqueCheck('lesson', 'title', 'Dieser Eintrag')),
     }),
     defineField({
       name: 'description',

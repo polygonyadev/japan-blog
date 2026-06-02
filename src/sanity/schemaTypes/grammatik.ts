@@ -1,11 +1,12 @@
 import { defineField, defineType } from 'sanity'
+import { uniqueCheck } from '../lib/uniqueCheck'
 
 export const grammatikType = defineType({
   name: 'grammatik',
   title: 'Grammatik',
   type: 'document',
   fields: [
-    defineField({ name: 'muster', title: 'Muster / Titel', type: 'string', validation: r => r.required() }),
+    defineField({ name: 'muster', title: 'Muster / Titel', type: 'string', validation: r => r.required().custom(uniqueCheck('grammatik', 'muster', 'Dieses Grammatik-Muster')) }),
     defineField({ name: 'bedeutung', title: 'Bedeutung (Deutsch)', type: 'string', validation: r => r.required() }),
     defineField({ name: 'struktur', title: 'Struktur / Pattern', type: 'string' }),
     defineField({
