@@ -1,8 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { GraduationCap, Search, BookOpen, X } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { DetailModal, MarkdownContent } from "@/components/DetailModal";
 import { useLanguage } from "@/components/LanguageProvider";
 
@@ -57,25 +55,6 @@ function ExampleTable({ rows }: { rows: { japanisch?: string; kana?: string; deu
   );
 }
 
-function MarkdownBlock({ content }: { content: string }) {
-  return (
-    <div>
-      <ReactMarkdown remarkPlugins={[remarkGfm]}
-        components={{
-          table: (props) => <table className="w-full text-sm border-collapse mb-3" {...props} />,
-          th: (props) => <th className="text-left py-1.5 pr-4 text-xs font-semibold" style={{ borderBottom:"1px solid var(--border)", color:"var(--accent-cyan)" }} {...props} />,
-          td: (props) => <td className="py-1.5 pr-4 text-sm" style={{ borderBottom:"1px solid var(--border)" }} {...props} />,
-          code: (props) => <code className="px-1.5 py-0.5 rounded text-xs font-mono" style={{ background:"var(--bg-card)", color:"var(--accent-cyan)" }} {...props} />,
-          h2: (props) => <h2 className="text-base font-bold mt-4 mb-2" style={{ color:"var(--accent-cyan)" }} {...props} />,
-          h3: (props) => <h3 className="text-sm font-semibold mt-3 mb-1" {...props} />,
-          p: (props) => <p className="text-sm mb-2 leading-relaxed" style={{ color:"var(--text-secondary)" }} {...props} />,
-          strong: (props) => <strong className="font-bold" style={{ color:"var(--text-primary)" }} {...props} />,
-        }}>
-        {content}
-      </ReactMarkdown>
-    </div>
-  );
-}
 
 function Card({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
   return (
@@ -554,7 +533,6 @@ function NotizenSection({ items, jlpt }: { items: any[]; jlpt: JLPT | null }) {
       ))}
     </div>
     {selected && (
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       <DetailModal onClose={() => setSelected(null)}>
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {(() => { const n = selected as any; return <>

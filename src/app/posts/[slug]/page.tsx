@@ -14,58 +14,6 @@ export async function generateStaticParams() {
   return posts.map(p => ({ slug: p.slug }));
 }
 
-const portableComponents = {
-  types: {
-    image: ({ value }: { value: { asset?: { url: string }; caption?: string } }) => {
-      if (!value?.asset?.url) return null;
-      return (
-        <figure className="my-6">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={value.asset.url}
-            alt={value.caption ?? ""}
-            className="w-full rounded-xl object-cover"
-            style={{ border: "1px solid var(--border)" }}
-          />
-          {value.caption && (
-            <figcaption className="text-center text-sm mt-2" style={{ color: "var(--text-secondary)" }}>
-              {value.caption}
-            </figcaption>
-          )}
-        </figure>
-      );
-    },
-  },
-  block: {
-    normal: ({ children }: { children?: React.ReactNode }) => (
-      <p className="mb-4 leading-relaxed" style={{ color: "var(--text-primary)" }}>{children}</p>
-    ),
-    h2: ({ children }: { children?: React.ReactNode }) => (
-      <h2 className="text-2xl font-bold mt-8 mb-3">{children}</h2>
-    ),
-    h3: ({ children }: { children?: React.ReactNode }) => (
-      <h3 className="text-xl font-bold mt-6 mb-2">{children}</h3>
-    ),
-    blockquote: ({ children }: { children?: React.ReactNode }) => (
-      <blockquote
-        className="pl-4 my-4 italic"
-        style={{ borderLeft: "3px solid var(--accent-cyan)", color: "var(--text-secondary)" }}
-      >
-        {children}
-      </blockquote>
-    ),
-  },
-  marks: {
-    strong: ({ children }: { children?: React.ReactNode }) => <strong className="font-bold">{children}</strong>,
-    em: ({ children }: { children?: React.ReactNode }) => <em className="italic">{children}</em>,
-    link: ({ value, children }: { value?: { href: string }; children?: React.ReactNode }) => (
-      <a href={value?.href} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-cyan)" }} className="underline underline-offset-2">
-        {children}
-      </a>
-    ),
-  },
-};
-
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const post = await getPostBySlug(slug);

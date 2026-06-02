@@ -11,17 +11,20 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
+function getInitialTheme(): Theme {
+  if (typeof document !== "undefined") {
+    const attr = document.documentElement.getAttribute("data-theme");
+    if (attr === "dark" || attr === "light") return attr;
+  }
+  return "light";
+}
 
-  useEffect(() => {
-    const saved = localStorage.getItem("theme") as Theme | null;
-    if (saved) setTheme(saved);
-  }, []);
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
+    try { localStorage.setItem("theme", theme); } catch {}
   }, [theme]);
 
   return (

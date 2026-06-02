@@ -1,6 +1,6 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
-import { type Lang, translations, type T } from "@/lib/i18n";
+import { type Lang, translations } from "@/lib/i18n";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface LangContext { lang: Lang; toggle: () => void; t: any }

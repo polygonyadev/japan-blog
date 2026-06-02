@@ -47,7 +47,7 @@ export function MarkdownContent({ content }: { content: string }) {
         thead: (p) => <thead {...p} />,
         th: (p) => <th className="text-left py-2 pr-4 text-xs font-semibold" style={{ borderBottom: "2px solid var(--border)", color: "var(--accent-cyan)" }} {...p} />,
         td: (p) => <td className="py-1.5 pr-4 text-sm" style={{ borderBottom: "1px solid var(--border)" }} {...p} />,
-        code: ({ children, className, ...p }) => {
+        code: ({ children, ...p }) => {
           const isBlock = String(children).includes('\n');
           return isBlock
             ? <pre className="p-3 rounded-xl text-xs overflow-x-auto my-3" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}><code {...p}>{children}</code></pre>

@@ -4,14 +4,12 @@ import { Clock } from "lucide-react";
 
 export default function TokyoTime() {
   const [time, setTime] = useState("");
-  const [date, setDate] = useState("");
 
   useEffect(() => {
     function update() {
       const now = new Date();
       const tokyo = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
       setTime(tokyo.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
-      setDate(tokyo.toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" }));
     }
     update();
     const timer = setInterval(update, 1000);

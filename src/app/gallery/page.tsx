@@ -13,6 +13,19 @@ interface GalleryItem {
   title?: string;
 }
 
+function FilterBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick} className="text-xs px-3 py-1 rounded-full transition-all"
+      style={{
+        background: active ? "rgba(255,45,107,0.15)" : "rgba(255,255,255,0.04)",
+        color: active ? "var(--accent-pink)" : "var(--text-secondary)",
+        border: `1px solid ${active ? "rgba(255,45,107,0.4)" : "var(--border)"}`,
+      }}>
+      {children}
+    </button>
+  );
+}
+
 export default function GalleryPage() {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -34,19 +47,6 @@ export default function GalleryPage() {
     if (selectedLocation && img.location !== selectedLocation) return false;
     return true;
   });
-
-  function FilterBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-    return (
-      <button onClick={onClick} className="text-xs px-3 py-1 rounded-full transition-all"
-        style={{
-          background: active ? "rgba(255,45,107,0.15)" : "rgba(255,255,255,0.04)",
-          color: active ? "var(--accent-pink)" : "var(--text-secondary)",
-          border: `1px solid ${active ? "rgba(255,45,107,0.4)" : "var(--border)"}`,
-        }}>
-        {children}
-      </button>
-    );
-  }
 
   return (
     <div className="min-h-screen pt-14 max-w-6xl mx-auto px-4 py-10">
