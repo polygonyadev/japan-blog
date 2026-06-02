@@ -72,19 +72,6 @@ export default function HomeClient({ posts, bucketItems, settings, stats }: Prop
           postsWritten={stats.postsCount}
         />
 
-        {/* Map */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold">{t.myRoute}</h2>
-            <Link href="/map" className="text-sm flex items-center gap-1 transition-colors hover:text-cyan-300" style={{ color: "var(--text-secondary)" }}>
-              {t.fullscreen} <ArrowRight size={13} />
-            </Link>
-          </div>
-          <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-            <MiniMap markers={mapMarkers} height="320px" />
-          </div>
-        </section>
-
         {/* Latest posts */}
         <section>
           <div className="flex items-center justify-between mb-4">
@@ -104,6 +91,19 @@ export default function HomeClient({ posts, bucketItems, settings, stats }: Prop
               {latestPosts.map((p: Post) => <PostCard key={p.slug} post={p} />)}
             </div>
           )}
+        </section>
+
+        {/* Map */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">{t.myRoute}</h2>
+            <Link href="/map" className="text-sm flex items-center gap-1 transition-colors hover:text-cyan-300" style={{ color: "var(--text-secondary)" }}>
+              {t.fullscreen} <ArrowRight size={13} />
+            </Link>
+          </div>
+          <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
+            <MiniMap markers={mapMarkers} height="320px" />
+          </div>
         </section>
 
         {/* Next destinations */}
