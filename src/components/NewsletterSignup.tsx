@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Mail, Send, ChevronDown, ChevronUp } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 
@@ -11,6 +11,15 @@ export default function NewsletterSignup() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Auto-open + scroll when arriving via #newsletter anchor
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash === "#newsletter") {
+      setOpen(true);
+      setTimeout(() => ref.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+    }
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,7 +38,7 @@ export default function NewsletterSignup() {
   }
 
   return (
-    <div className="glass rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
+    <div ref={ref} id="newsletter" className="glass rounded-2xl overflow-hidden scroll-mt-20" style={{ border: "1px solid var(--border)" }}>
       <button
         onClick={() => setOpen(v => !v)}
         className="w-full flex items-center justify-between px-5 py-3 transition-colors hover:opacity-80"

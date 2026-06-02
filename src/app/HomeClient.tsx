@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { ArrowRight, MapPin } from "lucide-react";
+import { ArrowRight, MapPin, Mail } from "lucide-react";
 import StatsBar from "@/components/StatsBar";
 import PostCard from "@/components/PostCard";
 import MiniMap from "@/components/MiniMap";
@@ -130,8 +130,20 @@ export default function HomeClient({ posts, bucketItems, settings, stats }: Prop
           </section>
         )}
 
-        {/* Support */}
+        {/* Newsletter CTA */}
         <section className="text-center py-6">
+          <p className="text-sm mb-3" style={{ color: "var(--text-secondary)" }}>{t.newsletterText}</p>
+          <Link
+            href="/community#newsletter"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 hover:scale-105 glow-cyan"
+            style={{ background: "var(--accent-cyan)", color: "#0d1117" }}
+          >
+            <Mail size={15} /> {t.newsletterTitle}
+          </Link>
+        </section>
+
+        {/* Support */}
+        <section className="text-center pb-6">
           <p className="text-sm mb-3" style={{ color: "var(--text-secondary)" }}>{t.supportText}</p>
           <BuyMeCoffee />
         </section>
