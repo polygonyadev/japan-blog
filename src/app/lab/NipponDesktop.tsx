@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import MiniMap from "@/components/MiniMap";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Photo { url?: string; caption?: string }
 interface LabPost {
@@ -35,16 +37,19 @@ function beep(freq = 660) {
 
 const APPS = [
   { id: "blog", icon: "✎", title: "Blog.exe" },
+  { id: "japanisch", icon: "🎌", title: "Japanisch" },
   { id: "photo", icon: "📷", title: "Foto des Tages" },
   { id: "video", icon: "▶", title: "Video des Tages" },
   { id: "map", icon: "🗺", title: "Karte" },
+  { id: "bucket", icon: "🎯", title: "Bucket List" },
   { id: "paint", icon: "🎨", title: "Paint" },
   { id: "snake", icon: "🐍", title: "Snake" },
-  { id: "about", icon: "★", title: "Über mich" },
+  { id: "newsletter", icon: "📧", title: "Newsletter" },
   { id: "guestbook", icon: "✉", title: "Gästebuch" },
+  { id: "about", icon: "★", title: "Über mich" },
 ];
-const DESKTOP_ICONS = ["blog", "photo", "map", "paint", "snake", "guestbook"];
-const W: Record<string, number> = { blog: 560, video: 560, map: 520, paint: 520, snake: 340, about: 440, guestbook: 460, photo: 440 };
+const DESKTOP_ICONS = ["blog", "japanisch", "photo", "map", "bucket", "paint", "snake", "guestbook"];
+const W: Record<string, number> = { blog: 560, japanisch: 600, video: 560, map: 520, bucket: 480, paint: 520, snake: 340, newsletter: 440, about: 440, guestbook: 460, photo: 440 };
 function appWidth(id: string) { return id.startsWith("post:") ? 540 : (W[id] ?? 460); }
 function winMeta(id: string, data: LabPost[]) {
   if (id.startsWith("post:")) { const p = data.find(x => x._id === id.slice(5)); return { icon: "📄", title: p?.title ?? "Post" }; }
@@ -301,11 +306,14 @@ function WindowFrame({ win, data, onOpenPost, onClose, onFocus, onMin, onMax, on
       </div>
       <div className="p-3 overflow-y-auto flex-1" style={{ background: C.cream, color: C.ink }}>
         {win.id === "blog" && <BlogApp data={data} onOpenPost={onOpenPost} onBeep={onBeep} />}
+        {win.id === "japanisch" && <JapanischApp onBeep={onBeep} />}
         {win.id === "photo" && <PhotoApp data={data} />}
         {win.id === "video" && <VideoApp data={data} />}
         {win.id === "map" && <MapApp data={data} />}
+        {win.id === "bucket" && <BucketApp onBeep={onBeep} />}
         {win.id === "paint" && <PaintApp />}
         {win.id === "snake" && <SnakeApp />}
+        {win.id === "newsletter" && <NewsletterApp onBeep={onBeep} />}
         {win.id === "about" && <AboutApp />}
         {win.id === "guestbook" && <GuestbookApp onBeep={onBeep} />}
         {win.id.startsWith("post:") && <PostDetailApp post={data.find(p => p._id === win.id.slice(5))} />}
@@ -572,6 +580,157 @@ function SnakeApp() {
         )}
       </div>
       <div className="term text-base mt-2" style={{ color: C.cyan }}>Pfeiltasten oder WASD</div>
+    </div>
+  );
+}
+
+// ─── Japanisch (live aus Studio) ──────────────────────────────────────────────
+function JapanischApp({ onBeep }: { onBeep: (f?: number) => void }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [data, setData] = useState<any>(null);
+  const [tab, setTab] = useState("notizen");
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState<string | null>(null);
+  useEffect(() => { fetch("/api/japanisch").then(r => r.json()).then(setData).catch(() => {}); }, []);
+
+  const TABS: [string, string][] = [
+    ["notizen", "📚 Lektionen"], ["lessons", "✨ Nützliches"], ["grammatik", "🔤 Grammatik"],
+    ["partikel", "🔗 Partikel"], ["saetze", "💬 Sätze"], ["vokabeln", "📝 Vokabeln"], ["kanji", "漢 Kanji"],
+  ];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function head(it: any): string { return it.titel ?? it.title ?? it.wort ?? it.zeichen ?? it.muster ?? it.partikel ?? it.japanisch ?? "?"; }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function sub(it: any): string { return it.bedeutung ?? it.funktion ?? it.deutsch ?? it.description ?? ""; }
+
+  if (!data) return <div className="term text-xl text-center py-6" style={{ color: C.ochre }}>lädt aus Studio… ⏳</div>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const items: any[] = (data[tab] ?? []).filter((it: any) =>
+    !q || `${head(it)} ${sub(it)} ${it.kana ?? ""}`.toLowerCase().includes(q.toLowerCase()));
+
+  return (
+    <div>
+      <div className="pixel text-[10px] mb-2 text-center" style={{ color: C.pink }}>🎌 JAPANISCH 🎌</div>
+      <div className="flex flex-wrap gap-1 mb-2">
+        {TABS.map(([id, label]) => (
+          <button key={id} onClick={() => { onBeep(); setTab(id); setOpen(null); }} className="term text-base px-2" style={{ ...(tab === id ? raised : sunken), background: tab === id ? C.pink : "#fff", color: tab === id ? C.cream : C.ink }}>{label}</button>
+        ))}
+      </div>
+      <input value={q} onChange={e => setQ(e.target.value)} placeholder="🔍 suchen…" className="term text-lg w-full px-2 py-1 mb-2 outline-none" style={{ ...sunken, background: "#fff", color: C.ink }} />
+      <div className="term text-sm mb-2" style={{ color: C.ochre }}>{items.length} Einträge</div>
+      <div className="flex flex-col gap-1.5">
+        {items.length === 0 && <div className="term text-lg text-center py-3" style={{ color: C.ochre }}>noch nichts hier — leg im Studio Einträge an ✍</div>}
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        {items.map((it: any) => {
+          const id = it._id;
+          const isOpen = open === id;
+          return (
+            <div key={id} style={{ ...sunken, background: "#fff" }}>
+              <button onClick={() => { onBeep(); setOpen(isOpen ? null : id); }} className="w-full text-left p-2 flex items-center gap-2">
+                <span className="term text-xl" style={{ color: C.pink }}>{head(it)}</span>
+                {it.kana && <span className="term text-base" style={{ color: C.cyan }}>{it.kana}</span>}
+                {it.jlpt && <span className="term text-sm px-1" style={{ background: C.ochre, color: "#fff" }}>{it.jlpt}</span>}
+                <span className="text-xs ml-auto truncate" style={{ color: C.ink }}>{sub(it)}</span>
+              </button>
+              {isOpen && (
+                <div className="px-2 pb-2 text-sm" style={{ color: C.ink }}>
+                  {it.struktur && <div className="term text-base mb-1 px-2 py-1" style={{ background: C.bg, color: C.cyan, ...sunken }}>{it.struktur}</div>}
+                  {it.konjugation?.length > 0 && (
+                    <table className="w-full mb-2"><tbody>{it.konjugation.map((k: { form: string; japanisch: string; kana?: string }, i: number) => (
+                      <tr key={i}><td className="term text-sm pr-2" style={{ color: C.ochre }}>{k.form}</td><td className="term text-base">{k.japanisch}</td><td className="term text-sm" style={{ color: C.cyan }}>{k.kana}</td></tr>
+                    ))}</tbody></table>
+                  )}
+                  {(it.beispiele ?? []).map((b: { japanisch?: string; kana?: string; deutsch?: string }, i: number) => (
+                    <div key={i} className="mb-1"><span className="term text-base">{b.japanisch}</span> {b.kana && <span className="term text-sm" style={{ color: C.cyan }}>（{b.kana}）</span>} — {b.deutsch}</div>
+                  ))}
+                  {(it.phrases ?? []).map((p: { jp: string; romaji?: string; de: string }, i: number) => (
+                    <div key={i} className="mb-1"><span className="term text-base">{p.jp}</span> {p.romaji && <span className="term text-sm" style={{ color: C.cyan }}>（{p.romaji}）</span>} — {p.de}</div>
+                  ))}
+                  {it.inhalt && <div className="prose-sm mt-1"><ReactMarkdown remarkPlugins={[remarkGfm]}>{it.inhalt}</ReactMarkdown></div>}
+                  {it.markdown && <div className="prose-sm mt-1"><ReactMarkdown remarkPlugins={[remarkGfm]}>{it.markdown}</ReactMarkdown></div>}
+                  {it.notizen && <p className="mt-1" style={{ color: C.ink }}>{it.notizen}</p>}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Bucket List (live aus Studio) ────────────────────────────────────────────
+function BucketApp({ onBeep }: { onBeep: (f?: number) => void }) {
+  interface Item { _id: string; title: string; description?: string; location?: string; done: boolean }
+  const [items, setItems] = useState<Item[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    fetch("/api/bucket").then(r => r.json()).then((d: Item[]) => {
+      let local: Record<string, boolean> = {};
+      try { local = JSON.parse(localStorage.getItem("nippon-bucket") ?? "{}"); } catch {}
+      setItems((Array.isArray(d) ? d : []).map(i => ({ ...i, done: local[i._id] ?? i.done })));
+      setLoaded(true);
+    }).catch(() => setLoaded(true));
+  }, []);
+  function toggle(id: string) {
+    onBeep();
+    setItems(prev => {
+      const next = prev.map(i => i._id === id ? { ...i, done: !i.done } : i);
+      try { localStorage.setItem("nippon-bucket", JSON.stringify(Object.fromEntries(next.map(i => [i._id, i.done])))); } catch {}
+      return next;
+    });
+  }
+  const done = items.filter(i => i.done).length;
+  return (
+    <div>
+      <div className="pixel text-[10px] mb-2 text-center" style={{ color: C.pink }}>🎯 BUCKET LIST 🎯</div>
+      {!loaded ? <div className="term text-xl text-center py-4" style={{ color: C.ochre }}>lädt… ⏳</div> : items.length === 0 ? (
+        <div className="term text-lg text-center py-4" style={{ color: C.ochre }}>noch keine Ziele — leg sie im Studio an 🗺</div>
+      ) : (
+        <>
+          <div className="mb-3">
+            <div className="term text-base flex justify-between" style={{ color: C.ochre }}><span>{done}/{items.length} erledigt</span><span>{Math.round((done / items.length) * 100)}%</span></div>
+            <div className="h-3 p-0.5" style={{ ...sunken, background: "#fff" }}><div className="h-full" style={{ width: `${(done / items.length) * 100}%`, background: `linear-gradient(90deg,${C.cyan},${C.pink})` }} /></div>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            {items.map(i => (
+              <button key={i._id} onClick={() => toggle(i._id)} className="p-2 text-left flex items-start gap-2" style={{ ...sunken, background: "#fff", opacity: i.done ? 0.6 : 1 }}>
+                <span className="term text-xl" style={{ color: i.done ? C.cyan : C.ink }}>{i.done ? "☑" : "☐"}</span>
+                <div className="min-w-0">
+                  <div className="term text-lg" style={{ color: C.pink, textDecoration: i.done ? "line-through" : "none" }}>{i.title}</div>
+                  {i.description && <div className="text-xs" style={{ color: C.ink }}>{i.description}</div>}
+                  {i.location && <div className="term text-sm" style={{ color: C.ochre }}>📍 {i.location}</div>}
+                </div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Newsletter ───────────────────────────────────────────────────────────────
+function NewsletterApp({ onBeep }: { onBeep: (f?: number) => void }) {
+  const [email, setEmail] = useState(""); const [name, setName] = useState("");
+  const [sent, setSent] = useState(false); const [sending, setSending] = useState(false);
+  async function submit(e: React.FormEvent) {
+    e.preventDefault(); if (!email.trim()) return; onBeep(880); setSending(true);
+    try { const r = await fetch("/api/newsletter", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, name }) }); if (r.ok) setSent(true); } catch {}
+    setSending(false);
+  }
+  return (
+    <div>
+      <div className="pixel text-[10px] mb-3 text-center" style={{ color: C.pink }}>📧 NEWSLETTER 📧</div>
+      {sent ? (
+        <div className="p-3 term text-xl text-center" style={{ ...sunken, background: "#fff", color: C.ink }}>✅ Du bist dabei! Du bekommst eine Mail bei Neuigkeiten. ♥</div>
+      ) : (
+        <form onSubmit={submit} className="flex flex-col gap-2">
+          <p className="term text-lg" style={{ color: C.ink }}>Trag dich ein und ich melde mich bei neuen Posts!</p>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Name (optional)" className="term text-lg px-2 py-1 outline-none" style={{ ...sunken, background: "#fff", color: C.ink }} />
+          <input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="deine@email.com" required className="term text-lg px-2 py-1 outline-none" style={{ ...sunken, background: "#fff", color: C.ink }} />
+          <button type="submit" disabled={sending} className="nb pixel text-[9px] px-3 py-2 self-end disabled:opacity-50" style={{ background: C.pink, color: C.cream, ...raised }}>{sending ? "…" : "★ EINTRAGEN ★"}</button>
+        </form>
+      )}
     </div>
   );
 }
