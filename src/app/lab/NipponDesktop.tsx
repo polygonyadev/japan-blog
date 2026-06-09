@@ -60,6 +60,13 @@ function winMeta(id: string, data: LabPost[], lang: Lng = "de") {
 }
 
 interface OpenWin { id: string; x: number; y: number; z: number; min?: boolean; max?: boolean }
+interface SysLine { label: string; value: string; color?: string }
+interface NipponSettings {
+  bannerText: string;
+  systems: SysLine[];
+  photoOfDay?: { url: string; caption?: string } | null;
+  videoOfDay?: { id: string; title?: string } | null;
+}
 
 export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPost[]; onSwitchSimple?: () => void }) {
   const { lang, toggle: toggleLang } = useLanguage();
@@ -74,7 +81,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   const [startOpen, setStartOpen] = useState(false);
   const [progOpen, setProgOpen] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [settings, setSettings] = useState<{ bannerText: string; systems: any[] } | null>(null);
+  const [settings, setSettings] = useState<NipponSettings | null>(null);
   const z = useRef(10);
   const drag = useRef<{ id: string; sx: number; sy: number; wx: number; wy: number } | null>(null);
   const soundRef = useRef(true); soundRef.current = sound;
@@ -267,7 +274,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
           <button ref={catRef} onClick={() => click(990)} className="absolute top-0 left-0 text-3xl z-[5]" style={{ cursor: cursorUrl, willChange: "transform" }} title="にゃ～">🐱</button>
 
           {wins.filter(w => !w.min).map(w => (
-            <WindowFrame key={w.id} win={w} data={data} onOpenPost={openPost}
+            <WindowFrame key={w.id} win={w} data={data} settings={settings} onOpenPost={openPost}
               onClose={() => { click(440); closeWin(w.id); }} onFocus={() => focusWin(w.id)}
               onMin={() => { click(440); minWin(w.id); }} onMax={() => { click(); maxWin(w.id); }}
               onTitleDown={(e) => onTitleDown(e, w.id)} onBeep={click} />
@@ -326,8 +333,8 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   );
 }
 
-function WindowFrame({ win, data, onOpenPost, onClose, onFocus, onMin, onMax, onTitleDown, onBeep }: {
-  win: OpenWin; data: LabPost[]; onOpenPost: (id: string) => void; onClose: () => void; onFocus: () => void; onMin: () => void; onMax: () => void; onTitleDown: (e: React.PointerEvent) => void; onBeep: (f?: number) => void;
+function WindowFrame({ win, data, settings, onOpenPost, onClose, onFocus, onMin, onMax, onTitleDown, onBeep }: {
+  win: OpenWin; data: LabPost[]; settings: NipponSettings | null; onOpenPost: (id: string) => void; onClose: () => void; onFocus: () => void; onMin: () => void; onMax: () => void; onTitleDown: (e: React.PointerEvent) => void; onBeep: (f?: number) => void;
 }) {
   const { lang } = useLanguage();
   const m = winMeta(win.id, data, lang);
@@ -345,9 +352,9 @@ function WindowFrame({ win, data, onOpenPost, onClose, onFocus, onMin, onMax, on
       <div className="p-3 overflow-y-auto flex-1" style={{ background: C.cream, color: C.ink }}>
         {win.id === "blog" && <BlogApp data={data} onOpenPost={onOpenPost} onBeep={onBeep} />}
         {win.id === "japanisch" && <JapanischApp onBeep={onBeep} />}
-        {win.id === "photo" && <PhotoApp data={data} />}
-        {win.id === "video" && <VideoApp data={data} />}
-        {win.id === "map" && <MapApp data={data} />}
+        {win.id === "photo" && <PhotoApp data={data} settings={settings} />}
+        {win.id === "video" && <VideoApp data={data} settings={settings} />}
+        {win.id === "map" && <MapApp data={data} onOpenPost={onOpenPost} />}
         {win.id === "bucket" && <BucketApp onBeep={onBeep} />}
         {win.id === "paint" && <PaintApp />}
         {win.id === "snake" && <SnakeApp />}
@@ -452,47 +459,56 @@ function PostDetailApp({ post }: { post?: LabPost }) {
   );
 }
 
-function PhotoApp({ data }: { data: LabPost[] }) {
+function PhotoApp({ data, settings }: { data: LabPost[]; settings: NipponSettings | null }) {
+  const { lang } = useLanguage();
+  // Im Studio gesetztes Foto des Tages hat Vorrang, sonst zufälliges Post-Foto
   const photos = data.flatMap(p => (p.photos ?? []).filter(x => x.url).map(x => ({ ...x, post: p })));
-  const pick = photos.length ? photos[Math.floor(Date.now() / 86400000) % photos.length] : null;
+  const auto = photos.length ? photos[Math.floor(Date.now() / 86400000) % photos.length] : null;
+  const url = settings?.photoOfDay?.url ?? auto?.url;
+  const caption = settings?.photoOfDay?.caption ?? auto?.caption ?? auto?.post?.location;
   return (
     <div className="text-center">
-      <div className="pixel text-[10px] mb-2" style={{ color: C.pink }}>★ FOTO DES TAGES ★</div>
+      <div className="pixel text-[10px] mb-2" style={{ color: C.pink }}>{lang === "en" ? "★ PHOTO OF THE DAY ★" : "★ FOTO DES TAGES ★"}</div>
       <div className="p-1 inline-block w-full" style={{ background: C.bg, ...sunken }}>
-        {pick?.url
+        {url
           // eslint-disable-next-line @next/next/no-img-element
-          ? <img src={pick.url} alt="" className="w-full max-h-80 object-cover" />
+          ? <img src={url} alt="" className="w-full max-h-80 object-cover" />
           : <div className="w-full h-56 flex items-center justify-center text-6xl" style={{ background: `linear-gradient(135deg,${C.pink},${C.cyan})` }}>📷</div>}
       </div>
-      <div className="term text-lg mt-2" style={{ color: C.ochre }}>{pick?.caption ?? pick?.post?.location ?? "Noch keine Fotos — leg im Studio welche an 📷"}</div>
+      <div className="term text-lg mt-2" style={{ color: C.ochre }}>{caption ?? (lang === "en" ? "No photos yet — add some in the Studio 📷" : "Noch keine Fotos — leg im Studio welche an 📷")}</div>
     </div>
   );
 }
-function VideoApp({ data }: { data: LabPost[] }) {
-  const withVid = data.find(p => p.youtubeId);
+function VideoApp({ data, settings }: { data: LabPost[]; settings: NipponSettings | null }) {
+  const { lang } = useLanguage();
+  // Im Studio gesetztes Video des Tages hat Vorrang, sonst erstes Post-Video
+  const fromPost = data.find(p => p.youtubeId);
+  const vidId = settings?.videoOfDay?.id ?? fromPost?.youtubeId;
+  const vidTitle = settings?.videoOfDay?.title ?? fromPost?.title;
   return (
     <div>
-      <div className="pixel text-[10px] mb-2 text-center" style={{ color: C.pink }}>▶ VIDEO DES TAGES ▶</div>
-      {withVid ? (
+      <div className="pixel text-[10px] mb-2 text-center" style={{ color: C.pink }}>{lang === "en" ? "▶ VIDEO OF THE DAY ▶" : "▶ VIDEO DES TAGES ▶"}</div>
+      {vidId ? (
         <>
           <div className="relative" style={{ paddingBottom: "56.25%" }}>
-            <iframe className="absolute inset-0 w-full h-full" src={`https://www.youtube.com/embed/${withVid.youtubeId}`} title="Video des Tages" allowFullScreen />
+            <iframe className="absolute inset-0 w-full h-full" src={`https://www.youtube.com/embed/${vidId}`} title="Video" allowFullScreen />
           </div>
-          <div className="term text-lg mt-2 text-center" style={{ color: C.ochre }}>{withVid.title}</div>
+          {vidTitle && <div className="term text-lg mt-2 text-center" style={{ color: C.ochre }}>{vidTitle}</div>}
         </>
       ) : (
-        <div className="term text-xl text-center py-8" style={{ color: C.ochre }}>noch kein Video — füg in einem Post eine YouTube-ID hinzu 🎬</div>
+        <div className="term text-xl text-center py-8" style={{ color: C.ochre }}>{lang === "en" ? "no video yet — set a YouTube link in the Studio 🎬" : "noch kein Video — setz im Studio einen YouTube-Link 🎬"}</div>
       )}
     </div>
   );
 }
-function MapApp({ data }: { data: LabPost[] }) {
-  const markers = data.filter(p => p.lat && p.lng).map(p => ({ lat: p.lat!, lng: p.lng!, label: p.location ?? p.title }));
+function MapApp({ data, onOpenPost }: { data: LabPost[]; onOpenPost: (id: string) => void }) {
+  const { lang } = useLanguage();
+  const markers = data.filter(p => p.lat && p.lng).map(p => ({ lat: p.lat!, lng: p.lng!, label: p.location ?? p.title, id: p._id }));
   return (
     <div>
-      <div className="pixel text-[10px] mb-2 text-center" style={{ color: C.pink }}>🗺 MEINE ORTE 🗺</div>
+      <div className="pixel text-[10px] mb-2 text-center" style={{ color: C.pink }}>{lang === "en" ? "🗺 MY PLACES 🗺" : "🗺 MEINE ORTE 🗺"}</div>
       <div className="p-1" style={{ background: C.bg, ...sunken }}>
-        {markers.length ? <MiniMap markers={markers} height="300px" zoom={6} /> : <div className="h-40 flex items-center justify-center term text-xl" style={{ color: C.cyan }}>noch keine Orte ◔_◔</div>}
+        {markers.length ? <MiniMap markers={markers} height="300px" zoom={6} onMarkerClick={(id) => onOpenPost(id)} /> : <div className="h-40 flex items-center justify-center term text-xl" style={{ color: C.cyan }}>{lang === "en" ? "no places yet ◔_◔" : "noch keine Orte ◔_◔"}</div>}
       </div>
     </div>
   );
