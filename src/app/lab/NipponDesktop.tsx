@@ -67,6 +67,7 @@ interface NipponSettings {
   systems: SysLine[];
   photoOfDay?: { url: string; caption?: string } | null;
   videoOfDay?: { id: string; title?: string } | null;
+  departureDate?: string | null;
 }
 
 export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPost[]; onSwitchSimple?: () => void }) {
@@ -122,6 +123,22 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   }, []);
 
   const sysColor: Record<string, string> = { green: "#33ff66", pink: C.pink, ochre: C.ochre, cyan: C.cyan };
+
+  // Tage in Japan aus dem "Abreisedatum" der Website-Einstellungen (Studio)
+  function japanLine(): SysLine | null {
+    const dep = settings?.departureDate;
+    if (!dep) return null;
+    const start = new Date(dep).getTime();
+    const now = Date.now();
+    const dayMs = 1000 * 60 * 60 * 24;
+    if (now >= start) {
+      const days = Math.floor((now - start) / dayMs);
+      return { label: "Japan", value: L(`Tag ${days}`, `Day ${days}`), color: "cyan" };
+    }
+    const until = Math.ceil((start - now) / dayMs);
+    return { label: L("Ankunft", "Arrival"), value: L(`in ${until}T`, `in ${until}d`), color: "ochre" };
+  }
+  const jLine = japanLine();
 
   // Cat rAF follow
   useEffect(() => {
@@ -243,12 +260,15 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
           </div>
           <div className="p-2 term text-base" style={{ background: C.bg, ...sunken, color: C.cyan }}>
             <div className="pixel text-[8px] mb-1" style={{ color: C.cream }}>SYSTEMS</div>
-            {(settings?.systems ?? [
-              { label: "NipponOS", value: "OK", color: "green" },
-              { label: "Kamera", value: "OK", color: "green" },
-              { label: "Magen", value: "VOLL", color: "ochre" },
-              { label: "Heimweh", value: "12%", color: "pink" },
-            ]).map((s: { label: string; value: string; color?: string }, i: number) => (
+            {[
+              ...(jLine ? [jLine] : []),
+              ...(settings?.systems ?? [
+                { label: "NipponOS", value: "OK", color: "green" },
+                { label: "Kamera", value: "OK", color: "green" },
+                { label: "Magen", value: "VOLL", color: "ochre" },
+                { label: "Heimweh", value: "12%", color: "pink" },
+              ]),
+            ].map((s: SysLine, i: number) => (
               <div key={i}>{s.label} {"·".repeat(Math.max(2, 11 - s.label.length))} <span style={{ color: sysColor[s.color ?? "green"] ?? "#33ff66" }}>{s.value}</span></div>
             ))}
           </div>
