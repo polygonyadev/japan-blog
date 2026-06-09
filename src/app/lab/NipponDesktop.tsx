@@ -36,7 +36,7 @@ const APPS = [
   { id: "blog", icon: "✎", title: "Blog.exe", titleEN: "Blog.exe" },
   { id: "japanisch", icon: "🎌", title: "Japanisch", titleEN: "Japanese" },
   { id: "photo", icon: "📷", title: "Foto des Tages", titleEN: "Photo of the Day" },
-  { id: "fotofeed", icon: "📸", title: "Fotostream", titleEN: "Photo Stream" },
+  { id: "fotofeed", icon: "📸", title: "Camera Roll", titleEN: "Camera Roll" },
   { id: "video", icon: "▶", title: "Video des Tages", titleEN: "Video of the Day" },
   { id: "map", icon: "🗺", title: "Karte", titleEN: "Map" },
   { id: "bucket", icon: "🎯", title: "Bucket List", titleEN: "Bucket List" },
@@ -601,7 +601,7 @@ function FotoFeedApp({ data, onOpenPost }: { data: LabPost[]; onOpenPost: (id: s
 
   return (
     <div>
-      <div className="pixel text-[10px] mb-2 text-center" style={{ color: C.pink }}>📸 {L("FOTOSTREAM", "PHOTO STREAM")} 📸</div>
+      <div className="pixel text-[10px] mb-2 text-center" style={{ color: C.pink }}>📸 CAMERA ROLL 📸</div>
       {items === null ? (
         <div className="term text-lg text-center py-6" style={{ color: C.ochre }}>{L("lädt…", "loading…")} ⏳</div>
       ) : items.length === 0 ? (
