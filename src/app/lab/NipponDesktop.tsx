@@ -4,12 +4,13 @@ import Link from "next/link";
 import MiniMap from "@/components/MiniMap";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useLanguage } from "@/components/LanguageProvider";
 
 interface Photo { url?: string; caption?: string }
 interface LabPost {
   _id: string; title: string; slug?: string; date?: string; location?: string;
-  lat?: number; lng?: number; excerpt?: string; tags?: string[]; youtubeId?: string;
-  cover?: string; photos?: Photo[];
+  lat?: number; lng?: number; excerpt?: string; excerptEN?: string; tags?: string[]; youtubeId?: string;
+  cover?: string; coverImage?: string; photos?: Photo[];
 }
 
 const C = { bg: "#1a1a2e", bg2: "#16213e", cream: "#fdfaf6", pink: "#ff2a6d", cyan: "#3df0e0", ochre: "#e8a13a", ink: "#2a2a3a" };
@@ -43,7 +44,9 @@ const APPS = [
   { id: "guestbook", icon: "✉", title: "Gästebuch" },
   { id: "about", icon: "★", title: "Über mich" },
 ];
-const DESKTOP_ICONS = ["blog", "japanisch", "photo", "map", "bucket", "paint", "snake", "guestbook"];
+const DESKTOP_ICONS = ["blog", "japanisch", "photo", "video", "map", "bucket", "paint", "snake", "pong", "guestbook"];
+// Linkes Sidebar-Menü: nur die wichtigen Apps (Spiele nur über Icons + Start)
+const SIDEBAR_APPS = ["blog", "japanisch", "photo", "video", "map", "bucket", "newsletter", "guestbook", "about"];
 const W: Record<string, number> = { blog: 560, japanisch: 600, video: 560, map: 520, bucket: 480, paint: 520, snake: 340, pong: 360, newsletter: 440, about: 440, guestbook: 460, photo: 440 };
 function appWidth(id: string) { return id.startsWith("post:") ? 540 : (W[id] ?? 460); }
 function winMeta(id: string, data: LabPost[]) {
@@ -54,6 +57,7 @@ function winMeta(id: string, data: LabPost[]) {
 interface OpenWin { id: string; x: number; y: number; z: number; min?: boolean; max?: boolean }
 
 export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPost[]; onSwitchSimple?: () => void }) {
+  const { lang, toggle: toggleLang } = useLanguage();
   const data = posts;
   const [booted, setBooted] = useState(false);
   const [shutting, setShutting] = useState(false);
@@ -62,6 +66,8 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   const [visitors, setVisitors] = useState(1337);
   const [sound, setSound] = useState(true);
   const [startOpen, setStartOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [settings, setSettings] = useState<{ bannerText: string; systems: any[] } | null>(null);
   const z = useRef(10);
   const drag = useRef<{ id: string; sx: number; sy: number; wx: number; wy: number } | null>(null);
   const soundRef = useRef(true); soundRef.current = sound;
@@ -85,9 +91,12 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
 
   useEffect(() => {
     setVisitors(1337 + Math.floor((Date.now() / 86400000) % 500));
+    fetch("/api/nippon-settings").then(r => r.json()).then(setSettings).catch(() => {});
     function tick() { setClock(new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" })).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })); }
     tick(); const t = setInterval(tick, 20000); return () => clearInterval(t);
   }, []);
+
+  const sysColor: Record<string, string> = { green: "#33ff66", pink: C.pink, ochre: C.ochre, cyan: C.cyan };
 
   // Cat rAF follow
   useEffect(() => {
@@ -186,7 +195,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
 
       <div className="relative overflow-hidden py-1 shrink-0" style={{ background: C.pink, borderBottom: `3px solid ${C.ink}` }}>
         <div className="term text-lg whitespace-nowrap" style={{ color: C.bg, animation: "nm 22s linear infinite" }}>
-          ★ ようこそ！ NipponOS v0.3 ★ Doppelklick auf Desktop-Icons · Fenster ziehen/min/max ★ 日本大好き ★ START für alle Apps ★ jag die Katze nicht — sie folgt dir! 🐱 ★
+          {settings?.bannerText ?? "★ ようこそ！ NipponOS ★ Doppelklick auf Desktop-Icons · Fenster ziehen ★ 日本大好き ★"}
         </div>
       </div>
 
@@ -203,17 +212,21 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
           <div className="p-1" style={{ background: C.ochre, ...raised }}>
             <div className="p-2" style={{ background: C.bg }}>
               <div className="pixel text-[8px] mb-2 text-center" style={{ color: C.ochre }}>● APPS ●</div>
-              {APPS.map(a => (
+              {SIDEBAR_APPS.map(id => { const a = APPS.find(x => x.id === id)!; return (
                 <button key={a.id} onClick={() => openApp(a.id)} className="nb term text-lg w-full text-left px-2 py-0.5 mb-1" style={{ color: C.cream, ...sunken, background: "rgba(255,255,255,0.05)" }}>{a.icon} {a.title}</button>
-              ))}
+              ); })}
             </div>
           </div>
           <div className="p-2 term text-base" style={{ background: C.bg, ...sunken, color: C.cyan }}>
             <div className="pixel text-[8px] mb-1" style={{ color: C.cream }}>SYSTEMS</div>
-            <div>NipponOS ··· <span style={{ color: "#33ff66" }}>OK</span></div>
-            <div>Kamera ····· <span style={{ color: "#33ff66" }}>OK</span></div>
-            <div>Magen ······ <span style={{ color: C.ochre }}>VOLL</span></div>
-            <div>Heimweh ···· <span style={{ color: C.pink }}>12%</span></div>
+            {(settings?.systems ?? [
+              { label: "NipponOS", value: "OK", color: "green" },
+              { label: "Kamera", value: "OK", color: "green" },
+              { label: "Magen", value: "VOLL", color: "ochre" },
+              { label: "Heimweh", value: "12%", color: "pink" },
+            ]).map((s: { label: string; value: string; color?: string }, i: number) => (
+              <div key={i}>{s.label} {"·".repeat(Math.max(2, 11 - s.label.length))} <span style={{ color: sysColor[s.color ?? "green"] ?? "#33ff66" }}>{s.value}</span></div>
+            ))}
           </div>
           <div className="p-2 text-center" style={{ background: C.ink, ...raised }}>
             <div className="pixel text-[8px] mb-1" style={{ color: C.cream }}>VISITORS</div>
@@ -285,6 +298,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
           ); })}
         </div>
         <button onClick={() => setSound(s => !s)} className="term text-base px-2" style={{ color: sound ? C.cyan : "#888", ...sunken }} title="Sound an/aus">{sound ? "🔊" : "🔇"}</button>
+        <button onClick={() => { click(520); toggleLang(); }} className="term text-base px-2" style={{ color: C.ochre, ...sunken }} title={lang === "de" ? "Switch to English" : "Auf Deutsch wechseln"}>{lang === "de" ? "DE" : "EN"}</button>
         <span className="term text-lg px-2 hidden sm:inline" style={{ color: C.cyan }}>🇯🇵 {clock}</span>
       </div>
     </div>
@@ -327,12 +341,14 @@ function WindowFrame({ win, data, onOpenPost, onClose, onFocus, onMin, onMax, on
 
 // ─── Apps ─────────────────────────────────────────────────────────────────────
 function BlogApp({ data, onOpenPost, onBeep }: { data: LabPost[]; onOpenPost: (id: string) => void; onBeep: (f?: number) => void }) {
+  const { lang } = useLanguage();
+  const ex = (p: LabPost) => (lang === "en" ? p.excerptEN || p.excerpt : p.excerpt) ?? "";
   const [q, setQ] = useState("");
   const [tag, setTag] = useState<string | null>(null);
   const allTags = Array.from(new Set(data.flatMap(p => p.tags ?? [])));
   const filtered = data.filter(p => {
     if (tag && !(p.tags ?? []).includes(tag)) return false;
-    if (q && !`${p.title} ${p.excerpt} ${p.location}`.toLowerCase().includes(q.toLowerCase())) return false;
+    if (q && !`${p.title} ${ex(p)} ${p.location}`.toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   });
   return (
@@ -351,15 +367,15 @@ function BlogApp({ data, onOpenPost, onBeep }: { data: LabPost[]; onOpenPost: (i
       <div className="flex flex-col gap-2">
         {filtered.map(p => (
           <button key={p._id} onClick={() => onOpenPost(p._id)} className="nb p-2 text-left flex gap-2 items-center" style={{ ...sunken, background: "#fff" }}>
-            <div className="w-14 h-14 shrink-0 flex items-center justify-center" style={{ background: p.cover ? "transparent" : `linear-gradient(135deg,${C.pink},${C.cyan})` }}>
-              {p.cover
+            <div className="w-14 h-14 shrink-0 flex items-center justify-center" style={{ background: (p.coverImage ?? p.cover) ? "transparent" : `linear-gradient(135deg,${C.pink},${C.cyan})` }}>
+              {(p.coverImage ?? p.cover)
                 // eslint-disable-next-line @next/next/no-img-element
-                ? <img src={p.cover} alt="" className="w-full h-full object-cover" /> : <span className="text-2xl">📄</span>}
+                ? <img src={p.coverImage ?? p.cover} alt="" className="w-full h-full object-cover" /> : <span className="text-2xl">📄</span>}
             </div>
             <div className="min-w-0">
               <div className="term text-lg truncate" style={{ color: C.pink }}>{p.title}</div>
               <div className="term text-sm" style={{ color: C.ochre }}>{p.date ? new Date(p.date).toLocaleDateString("de-DE") : ""} · 📍 {p.location ?? "Japan"}</div>
-              <div className="text-xs truncate" style={{ color: C.ink }}>{p.excerpt}</div>
+              <div className="text-xs truncate" style={{ color: C.ink }}>{ex(p)}</div>
             </div>
           </button>
         ))}
@@ -370,31 +386,44 @@ function BlogApp({ data, onOpenPost, onBeep }: { data: LabPost[]; onOpenPost: (i
 }
 
 function PostDetailApp({ post }: { post?: LabPost }) {
-  if (!post) return <div className="term text-xl">Post nicht gefunden.</div>;
+  const { lang } = useLanguage();
+  const [zoom, setZoom] = useState<Photo | null>(null);
+  if (!post) return <div className="term text-xl">{lang === "en" ? "Post not found." : "Post nicht gefunden."}</div>;
   const photos = (post.photos ?? []).filter(p => p.url);
+  const text = (lang === "en" ? post.excerptEN || post.excerpt : post.excerpt) ?? "";
   return (
     <div>
       <div className="term text-2xl mb-1" style={{ color: C.pink }}>{post.title}</div>
-      <div className="term text-base mb-3" style={{ color: C.ochre }}>{post.date ? new Date(post.date).toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" }) : ""} · 📍 {post.location ?? "Japan"}</div>
+      <div className="term text-base mb-3" style={{ color: C.ochre }}>{post.date ? new Date(post.date).toLocaleDateString(lang === "en" ? "en-US" : "de-DE", { day: "numeric", month: "long", year: "numeric" }) : ""} · 📍 {post.location ?? "Japan"}</div>
       {/* Foto */}
       <div className="p-1 mb-3" style={{ background: C.bg, ...sunken }}>
         {photos[0]?.url
           // eslint-disable-next-line @next/next/no-img-element
-          ? <img src={photos[0].url} alt="" className="w-full max-h-64 object-cover" />
+          ? <img src={photos[0].url} alt="" onClick={() => setZoom(photos[0])} className="w-full max-h-64 object-cover cursor-pointer" title={lang === "en" ? "Click to enlarge" : "Klick zum Vergrößern"} />
           : <div className="w-full h-44 flex items-center justify-center text-5xl" style={{ background: `linear-gradient(135deg,${C.pink},${C.cyan})` }}>📷</div>}
       </div>
-      <p className="text-sm leading-relaxed mb-3">{post.excerpt}</p>
+      <p className="text-sm leading-relaxed mb-3">{text}</p>
       {photos.length > 1 && (
         <div className="grid grid-cols-3 gap-1 mb-3">
           {photos.slice(1).map((p, i) => (
             // eslint-disable-next-line @next/next/no-img-element
-            <img key={i} src={p.url} alt="" className="w-full h-16 object-cover" style={{ ...sunken }} />
+            <img key={i} src={p.url} alt="" onClick={() => setZoom(p)} className="w-full h-16 object-cover cursor-pointer" style={{ ...sunken }} title={lang === "en" ? "Click to enlarge" : "Klick zum Vergrößern"} />
           ))}
         </div>
       )}
       {post.lat && post.lng && (
         <div className="p-1" style={{ background: C.bg, ...sunken }}>
           <MiniMap markers={[{ lat: post.lat, lng: post.lng, label: post.location ?? post.title }]} height="180px" zoom={11} />
+        </div>
+      )}
+      {zoom && (
+        <div onClick={() => setZoom(null)} className="fixed inset-0 z-[200] flex items-center justify-center p-6 cursor-pointer" style={{ background: "rgba(10,10,20,0.85)" }}>
+          <div className="p-2 max-w-3xl" style={{ background: C.cream, ...raised }} onClick={e => e.stopPropagation()}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={zoom.url} alt="" className="w-full max-h-[75vh] object-contain" />
+            {zoom.caption && <div className="term text-base mt-1 text-center" style={{ color: C.ink }}>{zoom.caption}</div>}
+            <button onClick={() => setZoom(null)} className="term text-base mt-2 w-full px-2 py-1" style={{ background: C.pink, color: C.cream, ...raised }}>✕ {lang === "en" ? "Close" : "Schließen"}</button>
+          </div>
         </div>
       )}
     </div>

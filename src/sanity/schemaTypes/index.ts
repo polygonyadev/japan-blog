@@ -13,7 +13,8 @@ import { notizType } from './notiz'
 import { communityType } from './community'
 import { newsletterType } from './newsletter'
 import { guestbookType } from './guestbook'
+import { nipponSettingsType } from './nipponSettings'
 
 export const schema: { types: SchemaTypeDefinition[] } = {
-  types: [postType, lessonType, bucketItemType, siteSettingsType, photoType, vokabelType, kanjiType, grammatikType, partikelType, satzType, notizType, communityType, newsletterType, guestbookType],
+  types: [postType, lessonType, bucketItemType, siteSettingsType, photoType, vokabelType, kanjiType, grammatikType, partikelType, satzType, notizType, communityType, newsletterType, guestbookType, nipponSettingsType],
 }
