@@ -14,7 +14,10 @@ const writeClient = createClient({
 export async function GET() {
   try {
     const entries = await client.fetch(
-      `*[_type == "guestbook" && approved == true] | order(createdAt desc)[0...50] { _id, name, message, createdAt }`,
+      `*[_type == "guestbook" && approved == true] | order(createdAt desc)[0...50] {
+        _id, name, message, createdAt,
+        "antworten": antworten[approved == true]{ _key, name, message, createdAt }
+      }`,
       {},
       { next: { revalidate: 20 } }
     )
