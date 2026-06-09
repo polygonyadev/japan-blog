@@ -9,16 +9,43 @@ const DEFAULTS = {
     { label: 'Magen', value: 'VOLL', color: 'ochre' },
     { label: 'Heimweh', value: '12%', color: 'pink' },
   ],
+  photoOfDay: null as null | { url: string; caption?: string },
+  videoOfDay: null as null | { id: string; title?: string },
+}
+
+// Extrahiert die YouTube-Video-ID aus Link oder roher ID
+function youtubeId(input?: string): string | null {
+  if (!input) return null
+  const s = input.trim()
+  // bereits eine reine ID?
+  if (/^[a-zA-Z0-9_-]{11}$/.test(s)) return s
+  const m = s.match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([a-zA-Z0-9_-]{11})/)
+  return m ? m[1] : null
 }
 
 export async function GET() {
   try {
     const s = await client.fetch(
-      `*[_type == "nipponSettings"][0]{ bannerText, systems }`,
+      `*[_type == "nipponSettings"][0]{
+        bannerText,
+        systems,
+        "photoUrl": photoOfDay.asset->url,
+        "photoCaption": photoOfDay.caption,
+        videoOfDay,
+        videoOfDayTitle
+      }`,
       {},
       { next: { revalidate: 30 } }
     )
-    if (s) return NextResponse.json({ bannerText: s.bannerText || DEFAULTS.bannerText, systems: (s.systems?.length ? s.systems : DEFAULTS.systems) })
+    if (s) {
+      const vid = youtubeId(s.videoOfDay)
+      return NextResponse.json({
+        bannerText: s.bannerText || DEFAULTS.bannerText,
+        systems: s.systems?.length ? s.systems : DEFAULTS.systems,
+        photoOfDay: s.photoUrl ? { url: s.photoUrl, caption: s.photoCaption || undefined } : null,
+        videoOfDay: vid ? { id: vid, title: s.videoOfDayTitle || undefined } : null,
+      })
+    }
   } catch {}
   return NextResponse.json(DEFAULTS)
 }

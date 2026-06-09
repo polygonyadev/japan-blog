@@ -13,6 +13,27 @@ export const nipponSettingsType = defineType({
       initialValue: '★ ようこそ！ Willkommen in meinem NipponOS ★ 日本大好き ★',
     }),
     defineField({
+      name: 'photoOfDay',
+      title: 'Foto des Tages',
+      type: 'image',
+      options: { hotspot: true },
+      description: 'Das Bild, das in der "Foto des Tages"-App angezeigt wird. Leer lassen = automatisch ein zufälliges Foto aus deinen Posts.',
+      fields: [
+        defineField({ name: 'caption', title: 'Bildunterschrift', type: 'string' }),
+      ],
+    }),
+    defineField({
+      name: 'videoOfDay',
+      title: 'Video des Tages (YouTube-Link)',
+      type: 'url',
+      description: 'YouTube-Link oder Video-ID für die "Video des Tages"-App. z.B. https://youtu.be/abc123 oder https://www.youtube.com/watch?v=abc123',
+    }),
+    defineField({
+      name: 'videoOfDayTitle',
+      title: 'Titel des Videos (optional)',
+      type: 'string',
+    }),
+    defineField({
       name: 'systems',
       title: 'SYSTEMS-Anzeige (Sidebar)',
       type: 'array',

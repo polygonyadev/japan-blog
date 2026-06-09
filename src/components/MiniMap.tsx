@@ -8,6 +8,7 @@ interface Marker {
   lng: number;
   label: string;
   slug?: string;
+  id?: string;
 }
 
 interface MiniMapProps {
@@ -15,14 +16,19 @@ interface MiniMapProps {
   center?: [number, number];
   zoom?: number;
   height?: string;
+  // Wenn gesetzt: Klick auf einen Pin ruft dies auf (z.B. Post-Fenster im NipponOS öffnen)
+  // statt zur /posts/<slug>-Seite zu navigieren.
+  onMarkerClick?: (id: string) => void;
 }
 
-export default function MiniMap({ markers, center = [36.5, 136], zoom = 5, height = "300px" }: MiniMapProps) {
+export default function MiniMap({ markers, center = [36.5, 136], zoom = 5, height = "300px", onMarkerClick }: MiniMapProps) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("leaflet").Map | null>(null);
   const tileRef = useRef<import("leaflet").TileLayer | null>(null);
   const { theme } = useTheme();
   const router = useRouter();
+  const clickRef = useRef(onMarkerClick);
+  clickRef.current = onMarkerClick;
 
   useEffect(() => {
     if (!tileRef.current || !mapRef.current) return;
@@ -65,21 +71,26 @@ export default function MiniMap({ markers, center = [36.5, 136], zoom = 5, heigh
       });
 
       markers.forEach(m => {
+        const clickable = !!(m.slug || (m.id && clickRef.current));
         const popup = L.popup({ closeButton: false }).setContent(
-          `<div style="padding:6px 10px;font-size:13px;white-space:nowrap;cursor:${m.slug ? "pointer" : "default"}">
+          `<div style="padding:6px 10px;font-size:13px;white-space:nowrap;cursor:${clickable ? "pointer" : "default"}">
             📝 ${m.label}
-            ${m.slug ? `<div style="font-size:11px;color:var(--accent-cyan);margin-top:3px">→ Post öffnen</div>` : ""}
+            ${clickable ? `<div style="font-size:11px;color:var(--accent-cyan);margin-top:3px">→ Post öffnen</div>` : ""}
           </div>`
         );
         const marker = L.marker([m.lat, m.lng], { icon }).addTo(map).bindPopup(popup);
-        if (m.slug) {
+        if (clickable) {
           const slug = m.slug;
+          const id = m.id;
           marker.on("popupopen", () => {
             setTimeout(() => {
               const el = marker.getPopup()?.getElement();
               if (el) {
                 el.style.cursor = "pointer";
-                el.addEventListener("click", () => router.push(`/posts/${slug}`));
+                el.addEventListener("click", () => {
+                  if (clickRef.current && id) clickRef.current(id);
+                  else if (slug) router.push(`/posts/${slug}`);
+                });
               }
             }, 50);
           });
