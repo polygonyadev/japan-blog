@@ -11,6 +11,7 @@ const DEFAULTS = {
   ],
   photoOfDay: null as null | { url: string; caption?: string },
   videoOfDay: null as null | { id: string; title?: string },
+  departureDate: null as null | string,
 }
 
 // Extrahiert die YouTube-Video-ID aus Link oder roher ID
@@ -25,25 +26,31 @@ function youtubeId(input?: string): string | null {
 
 export async function GET() {
   try {
-    const s = await client.fetch(
-      `*[_type == "nipponSettings"][0]{
-        bannerText,
-        systems,
-        "photoUrl": photoOfDay.asset->url,
-        "photoCaption": photoOfDay.caption,
-        videoOfDay,
-        videoOfDayTitle
+    const res = await client.fetch(
+      `{
+        "nippon": *[_type == "nipponSettings"][0]{
+          bannerText,
+          systems,
+          "photoUrl": photoOfDay.asset->url,
+          "photoCaption": photoOfDay.caption,
+          videoOfDay,
+          videoOfDayTitle
+        },
+        "departureDate": *[_type == "siteSettings"][0].departureDate
       }`,
       {},
       { next: { revalidate: 30 } }
     )
-    if (s) {
-      const vid = youtubeId(s.videoOfDay)
+    const s = res?.nippon
+    const departureDate = res?.departureDate ?? null
+    if (s || departureDate) {
+      const vid = youtubeId(s?.videoOfDay)
       return NextResponse.json({
-        bannerText: s.bannerText || DEFAULTS.bannerText,
-        systems: s.systems?.length ? s.systems : DEFAULTS.systems,
-        photoOfDay: s.photoUrl ? { url: s.photoUrl, caption: s.photoCaption || undefined } : null,
+        bannerText: s?.bannerText || DEFAULTS.bannerText,
+        systems: s?.systems?.length ? s.systems : DEFAULTS.systems,
+        photoOfDay: s?.photoUrl ? { url: s.photoUrl, caption: s.photoCaption || undefined } : null,
         videoOfDay: vid ? { id: vid, title: s.videoOfDayTitle || undefined } : null,
+        departureDate,
       })
     }
   } catch {}
