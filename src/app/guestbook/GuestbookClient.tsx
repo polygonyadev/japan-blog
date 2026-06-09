@@ -1,10 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
-import { BookOpen, Send, Clock } from "lucide-react";
+import { BookOpen, Send, Clock, Reply } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import NewsletterSignup from "@/components/NewsletterSignup";
 
-interface Entry { _id: string; name: string; message: string; createdAt?: string }
+interface ReplyT { _key?: string; name: string; message: string; createdAt?: string }
+interface Entry { _id: string; name: string; message: string; createdAt?: string; antworten?: ReplyT[] }
 
 function timeAgo(iso?: string) {
   if (!iso) return "";
@@ -17,15 +18,32 @@ function timeAgo(iso?: string) {
 }
 
 export default function GuestbookClient() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  // Antworten
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [rName, setRName] = useState("");
+  const [rMessage, setRMessage] = useState("");
+  const [rSending, setRSending] = useState(false);
+  const [rSentId, setRSentId] = useState<string | null>(null);
 
   useEffect(() => { fetch("/api/guestbook").then(r => r.json()).then(d => setEntries(Array.isArray(d) ? d : [])).catch(() => {}); }, []);
+
+  async function submitReply(e: React.FormEvent, entryId: string) {
+    e.preventDefault();
+    if (!rName.trim() || !rMessage.trim()) return;
+    setRSending(true);
+    try {
+      const res = await fetch("/api/guestbook/reply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ entryId, name: rName, message: rMessage }) });
+      if (res.ok) { setRSentId(entryId); setReplyTo(null); setRName(""); setRMessage(""); }
+    } catch {}
+    setRSending(false);
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -89,6 +107,48 @@ export default function GuestbookClient() {
               {e.createdAt && <span className="flex items-center gap-1 text-xs ml-auto" style={{ color: "var(--text-secondary)" }}><Clock size={10} /> {timeAgo(e.createdAt)}</span>}
             </div>
             <p className="text-sm leading-relaxed">{e.message}</p>
+
+            {/* Antworten */}
+            {(e.antworten ?? []).length > 0 && (
+              <div className="mt-3 ml-4 pl-3 flex flex-col gap-2" style={{ borderLeft: "2px solid var(--border)" }}>
+                {(e.antworten ?? []).map((a, j) => (
+                  <div key={a._key ?? j}>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="font-semibold text-xs" style={{ color: "var(--accent-cyan)" }}>↳ {a.name}</span>
+                      {a.createdAt && <span className="flex items-center gap-1 text-[10px]" style={{ color: "var(--text-secondary)" }}><Clock size={9} /> {timeAgo(a.createdAt)}</span>}
+                    </div>
+                    <p className="text-sm leading-relaxed">{a.message}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Antwort-Aktion */}
+            <div className="mt-3">
+              {rSentId === e._id ? (
+                <p className="text-xs" style={{ color: "var(--accent-cyan)" }}>✅ {t.replySent}</p>
+              ) : replyTo === e._id ? (
+                <form onSubmit={(ev) => submitReply(ev, e._id)} className="flex flex-col gap-2">
+                  <input value={rName} onChange={ev => setRName(ev.target.value)} maxLength={40} placeholder={t.yourName}
+                    className="w-full px-3 py-2 rounded-xl text-sm outline-none" style={{ background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
+                  <textarea value={rMessage} onChange={ev => setRMessage(ev.target.value)} maxLength={280} rows={2} placeholder={t.yourPost}
+                    className="w-full px-3 py-2 rounded-xl text-sm outline-none resize-none" style={{ background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
+                  <div className="flex gap-2 self-end">
+                    <button type="button" onClick={() => setReplyTo(null)} className="text-sm px-3 py-1.5" style={{ color: "var(--text-secondary)" }}>{lang === "en" ? "Cancel" : "Abbrechen"}</button>
+                    <button type="submit" disabled={rSending || !rName.trim() || !rMessage.trim()}
+                      className="flex items-center gap-2 px-4 py-1.5 rounded-xl font-medium text-sm transition-all hover:scale-105 disabled:opacity-50"
+                      style={{ background: "var(--accent-cyan)", color: "#0d1117" }}>
+                      <Send size={13} /> {rSending ? t.sending : t.send}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <button onClick={() => { setReplyTo(e._id); setRName(""); setRMessage(""); }}
+                  className="flex items-center gap-1.5 text-xs hover:underline" style={{ color: "var(--accent-cyan)" }}>
+                  <Reply size={13} /> {t.reply}
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>

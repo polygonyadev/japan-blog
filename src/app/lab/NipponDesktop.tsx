@@ -31,6 +31,7 @@ function beep(freq = 660) {
 }
 
 type Lng = "de" | "en";
+const KOFI_URL = "https://ko-fi.com/davidae";
 const APPS = [
   { id: "blog", icon: "✎", title: "Blog.exe", titleEN: "Blog.exe" },
   { id: "japanisch", icon: "🎌", title: "Japanisch", titleEN: "Japanese" },
@@ -80,6 +81,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   const [sound, setSound] = useState(true);
   const [startOpen, setStartOpen] = useState(false);
   const [progOpen, setProgOpen] = useState(false);
+  const [kofiOpen, setKofiOpen] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [settings, setSettings] = useState<NipponSettings | null>(null);
   const z = useRef(10);
@@ -96,6 +98,15 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   function boot() {
     setBooted(true); z.current += 3;
     setWins([{ id: "blog", x: 150, y: 28, z: 11, max: isMobile() }, ...(isMobile() ? [] : [{ id: "photo", x: 530, y: 90, z: 12 }])]);
+    // Ko-fi "Banner-Ad" einmal pro Session nach kurzer Zeit aufploppen lassen
+    let shown = false;
+    try { shown = sessionStorage.getItem("nippon-kofi-seen") === "1"; } catch {}
+    if (!shown) {
+      setTimeout(() => {
+        setKofiOpen(true);
+        try { sessionStorage.setItem("nippon-kofi-seen", "1"); } catch {}
+      }, 25000);
+    }
   }
   function shutdown() {
     click(330); setStartOpen(false); setShutting(true);
@@ -318,6 +329,27 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
         </>
       )}
 
+      {/* Ko-fi "Banner-Ad" Popup */}
+      {kofiOpen && (
+        <div className="absolute bottom-12 right-2 z-40 p-1 w-64" style={{ background: C.ochre, ...raised, animation: "wo .25s ease-out" }}>
+          <div className="flex items-center justify-between px-2 py-0.5" style={{ background: C.ink }}>
+            <span className="term text-base" style={{ color: C.cream }}>☕ {L("Werbung?!", "Sponsored?!")}</span>
+            <button onClick={() => { click(440); setKofiOpen(false); }} className="term text-xs w-5 h-5 flex items-center justify-center" style={{ background: C.cream, color: C.ink }} title={L("Schließen", "Close")}>✕</button>
+          </div>
+          <div className="p-3 text-center" style={{ background: C.cream, color: C.ink }}>
+            <div className="text-4xl mb-1" style={{ animation: "nf 2s ease-in-out infinite" }}>☕</div>
+            <div className="pixel text-[9px] mb-2" style={{ color: C.pink }}>{L("MAGST DU NIPPONOS?", "ENJOYING NIPPONOS?")}</div>
+            <p className="term text-lg leading-tight mb-3" style={{ color: C.ink }}>
+              {L("Unterstütze mein Japan-Abenteuer und spendier mir einen Kaffee! ♥", "Support my Japan adventure and buy me a coffee! ♥")}
+            </p>
+            <a href={KOFI_URL} target="_blank" rel="noopener noreferrer" onClick={() => click(880)}
+              className="nb inline-block pixel text-[9px] px-4 py-2" style={{ background: C.pink, color: C.cream, ...raised, textDecoration: "none" }}>
+              ★ {L("AUF KO-FI", "ON KO-FI")} ★
+            </a>
+          </div>
+        </div>
+      )}
+
       <div className="shrink-0 h-10 flex items-center gap-2 px-2 relative z-30" style={{ background: C.bg2, borderTop: `3px solid ${C.ink}` }}>
         <button onClick={() => { click(); setStartOpen(s => !s); setProgOpen(false); }} className="pixel text-[9px] px-2 py-1" style={{ background: startOpen ? C.cyan : C.pink, color: C.cream, ...raised }}>🗾 START</button>
         <div className="flex gap-1 flex-1 overflow-x-auto">
@@ -327,6 +359,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
         </div>
         <button onClick={() => setSound(s => !s)} className="term text-base px-2" style={{ color: sound ? C.cyan : "#888", ...sunken }} title="Sound an/aus">{sound ? "🔊" : "🔇"}</button>
         <button onClick={() => { click(520); toggleLang(); }} className="term text-base px-2" style={{ color: C.ochre, ...sunken }} title={lang === "de" ? "Switch to English" : "Auf Deutsch wechseln"}>{lang === "de" ? "DE" : "EN"}</button>
+        <button onClick={() => { click(740); setKofiOpen(o => !o); }} className="term text-base px-2" style={{ color: kofiOpen ? C.cyan : C.pink, ...(kofiOpen ? raised : sunken) }} title={L("Support me ☕", "Support me ☕")}>☕</button>
         <span className="term text-lg px-2 hidden sm:inline" style={{ color: C.cyan }}>🇯🇵 {clock}</span>
       </div>
     </div>
@@ -526,10 +559,17 @@ function AboutApp() {
   );
 }
 function GuestbookApp({ onBeep }: { onBeep: (f?: number) => void }) {
-  interface Entry { _id?: string; name: string; message: string }
+  interface Reply { _key?: string; name: string; message: string }
+  interface Entry { _id?: string; name: string; message: string; antworten?: Reply[] }
+  const { lang } = useLanguage();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [name, setName] = useState(""); const [msg, setMsg] = useState("");
   const [sent, setSent] = useState(false); const [sending, setSending] = useState(false);
+  // Antwort-Status pro Eintrag
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [rName, setRName] = useState(""); const [rMsg, setRMsg] = useState("");
+  const [rSending, setRSending] = useState(false); const [rSentId, setRSentId] = useState<string | null>(null);
 
   useEffect(() => { fetch("/api/guestbook").then(r => r.json()).then(d => setEntries(Array.isArray(d) ? d : [])).catch(() => {}); }, []);
 
@@ -542,26 +582,60 @@ function GuestbookApp({ onBeep }: { onBeep: (f?: number) => void }) {
     setSending(false);
   }
 
+  async function submitReply(e: React.FormEvent, entryId?: string) {
+    e.preventDefault(); if (!entryId || !rName.trim() || !rMsg.trim()) return; onBeep(880); setRSending(true);
+    try {
+      const res = await fetch("/api/guestbook/reply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ entryId, name: rName, message: rMsg }) });
+      if (res.ok) { setRSentId(entryId); setReplyTo(null); setRName(""); setRMsg(""); }
+    } catch {}
+    setRSending(false);
+  }
+
   return (
     <div>
-      <div className="pixel text-[10px] mb-3 text-center" style={{ color: C.pink }}>✉ GÄSTEBUCH ✉</div>
+      <div className="pixel text-[10px] mb-3 text-center" style={{ color: C.pink }}>{L("✉ GÄSTEBUCH ✉", "✉ GUESTBOOK ✉")}</div>
       {sent ? (
         <div className="p-3 term text-xl text-center mb-3" style={{ ...sunken, background: "#fff", color: C.ink }}>
-          ✅ Danke! Dein Eintrag wird kurz geprüft und erscheint dann hier. ♥
-          <button onClick={() => setSent(false)} className="block nb term text-lg mt-2 nl mx-auto">noch einen schreiben</button>
+          {L("✅ Danke! Dein Eintrag wird kurz geprüft und erscheint dann hier. ♥", "✅ Thanks! Your entry will be checked and shown here shortly. ♥")}
+          <button onClick={() => setSent(false)} className="block nb term text-lg mt-2 nl mx-auto">{L("noch einen schreiben", "write another")}</button>
         </div>
       ) : (
         <form onSubmit={submit} className="flex flex-col gap-2 mb-3">
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="Dein Name" className="term text-lg px-2 py-1 outline-none" style={{ ...sunken, background: "#fff", color: C.ink }} />
-          <textarea value={msg} onChange={e => setMsg(e.target.value)} placeholder="Deine Nachricht…" rows={2} className="term text-lg px-2 py-1 resize-none outline-none" style={{ ...sunken, background: "#fff", color: C.ink }} />
-          <button type="submit" disabled={sending} className="nb pixel text-[9px] px-3 py-2 self-end disabled:opacity-50" style={{ background: C.pink, color: C.cream, ...raised }}>{sending ? "…" : "★ EINTRAGEN ★"}</button>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder={L("Dein Name", "Your name")} className="term text-lg px-2 py-1 outline-none" style={{ ...sunken, background: "#fff", color: C.ink }} />
+          <textarea value={msg} onChange={e => setMsg(e.target.value)} placeholder={L("Deine Nachricht…", "Your message…")} rows={2} className="term text-lg px-2 py-1 resize-none outline-none" style={{ ...sunken, background: "#fff", color: C.ink }} />
+          <button type="submit" disabled={sending} className="nb pixel text-[9px] px-3 py-2 self-end disabled:opacity-50" style={{ background: C.pink, color: C.cream, ...raised }}>{sending ? "…" : L("★ EINTRAGEN ★", "★ POST ★")}</button>
         </form>
       )}
       <div className="flex flex-col gap-2">
         {entries.length === 0
-          ? <div className="term text-lg text-center" style={{ color: C.ochre }}>Sei der Erste! ✍</div>
+          ? <div className="term text-lg text-center" style={{ color: C.ochre }}>{L("Sei der Erste! ✍", "Be the first! ✍")}</div>
           : entries.map((e, i) => (
-            <div key={e._id ?? i} className="p-2 term text-lg" style={{ ...sunken, background: "#fff" }}><span style={{ color: C.pink }}>{e.name}:</span> <span style={{ color: C.ink }}>{e.message}</span></div>
+            <div key={e._id ?? i} className="p-2 term text-lg" style={{ ...sunken, background: "#fff" }}>
+              <div><span style={{ color: C.pink }}>{e.name}:</span> <span style={{ color: C.ink }}>{e.message}</span></div>
+              {/* Antworten */}
+              {(e.antworten ?? []).length > 0 && (
+                <div className="mt-1.5 ml-3 pl-2 flex flex-col gap-1" style={{ borderLeft: `3px solid ${C.cyan}` }}>
+                  {(e.antworten ?? []).map((a, j) => (
+                    <div key={a._key ?? j} className="term text-base"><span style={{ color: C.cyan }}>↳ {a.name}:</span> <span style={{ color: C.ink }}>{a.message}</span></div>
+                  ))}
+                </div>
+              )}
+              {/* Antwort-Aktion */}
+              {rSentId === e._id ? (
+                <div className="term text-base mt-1" style={{ color: C.ochre }}>{L("✅ Antwort wird geprüft ♥", "✅ Reply is being reviewed ♥")}</div>
+              ) : replyTo === e._id ? (
+                <form onSubmit={(ev) => submitReply(ev, e._id)} className="flex flex-col gap-1 mt-1.5">
+                  <input value={rName} onChange={ev => setRName(ev.target.value)} placeholder={L("Dein Name", "Your name")} className="term text-base px-2 py-0.5 outline-none" style={{ ...sunken, background: "#fff", color: C.ink }} />
+                  <textarea value={rMsg} onChange={ev => setRMsg(ev.target.value)} placeholder={L("Deine Antwort…", "Your reply…")} rows={2} className="term text-base px-2 py-0.5 resize-none outline-none" style={{ ...sunken, background: "#fff", color: C.ink }} />
+                  <div className="flex gap-1 self-end">
+                    <button type="button" onClick={() => { onBeep(440); setReplyTo(null); }} className="nb term text-base px-2" style={{ ...sunken, background: "#fff", color: C.ink }}>{L("abbrechen", "cancel")}</button>
+                    <button type="submit" disabled={rSending} className="nb term text-base px-3 disabled:opacity-50" style={{ background: C.cyan, color: C.ink, ...raised }}>{rSending ? "…" : L("↳ antworten", "↳ reply")}</button>
+                  </div>
+                </form>
+              ) : (
+                <button onClick={() => { onBeep(); setReplyTo(e._id ?? null); setRName(""); setRMsg(""); }} className="nb term text-base mt-1" style={{ color: C.cyan }}>↳ {L("antworten", "reply")}</button>
+              )}
+            </div>
           ))}
       </div>
     </div>
@@ -692,8 +766,10 @@ function JapanischApp({ onBeep }: { onBeep: (f?: number) => void }) {
   const [data, setData] = useState<any>(null);
   const [tab, setTab] = useState("notizen");
   const [q, setQ] = useState("");
+  const [jlpt, setJlpt] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   useEffect(() => { fetch("/api/japanisch").then(r => r.json()).then(setData).catch(() => {}); }, []);
+  const JLPT_LEVELS = ["N5", "N4", "N3", "N2", "N1"];
 
   const TABS: [string, string][] = [
     ["notizen", "📚 Lektionen"], ["lessons", "✨ Nützliches"], ["grammatik", "🔤 Grammatik"],
@@ -706,18 +782,33 @@ function JapanischApp({ onBeep }: { onBeep: (f?: number) => void }) {
 
   if (!data) return <div className="term text-xl text-center py-6" style={{ color: C.ochre }}>lädt aus Studio… ⏳</div>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const items: any[] = (data[tab] ?? []).filter((it: any) =>
-    !q || `${head(it)} ${sub(it)} ${it.kana ?? ""}`.toLowerCase().includes(q.toLowerCase()));
+  const tabItems: any[] = data[tab] ?? [];
+  // JLPT-Filter nur zeigen, wenn der aktuelle Tab überhaupt JLPT-Einträge hat
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hasJlpt = tabItems.some((it: any) => it.jlpt);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const items: any[] = tabItems.filter((it: any) =>
+    (!q || `${head(it)} ${sub(it)} ${it.kana ?? ""}`.toLowerCase().includes(q.toLowerCase()))
+    && (!jlpt || it.jlpt === jlpt));
 
   return (
     <div>
       <div className="pixel text-[10px] mb-2 text-center" style={{ color: C.pink }}>🎌 JAPANISCH 🎌</div>
       <div className="flex flex-wrap gap-1 mb-2">
         {TABS.map(([id, label]) => (
-          <button key={id} onClick={() => { onBeep(); setTab(id); setOpen(null); }} className="term text-base px-2" style={{ ...(tab === id ? raised : sunken), background: tab === id ? C.pink : "#fff", color: tab === id ? C.cream : C.ink }}>{label}</button>
+          <button key={id} onClick={() => { onBeep(); setTab(id); setOpen(null); setJlpt(null); }} className="term text-base px-2" style={{ ...(tab === id ? raised : sunken), background: tab === id ? C.pink : "#fff", color: tab === id ? C.cream : C.ink }}>{label}</button>
         ))}
       </div>
       <input value={q} onChange={e => setQ(e.target.value)} placeholder="🔍 suchen…" className="term text-lg w-full px-2 py-1 mb-2 outline-none" style={{ ...sunken, background: "#fff", color: C.ink }} />
+      {hasJlpt && (
+        <div className="flex flex-wrap items-center gap-1 mb-2">
+          <span className="term text-base mr-1" style={{ color: C.ochre }}>JLPT:</span>
+          <button onClick={() => { onBeep(); setJlpt(null); }} className="term text-base px-2" style={{ ...(jlpt === null ? raised : sunken), background: jlpt === null ? C.cyan : "#fff", color: C.ink }}>Alle</button>
+          {JLPT_LEVELS.map(lvl => (
+            <button key={lvl} onClick={() => { onBeep(); setJlpt(jlpt === lvl ? null : lvl); }} className="term text-base px-2" style={{ ...(jlpt === lvl ? raised : sunken), background: jlpt === lvl ? C.ochre : "#fff", color: jlpt === lvl ? "#fff" : C.ink }}>{lvl}</button>
+          ))}
+        </div>
+      )}
       <div className="term text-sm mb-2" style={{ color: C.ochre }}>{items.length} Einträge</div>
       <div className="flex flex-col gap-1.5">
         {items.length === 0 && <div className="term text-lg text-center py-3" style={{ color: C.ochre }}>noch nichts hier — leg im Studio Einträge an ✍</div>}

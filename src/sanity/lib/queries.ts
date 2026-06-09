@@ -166,10 +166,3 @@ export const allNotizenQuery = groq`
     _id, titel, typ, jlpt, tags, inhalt
   }
 `
-
-export const allCommunityQuery = groq`
-  *[_type == "community" && approved == true] | order(_createdAt desc) {
-    _id, name, message, kategorie, createdAt,
-    "antworten": antworten[approved == true]{ name, message, createdAt }
-  }
-`
