@@ -13,6 +13,11 @@ export default function Navbar() {
   const { lang, toggle: toggleLang, t } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  function switchToOS() {
+    try { localStorage.setItem("nippon-exp", "os"); } catch {}
+    window.location.href = "/";
+  }
+
   const links = [
     { href: "/",            label: t.home,       icon: Home },
     { href: "/posts",       label: t.posts,      icon: BookOpen },
@@ -44,6 +49,13 @@ export default function Navbar() {
               </Link>
             );
           })}
+
+          <button onClick={switchToOS}
+            className="ml-1 px-2 py-1 rounded-lg text-sm transition-all hover:scale-110"
+            style={{ color: "var(--text-secondary)", border: "1px solid var(--border)" }}
+            title="NipponOS Modus">
+            🗾
+          </button>
 
           <button onClick={toggleLang}
             className="ml-1 px-2 py-1 rounded-lg text-xs font-bold transition-all hover:scale-110"

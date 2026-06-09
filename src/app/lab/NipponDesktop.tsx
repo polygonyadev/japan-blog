@@ -53,7 +53,7 @@ function winMeta(id: string, data: LabPost[]) {
 
 interface OpenWin { id: string; x: number; y: number; z: number; min?: boolean; max?: boolean }
 
-export default function NipponDesktop({ posts }: { posts: LabPost[] }) {
+export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPost[]; onSwitchSimple?: () => void }) {
   const data = posts.length >= 2 ? posts : [...posts, ...DEMO];
   const [booted, setBooted] = useState(false);
   const [shutting, setShutting] = useState(false);
@@ -259,8 +259,11 @@ export default function NipponDesktop({ posts }: { posts: LabPost[] }) {
                 <button key={a.id} onClick={() => openApp(a.id)} className="nb term text-lg w-full text-left px-2 py-1 mb-0.5" style={{ color: C.cream, ...sunken, background: "rgba(255,255,255,0.05)" }}>{a.icon} {a.title}</button>
               ))}
               <div className="mt-1 pt-1" style={{ borderTop: `1px solid ${C.ink}` }}>
-                <button onClick={shutdown} className="nb term text-lg w-full text-left px-2 py-1" style={{ color: C.ochre, ...sunken }}>⏻ Herunterfahren</button>
-                <Link href="/" className="block term text-base w-full text-left px-2 py-1 mt-0.5 nl">🌐 zur echten Website</Link>
+                {onSwitchSimple && (
+                  <button onClick={() => { click(); onSwitchSimple(); }} className="nb term text-lg w-full text-left px-2 py-1" style={{ color: C.cyan, ...sunken }}>📄 Einfache Ansicht</button>
+                )}
+                <button onClick={shutdown} className="nb term text-lg w-full text-left px-2 py-1 mt-0.5" style={{ color: C.ochre, ...sunken }}>⏻ Herunterfahren</button>
+                {!onSwitchSimple && <Link href="/" className="block term text-base w-full text-left px-2 py-1 mt-0.5 nl">🌐 zur echten Website</Link>}
               </div>
             </div>
           </div>
@@ -439,29 +442,44 @@ function AboutApp() {
   );
 }
 function GuestbookApp({ onBeep }: { onBeep: (f?: number) => void }) {
-  interface Entry { name: string; msg: string; ts: number }
-  const DEMO_E: Entry[] = [{ name: "Mama", msg: "Pass auf dich auf! ♥", ts: 0 }, { name: "Tom", msg: "Sieht mega aus, viel Spass!", ts: 0 }, { name: "???", msg: "ラーメン食べた？", ts: 0 }];
-  const [entries, setEntries] = useState<Entry[]>([]); const [name, setName] = useState(""); const [msg, setMsg] = useState("");
-  useEffect(() => { try { const s = localStorage.getItem("nippon-gb"); if (s) setEntries(JSON.parse(s)); } catch {} }, []);
-  function submit(e: React.FormEvent) {
-    e.preventDefault(); if (!name.trim() || !msg.trim()) return; onBeep(880);
-    const next = [{ name: name.trim().slice(0, 24), msg: msg.trim().slice(0, 140), ts: Date.now() }, ...entries].slice(0, 30);
-    setEntries(next); try { localStorage.setItem("nippon-gb", JSON.stringify(next)); } catch {} setName(""); setMsg("");
+  interface Entry { _id?: string; name: string; message: string }
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [name, setName] = useState(""); const [msg, setMsg] = useState("");
+  const [sent, setSent] = useState(false); const [sending, setSending] = useState(false);
+
+  useEffect(() => { fetch("/api/guestbook").then(r => r.json()).then(d => setEntries(Array.isArray(d) ? d : [])).catch(() => {}); }, []);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault(); if (!name.trim() || !msg.trim()) return; onBeep(880); setSending(true);
+    try {
+      const res = await fetch("/api/guestbook", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, message: msg }) });
+      if (res.ok) { setSent(true); setName(""); setMsg(""); }
+    } catch {}
+    setSending(false);
   }
+
   return (
     <div>
       <div className="pixel text-[10px] mb-3 text-center" style={{ color: C.pink }}>✉ GÄSTEBUCH ✉</div>
-      <form onSubmit={submit} className="flex flex-col gap-2 mb-3">
-        <input value={name} onChange={e => setName(e.target.value)} placeholder="Dein Name" className="term text-lg px-2 py-1 outline-none" style={{ ...sunken, background: "#fff", color: C.ink }} />
-        <textarea value={msg} onChange={e => setMsg(e.target.value)} placeholder="Deine Nachricht…" rows={2} className="term text-lg px-2 py-1 resize-none outline-none" style={{ ...sunken, background: "#fff", color: C.ink }} />
-        <button type="submit" className="nb pixel text-[9px] px-3 py-2 self-end" style={{ background: C.pink, color: C.cream, ...raised }}>★ EINTRAGEN ★</button>
-      </form>
+      {sent ? (
+        <div className="p-3 term text-xl text-center mb-3" style={{ ...sunken, background: "#fff", color: C.ink }}>
+          ✅ Danke! Dein Eintrag wird kurz geprüft und erscheint dann hier. ♥
+          <button onClick={() => setSent(false)} className="block nb term text-lg mt-2 nl mx-auto">noch einen schreiben</button>
+        </div>
+      ) : (
+        <form onSubmit={submit} className="flex flex-col gap-2 mb-3">
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Dein Name" className="term text-lg px-2 py-1 outline-none" style={{ ...sunken, background: "#fff", color: C.ink }} />
+          <textarea value={msg} onChange={e => setMsg(e.target.value)} placeholder="Deine Nachricht…" rows={2} className="term text-lg px-2 py-1 resize-none outline-none" style={{ ...sunken, background: "#fff", color: C.ink }} />
+          <button type="submit" disabled={sending} className="nb pixel text-[9px] px-3 py-2 self-end disabled:opacity-50" style={{ background: C.pink, color: C.cream, ...raised }}>{sending ? "…" : "★ EINTRAGEN ★"}</button>
+        </form>
+      )}
       <div className="flex flex-col gap-2">
-        {[...entries, ...DEMO_E].map((e, i) => (
-          <div key={i} className="p-2 term text-lg" style={{ ...sunken, background: "#fff" }}><span style={{ color: C.pink }}>{e.name}:</span> <span style={{ color: C.ink }}>{e.msg}</span></div>
-        ))}
+        {entries.length === 0
+          ? <div className="term text-lg text-center" style={{ color: C.ochre }}>Sei der Erste! ✍</div>
+          : entries.map((e, i) => (
+            <div key={e._id ?? i} className="p-2 term text-lg" style={{ ...sunken, background: "#fff" }}><span style={{ color: C.pink }}>{e.name}:</span> <span style={{ color: C.ink }}>{e.message}</span></div>
+          ))}
       </div>
-      <p className="term text-sm mt-2 text-center" style={{ color: C.ochre }}>(Einträge bleiben in deinem Browser ♥)</p>
     </div>
   );
 }

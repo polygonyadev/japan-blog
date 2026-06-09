@@ -12,7 +12,8 @@ import { satzType } from './satz'
 import { notizType } from './notiz'
 import { communityType } from './community'
 import { newsletterType } from './newsletter'
+import { guestbookType } from './guestbook'
 
 export const schema: { types: SchemaTypeDefinition[] } = {
-  types: [postType, lessonType, bucketItemType, siteSettingsType, photoType, vokabelType, kanjiType, grammatikType, partikelType, satzType, notizType, communityType, newsletterType],
+  types: [postType, lessonType, bucketItemType, siteSettingsType, photoType, vokabelType, kanjiType, grammatikType, partikelType, satzType, notizType, communityType, newsletterType, guestbookType],
 }
