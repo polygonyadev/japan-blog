@@ -502,7 +502,7 @@ function AboutApp() {
     <div className="term text-xl leading-snug">
       <div className="pixel text-[10px] mb-3" style={{ color: C.pink }}>★ ÜBER MICH ★</div>
       <p>こんにちは！ Ich bin David 🙋</p>
-      <p className="mt-2">Ich bleibe ein Jahr in Japan und sammle hier Momente — Fotos, Ramen-Funde, kleine Entdeckungen.</p>
+      <p className="mt-2">Ich sammle hier Momente — Fotos, Ramen-Funde, kleine Entdeckungen.</p>
       <p className="mt-2" style={{ color: C.pink }}>Lieblings-Konbini: 7-Eleven 🍙</p>
       <p style={{ color: C.ochre }}>Aktueller Skill: Stäbchen-Profi 🥢</p>
       <p className="mt-2">Dieses NipponOS ist mein kleines Eck im Netz. Bleib eine Weile! (-‿‿-)</p>
