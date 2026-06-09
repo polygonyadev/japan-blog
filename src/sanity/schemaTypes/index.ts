@@ -13,7 +13,10 @@ import { notizType } from './notiz'
 import { newsletterType } from './newsletter'
 import { guestbookType } from './guestbook'
 import { nipponSettingsType } from './nipponSettings'
+import { postCommentType } from './postComment'
+import { highscoreType } from './highscore'
+import { drawingType } from './drawing'
 
 export const schema: { types: SchemaTypeDefinition[] } = {
-  types: [postType, lessonType, bucketItemType, siteSettingsType, photoType, vokabelType, kanjiType, grammatikType, partikelType, satzType, notizType, newsletterType, guestbookType, nipponSettingsType],
+  types: [postType, lessonType, bucketItemType, siteSettingsType, photoType, vokabelType, kanjiType, grammatikType, partikelType, satzType, notizType, newsletterType, guestbookType, nipponSettingsType, postCommentType, highscoreType, drawingType],
 }

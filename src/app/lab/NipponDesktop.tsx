@@ -40,6 +40,7 @@ const APPS = [
   { id: "map", icon: "🗺", title: "Karte", titleEN: "Map" },
   { id: "bucket", icon: "🎯", title: "Bucket List", titleEN: "Bucket List" },
   { id: "paint", icon: "🎨", title: "Paint", titleEN: "Paint" },
+  { id: "gallery", icon: "📁", title: "Gallery", titleEN: "Gallery" },
   { id: "snake", icon: "🐍", title: "Snake", titleEN: "Snake" },
   { id: "pong", icon: "🏓", title: "Pong", titleEN: "Pong" },
   { id: "newsletter", icon: "📧", title: "Newsletter", titleEN: "Newsletter" },
@@ -47,13 +48,13 @@ const APPS = [
   { id: "about", icon: "★", title: "Über mich", titleEN: "About me" },
 ];
 function appTitle(a: { title: string; titleEN?: string }, lang: Lng) { return lang === "en" ? (a.titleEN ?? a.title) : a.title; }
-const DESKTOP_ICONS = ["blog", "japanisch", "photo", "video", "map", "bucket", "paint", "snake", "pong", "guestbook"];
+const DESKTOP_ICONS = ["blog", "japanisch", "photo", "video", "map", "bucket", "gallery", "paint", "snake", "pong", "guestbook"];
 // Linkes Sidebar-Menü: nur die wichtigen Apps (Spiele nur über Icons + Start)
-const SIDEBAR_APPS = ["blog", "japanisch", "photo", "video", "map", "bucket", "newsletter", "guestbook", "about"];
+const SIDEBAR_APPS = ["blog", "japanisch", "photo", "video", "map", "bucket", "gallery", "newsletter", "guestbook", "about"];
 // Start-Menü: Top-Level + ausklappbarer "Programme"-Ordner (wie Windows)
-const START_TOP = ["blog", "japanisch", "photo", "video", "map", "bucket", "guestbook"];
+const START_TOP = ["blog", "japanisch", "photo", "video", "map", "bucket", "gallery", "guestbook"];
 const START_PROGRAMS = ["paint", "snake", "pong", "newsletter", "about"];
-const W: Record<string, number> = { blog: 560, japanisch: 600, video: 560, map: 520, bucket: 480, paint: 520, snake: 340, pong: 360, newsletter: 440, about: 440, guestbook: 460, photo: 440 };
+const W: Record<string, number> = { blog: 560, japanisch: 600, video: 560, map: 520, bucket: 480, paint: 520, gallery: 560, snake: 340, pong: 360, newsletter: 440, about: 440, guestbook: 460, photo: 440 };
 function appWidth(id: string) { return id.startsWith("post:") ? 540 : (W[id] ?? 460); }
 function winMeta(id: string, data: LabPost[], lang: Lng = "de") {
   if (id.startsWith("post:")) { const p = data.find(x => x._id === id.slice(5)); return { icon: "📄", title: p?.title ?? "Post" }; }
@@ -410,6 +411,7 @@ function WindowFrame({ win, data, settings, onOpenPost, onClose, onFocus, onMin,
         {win.id === "map" && <MapApp data={data} onOpenPost={onOpenPost} />}
         {win.id === "bucket" && <BucketApp onBeep={onBeep} />}
         {win.id === "paint" && <PaintApp />}
+        {win.id === "gallery" && <GalleryApp />}
         {win.id === "snake" && <SnakeApp />}
         {win.id === "pong" && <PongApp />}
         {win.id === "newsletter" && <NewsletterApp onBeep={onBeep} />}
@@ -498,6 +500,7 @@ function PostDetailApp({ post }: { post?: LabPost }) {
           <MiniMap markers={[{ lat: post.lat, lng: post.lng, label: post.location ?? post.title }]} height="180px" zoom={11} />
         </div>
       )}
+      <PostComments postId={post._id} postTitle={post.title} />
       {zoom && (
         <div onClick={() => setZoom(null)} className="fixed inset-0 flex items-center justify-center p-6 cursor-pointer" style={{ background: "rgba(10,10,20,0.85)", zIndex: 99999 }}>
           <div className="p-2 max-w-3xl" style={{ background: C.cream, ...raised }} onClick={e => e.stopPropagation()}>
@@ -507,6 +510,55 @@ function PostDetailApp({ post }: { post?: LabPost }) {
             <button onClick={() => setZoom(null)} className="term text-base mt-2 w-full px-2 py-1" style={{ background: C.pink, color: C.cream, ...raised }}>✕ {lang === "en" ? "Close" : "Schließen"}</button>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+function PostComments({ postId, postTitle }: { postId: string; postTitle: string }) {
+  interface Comment { _id?: string; name: string; message: string; createdAt?: string }
+  const { lang } = useLanguage();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [name, setName] = useState(""); const [msg, setMsg] = useState("");
+  const [sending, setSending] = useState(false); const [sent, setSent] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/comments?postId=${encodeURIComponent(postId)}`).then(r => r.json()).then(d => setComments(Array.isArray(d) ? d : [])).catch(() => {});
+  }, [postId]);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault(); if (!name.trim() || !msg.trim()) return; setSending(true);
+    try {
+      const res = await fetch("/api/comments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ postId, postTitle, name, message: msg }) });
+      if (res.ok) { setSent(true); setName(""); setMsg(""); }
+    } catch {}
+    setSending(false);
+  }
+
+  return (
+    <div className="mt-4 pt-3" style={{ borderTop: `2px dashed ${C.ochre}` }}>
+      <div className="pixel text-[9px] mb-2" style={{ color: C.pink }}>💬 {L("KOMMENTARE", "COMMENTS")} ({comments.length})</div>
+      <div className="flex flex-col gap-1.5 mb-3">
+        {comments.length === 0
+          ? <div className="term text-base" style={{ color: C.ochre }}>{L("Noch keine Kommentare — schreib den ersten! ✍", "No comments yet — write the first! ✍")}</div>
+          : comments.map((c, i) => (
+            <div key={c._id ?? i} className="p-2 term text-base" style={{ ...sunken, background: "#fff" }}>
+              <span style={{ color: C.pink }}>{c.name}:</span> <span style={{ color: C.ink }}>{c.message}</span>
+            </div>
+          ))}
+      </div>
+      {sent ? (
+        <div className="p-2 term text-base text-center" style={{ ...sunken, background: "#fff", color: C.ink }}>
+          {L("✅ Danke! Dein Kommentar wird kurz geprüft. ♥", "✅ Thanks! Your comment will be reviewed shortly. ♥")}
+          <button onClick={() => setSent(false)} className="block nb term text-base mt-1 nl mx-auto">{L("noch einen schreiben", "write another")}</button>
+        </div>
+      ) : (
+        <form onSubmit={submit} className="flex flex-col gap-1.5">
+          <input value={name} onChange={e => setName(e.target.value)} placeholder={L("Dein Name", "Your name")} className="term text-base px-2 py-1 outline-none" style={{ ...sunken, background: "#fff", color: C.ink }} />
+          <textarea value={msg} onChange={e => setMsg(e.target.value)} placeholder={L("Dein Kommentar…", "Your comment…")} rows={2} className="term text-base px-2 py-1 resize-none outline-none" style={{ ...sunken, background: "#fff", color: C.ink }} />
+          <button type="submit" disabled={sending} className="nb term text-base px-3 py-1 self-end disabled:opacity-50" style={{ background: C.pink, color: C.cream, ...raised }}>{sending ? "…" : L("💬 kommentieren", "💬 comment")}</button>
+        </form>
       )}
     </div>
   );
@@ -662,29 +714,187 @@ function GuestbookApp({ onBeep }: { onBeep: (f?: number) => void }) {
   );
 }
 
+// ─── Highscore-Rangliste (Snake & Pong) ──────────────────────────────────────
+function GameScores({ game, score, over }: { game: string; score: number; over: boolean }) {
+  interface S { _id?: string; name: string; score: number }
+  const { lang } = useLanguage();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
+  const [list, setList] = useState<S[]>([]);
+  const [name, setName] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const load = () => fetch(`/api/highscores?game=${game}`).then(r => r.json()).then(d => setList(Array.isArray(d) ? d : [])).catch(() => {});
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [game]);
+  // Neue Runde → wieder speichern erlauben
+  useEffect(() => { if (!over) setSubmitted(false); }, [over]);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault(); if (!name.trim() || saving) return; setSaving(true);
+    try {
+      await fetch("/api/highscores", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game, name, score }) });
+      setSubmitted(true); await load();
+    } catch {}
+    setSaving(false);
+  }
+
+  const qualifies = over && score > 0 && !submitted;
+  return (
+    <div className="mt-3 max-w-xs mx-auto">
+      {qualifies && (
+        <form onSubmit={save} className="flex gap-1 mb-2 justify-center">
+          <input value={name} onChange={e => setName(e.target.value)} maxLength={16} autoFocus placeholder={L("Dein Name", "Your name")}
+            className="term text-base px-2 py-1 outline-none" style={{ ...sunken, background: "#fff", color: C.ink, width: 130 }} />
+          <button type="submit" disabled={saving} className="nb term text-base px-2 disabled:opacity-50" style={{ background: C.cyan, color: C.ink, ...raised }}>{saving ? "…" : L("↵ speichern", "↵ save")}</button>
+        </form>
+      )}
+      {submitted && over && <div className="term text-base text-center mb-1" style={{ color: C.cyan }}>{L("✅ gespeichert!", "✅ saved!")}</div>}
+      <div className="pixel text-[8px] mb-1 text-center" style={{ color: C.ochre }}>🏆 {L("RANGLISTE", "LEADERBOARD")}</div>
+      <div className="flex flex-col gap-0.5">
+        {list.length === 0
+          ? <div className="term text-base text-center" style={{ color: C.ochre }}>{L("noch keine Scores", "no scores yet")}</div>
+          : list.map((s, i) => (
+            <div key={s._id ?? i} className="term text-base flex justify-between px-2 py-0.5" style={{ ...sunken, background: "#fff", color: C.ink }}>
+              <span>{i + 1}. {i === 0 ? "👑 " : ""}{s.name}</span><span style={{ color: C.pink }}>{s.score}</span>
+            </div>
+          ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Paint ────────────────────────────────────────────────────────────────────
 function PaintApp() {
+  interface Drawing { _id?: string; name?: string; url: string }
+  const { lang } = useLanguage();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
   const ref = useRef<HTMLCanvasElement>(null);
   const [color, setColor] = useState(C.pink);
   const [size, setSize] = useState(5);
+  const [view, setView] = useState<"draw" | "gallery">("draw");
+  const [name, setName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [showSave, setShowSave] = useState(false);
+  const [gallery, setGallery] = useState<Drawing[]>([]);
   const draw = useRef(false);
   const colors = [C.pink, C.cyan, C.ochre, C.ink, "#33ff66", "#ffffff"];
   function clear() { const c = ref.current?.getContext("2d"); if (!c || !ref.current) return; c.fillStyle = "#fff"; c.fillRect(0, 0, ref.current.width, ref.current.height); }
-  useEffect(() => { clear(); }, []);
+  useEffect(() => { if (view === "draw") clear(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [view]);
+  function loadGallery() { fetch("/api/drawings").then(r => r.json()).then(d => setGallery(Array.isArray(d) ? d : [])).catch(() => {}); }
+  useEffect(() => { if (view === "gallery") loadGallery(); }, [view]);
   function pos(e: React.PointerEvent) { const r = ref.current!.getBoundingClientRect(); return { x: (e.clientX - r.left) * (ref.current!.width / r.width), y: (e.clientY - r.top) * (ref.current!.height / r.height) }; }
   function down(e: React.PointerEvent) { draw.current = true; const c = ref.current!.getContext("2d")!; const p = pos(e); c.beginPath(); c.moveTo(p.x, p.y); }
   function move(e: React.PointerEvent) { if (!draw.current) return; const c = ref.current!.getContext("2d")!; const p = pos(e); c.lineTo(p.x, p.y); c.strokeStyle = color; c.lineWidth = size; c.lineCap = "round"; c.lineJoin = "round"; c.stroke(); }
+
+  async function save() {
+    if (!ref.current || saving) return; setSaving(true);
+    try {
+      const dataUrl = ref.current.toDataURL("image/png");
+      const res = await fetch("/api/drawings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, dataUrl }) });
+      if (res.ok) { setSaved(true); setShowSave(false); setName(""); }
+    } catch {}
+    setSaving(false);
+  }
+
   return (
     <div>
-      <div className="pixel text-[10px] mb-2 text-center" style={{ color: C.pink }}>🎨 PAINT 🎨</div>
-      <div className="flex items-center gap-1 mb-2 flex-wrap">
-        {colors.map(c => <button key={c} onClick={() => setColor(c)} className="w-6 h-6" style={{ background: c, ...(color === c ? raised : sunken) }} />)}
-        <span className="term text-base ml-2" style={{ color: C.ink }}>Größe:</span>
-        {[2, 5, 12].map(s => <button key={s} onClick={() => setSize(s)} className="term text-base px-2" style={{ ...(size === s ? raised : sunken), background: size === s ? C.pink : "#fff", color: size === s ? C.cream : C.ink }}>{s}</button>)}
-        <button onClick={clear} className="term text-base px-2 ml-auto" style={{ ...sunken, background: "#fff", color: C.ink }}>🗑 leeren</button>
+      <div className="flex items-center justify-between mb-2">
+        <div className="pixel text-[10px]" style={{ color: C.pink }}>🎨 PAINT 🎨</div>
+        <div className="flex gap-1">
+          <button onClick={() => setView("draw")} className="term text-base px-2" style={{ ...(view === "draw" ? raised : sunken), background: view === "draw" ? C.pink : "#fff", color: view === "draw" ? C.cream : C.ink }}>✏ {L("Malen", "Draw")}</button>
+          <button onClick={() => setView("gallery")} className="term text-base px-2" style={{ ...(view === "gallery" ? raised : sunken), background: view === "gallery" ? C.pink : "#fff", color: view === "gallery" ? C.cream : C.ink }}>🖼 {L("Galerie", "Gallery")}</button>
+        </div>
       </div>
-      <canvas ref={ref} width={460} height={300} className="w-full touch-none" style={{ ...sunken, background: "#fff", cursor: "crosshair" }}
-        onPointerDown={down} onPointerMove={move} onPointerUp={() => draw.current = false} onPointerLeave={() => draw.current = false} />
+
+      {view === "draw" ? (
+        <>
+          <div className="flex items-center gap-1 mb-2 flex-wrap">
+            {colors.map(c => <button key={c} onClick={() => setColor(c)} className="w-6 h-6" style={{ background: c, ...(color === c ? raised : sunken) }} />)}
+            <span className="term text-base ml-2" style={{ color: C.ink }}>{L("Größe", "Size")}:</span>
+            {[2, 5, 12].map(s => <button key={s} onClick={() => setSize(s)} className="term text-base px-2" style={{ ...(size === s ? raised : sunken), background: size === s ? C.pink : "#fff", color: size === s ? C.cream : C.ink }}>{s}</button>)}
+            <button onClick={clear} className="term text-base px-2 ml-auto" style={{ ...sunken, background: "#fff", color: C.ink }}>🗑 {L("leeren", "clear")}</button>
+          </div>
+          <canvas ref={ref} width={460} height={300} className="w-full touch-none" style={{ ...sunken, background: "#fff", cursor: "crosshair" }}
+            onPointerDown={down} onPointerMove={move} onPointerUp={() => draw.current = false} onPointerLeave={() => draw.current = false} />
+          {saved ? (
+            <div className="term text-base text-center mt-2" style={{ color: C.cyan }}>
+              {L("✅ Danke! Deine Zeichnung wird kurz geprüft und erscheint dann in der Galerie. ♥", "✅ Thanks! Your drawing will be reviewed and then appear in the gallery. ♥")}
+              <button onClick={() => setSaved(false)} className="block nb term text-base mt-1 nl mx-auto">{L("weiter malen", "keep drawing")}</button>
+            </div>
+          ) : showSave ? (
+            <div className="flex gap-1 mt-2">
+              <input value={name} onChange={e => setName(e.target.value)} maxLength={40} placeholder={L("Dein Name", "Your name")} className="term text-base px-2 py-1 flex-1 outline-none" style={{ ...sunken, background: "#fff", color: C.ink }} />
+              <button onClick={() => setShowSave(false)} className="nb term text-base px-2" style={{ ...sunken, background: "#fff", color: C.ink }}>{L("abbrechen", "cancel")}</button>
+              <button onClick={save} disabled={saving} className="nb term text-base px-3 disabled:opacity-50" style={{ background: C.cyan, color: C.ink, ...raised }}>{saving ? "…" : L("💾 hochladen", "💾 upload")}</button>
+            </div>
+          ) : (
+            <button onClick={() => setShowSave(true)} className="nb term text-base px-3 py-1 mt-2 w-full" style={{ background: C.pink, color: C.cream, ...raised }}>💾 {L("Zeichnung speichern", "Save drawing")}</button>
+          )}
+        </>
+      ) : (
+        <div>
+          {gallery.length === 0
+            ? <div className="term text-lg text-center py-6" style={{ color: C.ochre }}>{L("Noch keine Zeichnungen — mal die erste! 🎨", "No drawings yet — draw the first! 🎨")}</div>
+            : <div className="grid grid-cols-2 gap-2">
+                {gallery.map((d, i) => (
+                  <div key={d._id ?? i} className="p-1" style={{ ...sunken, background: "#fff" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={d.url} alt="" className="w-full object-contain" style={{ background: "#fff" }} />
+                    <div className="term text-base text-center" style={{ color: C.ink }}>{L("von", "by")} <span style={{ color: C.pink }}>{d.name || "Anonym"}</span></div>
+                  </div>
+                ))}
+              </div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Gallery (Ordner mit Paint-Zeichnungen, Finder-Style) ─────────────────────
+function GalleryApp() {
+  interface Drawing { _id?: string; name?: string; url: string; createdAt?: string }
+  const { lang } = useLanguage();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
+  const [items, setItems] = useState<Drawing[] | null>(null);
+  const [zoom, setZoom] = useState<Drawing | null>(null);
+  useEffect(() => { fetch("/api/drawings").then(r => r.json()).then(d => setItems(Array.isArray(d) ? d : [])).catch(() => setItems([])); }, []);
+
+  return (
+    <div>
+      {/* Finder-Pfadleiste */}
+      <div className="term text-base mb-2 px-2 py-1 flex items-center gap-1" style={{ ...sunken, background: "#fff", color: C.ink }}>
+        💻 <span style={{ color: C.ochre }}>System</span> ▸ 📁 <span style={{ color: C.pink }}>Gallery</span>
+      </div>
+      {items === null ? (
+        <div className="term text-lg text-center py-6" style={{ color: C.ochre }}>{L("lädt…", "loading…")} ⏳</div>
+      ) : items.length === 0 ? (
+        <div className="term text-lg text-center py-6" style={{ color: C.ochre }}>
+          {L("Dieser Ordner ist leer. Mal etwas in Paint und speichere es! 🎨", "This folder is empty. Draw something in Paint and save it! 🎨")}
+        </div>
+      ) : (
+        <>
+          <div className="term text-sm mb-2" style={{ color: C.ochre }}>{items.length} {L("Objekte", "items")}</div>
+          <div className="grid grid-cols-3 gap-2">
+            {items.map((d, i) => (
+              <button key={d._id ?? i} onClick={() => setZoom(d)} className="nb p-1 text-left" style={{ ...sunken, background: "#fff" }} title={L("öffnen", "open")}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={d.url} alt="" className="w-full h-20 object-contain" style={{ background: "#fff" }} />
+                <div className="term text-sm truncate text-center mt-0.5" style={{ color: C.ink }}>🖼 {d.name || "Anonym"}</div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {zoom && (
+        <div onClick={() => setZoom(null)} className="fixed inset-0 flex items-center justify-center p-6 cursor-pointer" style={{ background: "rgba(10,10,20,0.85)", zIndex: 99999 }}>
+          <div className="p-2 max-w-2xl" style={{ background: C.cream, ...raised }} onClick={e => e.stopPropagation()}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={zoom.url} alt="" className="w-full max-h-[70vh] object-contain" style={{ background: "#fff" }} />
+            <div className="term text-base mt-1 text-center" style={{ color: C.ink }}>{L("gezeichnet von", "drawn by")} <span style={{ color: C.pink }}>{zoom.name || "Anonym"}</span></div>
+            <button onClick={() => setZoom(null)} className="term text-base mt-2 w-full px-2 py-1" style={{ background: C.pink, color: C.cream, ...raised }}>✕ {L("Schließen", "Close")}</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -704,6 +914,8 @@ function SnakeApp() {
   }
   useEffect(() => {
     function key(e: KeyboardEvent) {
+      // Tastatur ignorieren, wenn in ein Eingabefeld getippt wird (Name speichern)
+      if ((e.target as HTMLElement)?.tagName === "INPUT") return;
       const k = e.key; const g = game.current;
       const set = (x: number, y: number) => { if (g.dir.x !== -x || g.dir.y !== -y) g.next = { x, y }; };
       if (k === "ArrowUp" || k === "w") { set(0, -1); e.preventDefault(); }
@@ -750,6 +962,7 @@ function SnakeApp() {
         )}
       </div>
       <div className="term text-base mt-2" style={{ color: C.cyan }}>Pfeiltasten oder WASD</div>
+      <GameScores game="snake" score={score} over={over} />
     </div>
   );
 }
@@ -953,14 +1166,16 @@ function PongApp() {
   const ref = useRef<HTMLCanvasElement>(null);
   const [score, setScore] = useState({ p: 0, a: 0 });
   const [running, setRunning] = useState(false);
-  const Wd = 320, Ht = 220, PH = 46, PW = 7;
+  const [over, setOver] = useState(false);
+  const Wd = 320, Ht = 220, PH = 46, PW = 7, MAX = 7;
   const g = useRef({ bx: 160, by: 110, vx: 3.2, vy: 2.2, py: 90, ay: 90 });
   const playerY = useRef(90);
 
-  function reset() { g.current = { bx: 160, by: 110, vx: Math.random() > 0.5 ? 3.2 : -3.2, vy: 2.2, py: 90, ay: 90 }; setScore({ p: 0, a: 0 }); setRunning(true); }
+  function reset() { g.current = { bx: 160, by: 110, vx: Math.random() > 0.5 ? 3.2 : -3.2, vy: 2.2, py: 90, ay: 90 }; setScore({ p: 0, a: 0 }); setOver(false); setRunning(true); }
 
   useEffect(() => {
     function key(e: KeyboardEvent) {
+      if ((e.target as HTMLElement)?.tagName === "INPUT") return;
       if (e.key === "ArrowUp" || e.key === "w") { playerY.current = Math.max(0, playerY.current - 24); e.preventDefault(); }
       if (e.key === "ArrowDown" || e.key === "s") { playerY.current = Math.min(Ht - PH, playerY.current + 24); e.preventDefault(); }
     }
@@ -983,8 +1198,8 @@ function PongApp() {
       // AI-Paddle (rechts)
       if (s.bx > Wd - 4 - PW && s.by > s.ay && s.by < s.ay + PH) { s.vx = -Math.abs(s.vx) * 1.04; s.vy += (s.by - (s.ay + PH / 2)) * 0.04; }
       // Tore
-      if (s.bx < 0) { setScore(sc => ({ ...sc, a: sc.a + 1 })); s.bx = 160; s.by = 110; s.vx = 3.2; s.vy = 2.2; }
-      if (s.bx > Wd) { setScore(sc => ({ ...sc, p: sc.p + 1 })); s.bx = 160; s.by = 110; s.vx = -3.2; s.vy = 2.2; }
+      if (s.bx < 0) { s.bx = 160; s.by = 110; s.vx = 3.2; s.vy = 2.2; setScore(sc => { const a = sc.a + 1; if (a >= MAX) { setOver(true); setRunning(false); } return { ...sc, a }; }); }
+      if (s.bx > Wd) { s.bx = 160; s.by = 110; s.vx = -3.2; s.vy = 2.2; setScore(sc => { const p = sc.p + 1; if (p >= MAX) { setOver(true); setRunning(false); } return { ...sc, p }; }); }
       // zeichnen
       const c = ref.current?.getContext("2d"); if (!c) return;
       c.fillStyle = C.bg; c.fillRect(0, 0, Wd, Ht);
@@ -1004,16 +1219,18 @@ function PongApp() {
   return (
     <div className="text-center">
       <div className="pixel text-[10px] mb-2" style={{ color: C.pink }}>🏓 PONG 🏓</div>
-      <div className="term text-xl mb-2" style={{ color: C.ochre }}>Du <span style={{ color: C.cyan }}>{score.p}</span> : <span style={{ color: C.pink }}>{score.a}</span> CPU</div>
+      <div className="term text-xl mb-2" style={{ color: C.ochre }}>Du <span style={{ color: C.cyan }}>{score.p}</span> : <span style={{ color: C.pink }}>{score.a}</span> CPU <span className="text-sm">(bis {MAX})</span></div>
       <div className="inline-block p-1 relative" style={{ background: C.ink, ...sunken }}>
         <canvas ref={ref} width={Wd} height={Ht} onPointerMove={pointer} className="touch-none" style={{ display: "block", imageRendering: "pixelated", maxWidth: "100%", cursor: "ns-resize" }} />
         {!running && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2" style={{ background: "rgba(26,26,46,0.85)" }}>
-            <button onClick={reset} className="nb pixel text-[10px] px-3 py-2" style={{ background: C.cyan, color: C.bg, ...raised }}>▶ START</button>
+            {over && <div className="pixel text-xs" style={{ color: score.p > score.a ? C.cyan : C.pink }}>{score.p > score.a ? "YOU WIN!" : "GAME OVER"}</div>}
+            <button onClick={reset} className="nb pixel text-[10px] px-3 py-2" style={{ background: C.cyan, color: C.bg, ...raised }}>{over ? "★ NOCHMAL ★" : "▶ START"}</button>
           </div>
         )}
       </div>
       <div className="term text-base mt-2" style={{ color: C.cyan }}>Maus bewegen oder ↑ ↓</div>
+      <GameScores game="pong" score={score.p} over={over} />
     </div>
   );
 }
