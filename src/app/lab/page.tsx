@@ -1,6 +1,6 @@
 import { client } from "@/sanity/lib/client";
 import { groq } from "next-sanity";
-import MetroPortal from "./MetroPortal";
+import NeoNippon from "./NeoNippon";
 
 const LAB_QUERY = groq`
   *[_type == "post"] | order(date desc) {
@@ -15,7 +15,7 @@ const LAB_QUERY = groq`
   }
 `;
 
-export const metadata = { title: "Tokyo Metro — Lab" };
+export const metadata = { title: "NipponOS — Lab" };
 
 export default async function LabPage() {
   let posts = [];
@@ -24,5 +24,5 @@ export default async function LabPage() {
   } catch {
     posts = [];
   }
-  return <MetroPortal posts={posts ?? []} />;
+  return <NeoNippon posts={posts ?? []} />;
 }
