@@ -44,12 +44,13 @@ const APPS = [
   { id: "bucket", icon: "🎯", title: "Bucket List" },
   { id: "paint", icon: "🎨", title: "Paint" },
   { id: "snake", icon: "🐍", title: "Snake" },
+  { id: "pong", icon: "🏓", title: "Pong" },
   { id: "newsletter", icon: "📧", title: "Newsletter" },
   { id: "guestbook", icon: "✉", title: "Gästebuch" },
   { id: "about", icon: "★", title: "Über mich" },
 ];
 const DESKTOP_ICONS = ["blog", "japanisch", "photo", "map", "bucket", "paint", "snake", "guestbook"];
-const W: Record<string, number> = { blog: 560, japanisch: 600, video: 560, map: 520, bucket: 480, paint: 520, snake: 340, newsletter: 440, about: 440, guestbook: 460, photo: 440 };
+const W: Record<string, number> = { blog: 560, japanisch: 600, video: 560, map: 520, bucket: 480, paint: 520, snake: 340, pong: 360, newsletter: 440, about: 440, guestbook: 460, photo: 440 };
 function appWidth(id: string) { return id.startsWith("post:") ? 540 : (W[id] ?? 460); }
 function winMeta(id: string, data: LabPost[]) {
   if (id.startsWith("post:")) { const p = data.find(x => x._id === id.slice(5)); return { icon: "📄", title: p?.title ?? "Post" }; }
@@ -225,6 +226,14 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
             <div className="pixel text-[8px] mb-1" style={{ color: C.cream }}>VISITORS</div>
             <span className="term text-xl px-2" style={{ background: "#000", color: "#33ff66", letterSpacing: "2px" }}>{String(visitors).padStart(6, "0")}</span>
           </div>
+          {/* Info / Umschalter */}
+          {onSwitchSimple && (
+            <div className="p-2 term text-base" style={{ background: C.bg, ...sunken, color: C.cream }}>
+              <div className="pixel text-[8px] mb-1" style={{ color: C.cyan }}>ℹ INFO</div>
+              <p className="mb-1" style={{ color: C.cream }}>Das ist die verspielte Version von Nippon Diary.</p>
+              <button onClick={() => { click(); onSwitchSimple(); }} className="nb term text-base" style={{ color: C.pink }}>→ zur normalen Seite</button>
+            </div>
+          )}
         </aside>
 
         <div id="neko-area" className="flex-1 relative overflow-hidden">
@@ -313,6 +322,7 @@ function WindowFrame({ win, data, onOpenPost, onClose, onFocus, onMin, onMax, on
         {win.id === "bucket" && <BucketApp onBeep={onBeep} />}
         {win.id === "paint" && <PaintApp />}
         {win.id === "snake" && <SnakeApp />}
+        {win.id === "pong" && <PongApp />}
         {win.id === "newsletter" && <NewsletterApp onBeep={onBeep} />}
         {win.id === "about" && <AboutApp />}
         {win.id === "guestbook" && <GuestbookApp onBeep={onBeep} />}
@@ -584,6 +594,32 @@ function SnakeApp() {
   );
 }
 
+// ─── Schön formatiertes Markdown (für Japanisch-Inhalte) ──────────────────────
+function NipponMarkdown({ content }: { content: string }) {
+  return (
+    <div className="text-sm leading-relaxed mt-1" style={{ color: C.ink }}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
+        h1: (p) => <h2 className="text-lg font-bold mt-3 mb-1" style={{ color: C.pink }} {...p} />,
+        h2: (p) => <h3 className="text-base font-bold mt-3 mb-1 pb-0.5" style={{ color: C.pink, borderBottom: `2px solid ${C.ochre}` }} {...p} />,
+        h3: (p) => <h4 className="text-sm font-bold mt-2 mb-1" style={{ color: C.ochre }} {...p} />,
+        p: (p) => <p className="mb-2" {...p} />,
+        strong: (p) => <strong className="font-bold" style={{ color: C.pink }} {...p} />,
+        em: (p) => <em className="italic" {...p} />,
+        ul: (p) => <ul className="list-disc list-inside mb-2 space-y-0.5" {...p} />,
+        ol: (p) => <ol className="list-decimal list-inside mb-2 space-y-0.5" {...p} />,
+        blockquote: (p) => <blockquote className="pl-2 my-2 italic" style={{ borderLeft: `3px solid ${C.cyan}`, color: "#555" }} {...p} />,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        code: ({ children, ...p }: any) => <code className="px-1 rounded text-xs font-mono" style={{ background: C.bg, color: C.cyan }} {...p}>{children}</code>,
+        table: (p) => <div className="overflow-x-auto my-2"><table className="border-collapse text-xs w-full" {...p} /></div>,
+        th: (p) => <th className="border px-1.5 py-1 text-left font-bold" style={{ borderColor: "#ccc", background: `${C.ochre}33`, color: C.ink }} {...p} />,
+        td: (p) => <td className="border px-1.5 py-1 align-top" style={{ borderColor: "#ddd" }} {...p} />,
+        a: (p) => <a className="underline" style={{ color: C.pink }} {...p} />,
+        hr: () => <hr className="my-2" style={{ borderColor: "#ddd" }} />,
+      }}>{content}</ReactMarkdown>
+    </div>
+  );
+}
+
 // ─── Japanisch (live aus Studio) ──────────────────────────────────────────────
 function JapanischApp({ onBeep }: { onBeep: (f?: number) => void }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -645,8 +681,8 @@ function JapanischApp({ onBeep }: { onBeep: (f?: number) => void }) {
                   {(it.phrases ?? []).map((p: { jp: string; romaji?: string; de: string }, i: number) => (
                     <div key={i} className="mb-1"><span className="term text-base">{p.jp}</span> {p.romaji && <span className="term text-sm" style={{ color: C.cyan }}>（{p.romaji}）</span>} — {p.de}</div>
                   ))}
-                  {it.inhalt && <div className="prose-sm mt-1"><ReactMarkdown remarkPlugins={[remarkGfm]}>{it.inhalt}</ReactMarkdown></div>}
-                  {it.markdown && <div className="prose-sm mt-1"><ReactMarkdown remarkPlugins={[remarkGfm]}>{it.markdown}</ReactMarkdown></div>}
+                  {it.inhalt && <NipponMarkdown content={it.inhalt} />}
+                  {it.markdown && <NipponMarkdown content={it.markdown} />}
                   {it.notizen && <p className="mt-1" style={{ color: C.ink }}>{it.notizen}</p>}
                 </div>
               )}
@@ -731,6 +767,76 @@ function NewsletterApp({ onBeep }: { onBeep: (f?: number) => void }) {
           <button type="submit" disabled={sending} className="nb pixel text-[9px] px-3 py-2 self-end disabled:opacity-50" style={{ background: C.pink, color: C.cream, ...raised }}>{sending ? "…" : "★ EINTRAGEN ★"}</button>
         </form>
       )}
+    </div>
+  );
+}
+
+// ─── Pong ─────────────────────────────────────────────────────────────────────
+function PongApp() {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const [score, setScore] = useState({ p: 0, a: 0 });
+  const [running, setRunning] = useState(false);
+  const Wd = 320, Ht = 220, PH = 46, PW = 7;
+  const g = useRef({ bx: 160, by: 110, vx: 3.2, vy: 2.2, py: 90, ay: 90 });
+  const playerY = useRef(90);
+
+  function reset() { g.current = { bx: 160, by: 110, vx: Math.random() > 0.5 ? 3.2 : -3.2, vy: 2.2, py: 90, ay: 90 }; setScore({ p: 0, a: 0 }); setRunning(true); }
+
+  useEffect(() => {
+    function key(e: KeyboardEvent) {
+      if (e.key === "ArrowUp" || e.key === "w") { playerY.current = Math.max(0, playerY.current - 24); e.preventDefault(); }
+      if (e.key === "ArrowDown" || e.key === "s") { playerY.current = Math.min(Ht - PH, playerY.current + 24); e.preventDefault(); }
+    }
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, []);
+
+  useEffect(() => {
+    if (!running) return;
+    const iv = setInterval(() => {
+      const s = g.current;
+      s.py += (playerY.current - s.py) * 0.4;
+      // AI verfolgt Ball mit Verzögerung
+      s.ay += ((s.by - PH / 2) - s.ay) * 0.08;
+      s.ay = Math.max(0, Math.min(Ht - PH, s.ay));
+      s.bx += s.vx; s.by += s.vy;
+      if (s.by < 4 || s.by > Ht - 4) s.vy *= -1;
+      // Spieler-Paddle (links)
+      if (s.bx < 4 + PW && s.by > s.py && s.by < s.py + PH) { s.vx = Math.abs(s.vx) * 1.04; s.vy += (s.by - (s.py + PH / 2)) * 0.04; }
+      // AI-Paddle (rechts)
+      if (s.bx > Wd - 4 - PW && s.by > s.ay && s.by < s.ay + PH) { s.vx = -Math.abs(s.vx) * 1.04; s.vy += (s.by - (s.ay + PH / 2)) * 0.04; }
+      // Tore
+      if (s.bx < 0) { setScore(sc => ({ ...sc, a: sc.a + 1 })); s.bx = 160; s.by = 110; s.vx = 3.2; s.vy = 2.2; }
+      if (s.bx > Wd) { setScore(sc => ({ ...sc, p: sc.p + 1 })); s.bx = 160; s.by = 110; s.vx = -3.2; s.vy = 2.2; }
+      // zeichnen
+      const c = ref.current?.getContext("2d"); if (!c) return;
+      c.fillStyle = C.bg; c.fillRect(0, 0, Wd, Ht);
+      c.strokeStyle = "rgba(255,255,255,0.15)"; c.setLineDash([4, 6]); c.beginPath(); c.moveTo(Wd / 2, 0); c.lineTo(Wd / 2, Ht); c.stroke(); c.setLineDash([]);
+      c.fillStyle = C.cyan; c.fillRect(4, s.py, PW, PH);
+      c.fillStyle = C.pink; c.fillRect(Wd - 4 - PW, s.ay, PW, PH);
+      c.fillStyle = C.ochre; c.fillRect(s.bx - 4, s.by - 4, 8, 8);
+    }, 16);
+    return () => clearInterval(iv);
+  }, [running]);
+
+  function pointer(e: React.PointerEvent) {
+    const r = ref.current!.getBoundingClientRect();
+    playerY.current = Math.max(0, Math.min(Ht - PH, (e.clientY - r.top) * (Ht / r.height) - PH / 2));
+  }
+
+  return (
+    <div className="text-center">
+      <div className="pixel text-[10px] mb-2" style={{ color: C.pink }}>🏓 PONG 🏓</div>
+      <div className="term text-xl mb-2" style={{ color: C.ochre }}>Du <span style={{ color: C.cyan }}>{score.p}</span> : <span style={{ color: C.pink }}>{score.a}</span> CPU</div>
+      <div className="inline-block p-1 relative" style={{ background: C.ink, ...sunken }}>
+        <canvas ref={ref} width={Wd} height={Ht} onPointerMove={pointer} className="touch-none" style={{ display: "block", imageRendering: "pixelated", maxWidth: "100%", cursor: "ns-resize" }} />
+        {!running && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2" style={{ background: "rgba(26,26,46,0.85)" }}>
+            <button onClick={reset} className="nb pixel text-[10px] px-3 py-2" style={{ background: C.cyan, color: C.bg, ...raised }}>▶ START</button>
+          </div>
+        )}
+      </div>
+      <div className="term text-base mt-2" style={{ color: C.cyan }}>Maus bewegen oder ↑ ↓</div>
     </div>
   );
 }
