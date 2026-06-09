@@ -36,6 +36,7 @@ const APPS = [
   { id: "blog", icon: "✎", title: "Blog.exe", titleEN: "Blog.exe" },
   { id: "japanisch", icon: "🎌", title: "Japanisch", titleEN: "Japanese" },
   { id: "photo", icon: "📷", title: "Foto des Tages", titleEN: "Photo of the Day" },
+  { id: "fotofeed", icon: "📸", title: "Fotostream", titleEN: "Photo Stream" },
   { id: "video", icon: "▶", title: "Video des Tages", titleEN: "Video of the Day" },
   { id: "map", icon: "🗺", title: "Karte", titleEN: "Map" },
   { id: "bucket", icon: "🎯", title: "Bucket List", titleEN: "Bucket List" },
@@ -48,13 +49,13 @@ const APPS = [
   { id: "about", icon: "★", title: "Über mich", titleEN: "About me" },
 ];
 function appTitle(a: { title: string; titleEN?: string }, lang: Lng) { return lang === "en" ? (a.titleEN ?? a.title) : a.title; }
-const DESKTOP_ICONS = ["blog", "japanisch", "photo", "video", "map", "bucket", "gallery", "paint", "snake", "pong", "guestbook"];
+const DESKTOP_ICONS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "paint", "snake", "pong", "guestbook"];
 // Linkes Sidebar-Menü: nur die wichtigen Apps (Spiele nur über Icons + Start)
-const SIDEBAR_APPS = ["blog", "japanisch", "photo", "video", "map", "bucket", "gallery", "newsletter", "guestbook", "about"];
+const SIDEBAR_APPS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "newsletter", "guestbook", "about"];
 // Start-Menü: Top-Level + ausklappbarer "Programme"-Ordner (wie Windows)
-const START_TOP = ["blog", "japanisch", "photo", "video", "map", "bucket", "gallery", "guestbook"];
+const START_TOP = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "guestbook"];
 const START_PROGRAMS = ["paint", "snake", "pong", "newsletter", "about"];
-const W: Record<string, number> = { blog: 560, japanisch: 600, video: 560, map: 520, bucket: 480, paint: 520, gallery: 560, snake: 340, pong: 360, newsletter: 440, about: 440, guestbook: 460, photo: 440 };
+const W: Record<string, number> = { blog: 560, japanisch: 600, video: 560, map: 520, bucket: 480, paint: 520, gallery: 560, fotofeed: 600, snake: 340, pong: 360, newsletter: 440, about: 440, guestbook: 460, photo: 440 };
 function appWidth(id: string) { return id.startsWith("post:") ? 540 : (W[id] ?? 460); }
 function winMeta(id: string, data: LabPost[], lang: Lng = "de") {
   if (id.startsWith("post:")) { const p = data.find(x => x._id === id.slice(5)); return { icon: "📄", title: p?.title ?? "Post" }; }
@@ -407,6 +408,7 @@ function WindowFrame({ win, data, settings, onOpenPost, onClose, onFocus, onMin,
         {win.id === "blog" && <BlogApp data={data} onOpenPost={onOpenPost} onBeep={onBeep} />}
         {win.id === "japanisch" && <JapanischApp onBeep={onBeep} />}
         {win.id === "photo" && <PhotoApp data={data} settings={settings} />}
+        {win.id === "fotofeed" && <FotoFeedApp data={data} onOpenPost={onOpenPost} />}
         {win.id === "video" && <VideoApp data={data} settings={settings} />}
         {win.id === "map" && <MapApp data={data} onOpenPost={onOpenPost} />}
         {win.id === "bucket" && <BucketApp onBeep={onBeep} />}
@@ -584,6 +586,62 @@ function PhotoApp({ data, settings }: { data: LabPost[]; settings: NipponSetting
     </div>
   );
 }
+
+// ─── Fotostream: alle Fotos (Blog-Posts + separate Galerie-Fotos) ─────────────
+function FotoFeedApp({ data, onOpenPost }: { data: LabPost[]; onOpenPost: (id: string) => void }) {
+  interface Feed { url: string; caption?: string; title?: string; location?: string; tags?: string[]; slug?: string }
+  const { lang } = useLanguage();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
+  const [items, setItems] = useState<Feed[] | null>(null);
+  const [zoom, setZoom] = useState<Feed | null>(null);
+  useEffect(() => { fetch("/api/gallery").then(r => r.json()).then(d => setItems(Array.isArray(d) ? d : [])).catch(() => setItems([])); }, []);
+
+  // slug -> Post-_id (um vom Foto das Post-Fenster zu öffnen)
+  const postIdBySlug = (slug?: string) => slug ? data.find(p => p.slug === slug)?._id : undefined;
+
+  return (
+    <div>
+      <div className="pixel text-[10px] mb-2 text-center" style={{ color: C.pink }}>📸 {L("FOTOSTREAM", "PHOTO STREAM")} 📸</div>
+      {items === null ? (
+        <div className="term text-lg text-center py-6" style={{ color: C.ochre }}>{L("lädt…", "loading…")} ⏳</div>
+      ) : items.length === 0 ? (
+        <div className="term text-lg text-center py-6" style={{ color: C.ochre }}>{L("Noch keine Fotos — lade welche im Studio hoch 📷", "No photos yet — upload some in the Studio 📷")}</div>
+      ) : (
+        <>
+          <div className="term text-sm mb-2" style={{ color: C.ochre }}>{items.length} {L("Fotos", "photos")}</div>
+          <div className="grid grid-cols-3 gap-1">
+            {items.map((it, i) => (
+              <button key={i} onClick={() => setZoom(it)} className="relative aspect-square overflow-hidden" style={{ ...sunken, background: C.bg }} title={it.caption ?? it.location ?? it.title}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={it.url} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {zoom && (
+        <div onClick={() => setZoom(null)} className="fixed inset-0 flex items-center justify-center p-6 cursor-pointer" style={{ background: "rgba(10,10,20,0.85)", zIndex: 99999 }}>
+          <div className="p-2 max-w-2xl" style={{ background: C.cream, ...raised }} onClick={e => e.stopPropagation()}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={zoom.url} alt="" className="w-full max-h-[70vh] object-contain" />
+            {(zoom.caption || zoom.location || zoom.title) && (
+              <div className="term text-base mt-1 text-center" style={{ color: C.ink }}>
+                {zoom.caption || zoom.location}{zoom.title ? ` · 📍 ${zoom.title}` : ""}
+              </div>
+            )}
+            <div className="flex gap-1 mt-2">
+              {postIdBySlug(zoom.slug) && (
+                <button onClick={() => { const id = postIdBySlug(zoom.slug); setZoom(null); if (id) onOpenPost(id); }} className="term text-base flex-1 px-2 py-1" style={{ background: C.cyan, color: C.ink, ...raised }}>→ {L("Post öffnen", "Open post")}</button>
+              )}
+              <button onClick={() => setZoom(null)} className="term text-base flex-1 px-2 py-1" style={{ background: C.pink, color: C.cream, ...raised }}>✕ {L("Schließen", "Close")}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function VideoApp({ data, settings }: { data: LabPost[]; settings: NipponSettings | null }) {
   const { lang } = useLanguage();
   // Im Studio gesetztes Video des Tages hat Vorrang, sonst erstes Post-Video
