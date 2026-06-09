@@ -16,12 +16,6 @@ const C = { bg: "#1a1a2e", bg2: "#16213e", cream: "#fdfaf6", pink: "#ff2a6d", cy
 const raised: React.CSSProperties = { boxShadow: "inset 2px 2px 0 rgba(255,255,255,0.5), inset -2px -2px 0 rgba(0,0,0,0.4)" };
 const sunken: React.CSSProperties = { boxShadow: "inset -2px -2px 0 rgba(255,255,255,0.4), inset 2px 2px 0 rgba(0,0,0,0.4)" };
 
-const DEMO: LabPost[] = [
-  { _id: "d1", title: "Shinjuku bei Nacht ✨", location: "Tōkyō, Shinjuku", lat: 35.6938, lng: 139.7034, date: "2026-06-20", tags: ["Neon", "Nacht"], excerpt: "Neon überall. Ich stehe mitten im Cyberpunk-Traum und kann nicht aufhören zu staunen.", photos: [{}, {}] },
-  { _id: "d2", title: "Ramen ohne Schild 🍜", location: "Nakano", lat: 35.7056, lng: 139.6657, date: "2026-06-22", tags: ["Essen"], excerpt: "Sechs Plätze, ein roter Vorhang, kein Name. Der beste Tonkotsu meines Lebens.", photos: [{}], youtubeId: "jfKfPfyJRdk" },
-  { _id: "d3", title: "Morgens am Tempel ⛩️", location: "Asakusa", lat: 35.7148, lng: 139.7967, date: "2026-06-25", tags: ["Kultur"], excerpt: "Um 6 Uhr ist der Sensō-ji fast leer. Räucherstäbchen, Glocken, Stille.", photos: [{}, {}, {}] },
-  { _id: "d4", title: "Konbini-Schätze 🏪", location: "Shibuya", lat: 35.6595, lng: 139.7005, date: "2026-06-26", tags: ["Essen", "Alltag"], excerpt: "Onigiri, Matcha-KitKat, Dosenkaffee. Der 7-Eleven ist mein zweites Zuhause.", photos: [{}] },
-];
 
 function beep(freq = 660) {
   try {
@@ -60,7 +54,7 @@ function winMeta(id: string, data: LabPost[]) {
 interface OpenWin { id: string; x: number; y: number; z: number; min?: boolean; max?: boolean }
 
 export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPost[]; onSwitchSimple?: () => void }) {
-  const data = posts.length >= 2 ? posts : [...posts, ...DEMO];
+  const data = posts;
   const [booted, setBooted] = useState(false);
   const [shutting, setShutting] = useState(false);
   const [wins, setWins] = useState<OpenWin[]>([]);
@@ -88,7 +82,6 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
     setTimeout(() => { setShutting(false); setBooted(false); setWins([]); }, 1100);
   }
 
-  useEffect(() => { const t = setTimeout(() => boot(), 1700); return () => clearTimeout(t); }, []); // eslint-disable-line
 
   useEffect(() => {
     setVisitors(1337 + Math.floor((Date.now() / 86400000) % 500));
@@ -107,8 +100,8 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
       if (area && catRef.current) {
         const r = area.getBoundingClientRect();
         const tx = mouse.current.x - r.left - 16, ty = mouse.current.y - r.top + 12;
-        catPos.current.x += (tx - catPos.current.x) * 0.045;
-        catPos.current.y += (ty - catPos.current.y) * 0.045;
+        catPos.current.x += (tx - catPos.current.x) * 0.018;
+        catPos.current.y += (ty - catPos.current.y) * 0.018;
         const cx = Math.max(0, Math.min(r.width - 34, catPos.current.x));
         const cy = Math.max(0, Math.min(r.height - 34, catPos.current.y));
         const flip = tx < catPos.current.x ? -1 : 1;
@@ -370,7 +363,7 @@ function BlogApp({ data, onOpenPost, onBeep }: { data: LabPost[]; onOpenPost: (i
             </div>
           </button>
         ))}
-        {filtered.length === 0 && <div className="term text-xl text-center py-4" style={{ color: C.ochre }}>nichts gefunden ◔_◔</div>}
+        {filtered.length === 0 && <div className="term text-xl text-center py-4" style={{ color: C.ochre }}>{data.length === 0 ? "noch keine Posts — leg im Studio welche an ✍" : "nichts gefunden ◔_◔"}</div>}
       </div>
     </div>
   );
@@ -420,19 +413,25 @@ function PhotoApp({ data }: { data: LabPost[] }) {
           ? <img src={pick.url} alt="" className="w-full max-h-80 object-cover" />
           : <div className="w-full h-56 flex items-center justify-center text-6xl" style={{ background: `linear-gradient(135deg,${C.pink},${C.cyan})` }}>📷</div>}
       </div>
-      <div className="term text-lg mt-2" style={{ color: C.ochre }}>{pick?.caption ?? pick?.post?.location ?? "Noch keine Fotos — Demo"}</div>
+      <div className="term text-lg mt-2" style={{ color: C.ochre }}>{pick?.caption ?? pick?.post?.location ?? "Noch keine Fotos — leg im Studio welche an 📷"}</div>
     </div>
   );
 }
 function VideoApp({ data }: { data: LabPost[] }) {
-  const withVid = data.find(p => p.youtubeId); const vid = withVid?.youtubeId ?? "jfKfPfyJRdk";
+  const withVid = data.find(p => p.youtubeId);
   return (
     <div>
       <div className="pixel text-[10px] mb-2 text-center" style={{ color: C.pink }}>▶ VIDEO DES TAGES ▶</div>
-      <div className="relative" style={{ paddingBottom: "56.25%" }}>
-        <iframe className="absolute inset-0 w-full h-full" src={`https://www.youtube.com/embed/${vid}`} title="Video des Tages" allowFullScreen />
-      </div>
-      <div className="term text-lg mt-2 text-center" style={{ color: C.ochre }}>{withVid ? withVid.title : "♪ heute läuft: Lofi für die Reise"}</div>
+      {withVid ? (
+        <>
+          <div className="relative" style={{ paddingBottom: "56.25%" }}>
+            <iframe className="absolute inset-0 w-full h-full" src={`https://www.youtube.com/embed/${withVid.youtubeId}`} title="Video des Tages" allowFullScreen />
+          </div>
+          <div className="term text-lg mt-2 text-center" style={{ color: C.ochre }}>{withVid.title}</div>
+        </>
+      ) : (
+        <div className="term text-xl text-center py-8" style={{ color: C.ochre }}>noch kein Video — füg in einem Post eine YouTube-ID hinzu 🎬</div>
+      )}
     </div>
   );
 }
