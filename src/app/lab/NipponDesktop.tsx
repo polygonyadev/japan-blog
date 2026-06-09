@@ -40,6 +40,7 @@ const APPS = [
   { id: "map", icon: "🗺", title: "Karte", titleEN: "Map" },
   { id: "bucket", icon: "🎯", title: "Bucket List", titleEN: "Bucket List" },
   { id: "paint", icon: "🎨", title: "Paint", titleEN: "Paint" },
+  { id: "gallery", icon: "📁", title: "Gallery", titleEN: "Gallery" },
   { id: "snake", icon: "🐍", title: "Snake", titleEN: "Snake" },
   { id: "pong", icon: "🏓", title: "Pong", titleEN: "Pong" },
   { id: "newsletter", icon: "📧", title: "Newsletter", titleEN: "Newsletter" },
@@ -47,13 +48,13 @@ const APPS = [
   { id: "about", icon: "★", title: "Über mich", titleEN: "About me" },
 ];
 function appTitle(a: { title: string; titleEN?: string }, lang: Lng) { return lang === "en" ? (a.titleEN ?? a.title) : a.title; }
-const DESKTOP_ICONS = ["blog", "japanisch", "photo", "video", "map", "bucket", "paint", "snake", "pong", "guestbook"];
+const DESKTOP_ICONS = ["blog", "japanisch", "photo", "video", "map", "bucket", "gallery", "paint", "snake", "pong", "guestbook"];
 // Linkes Sidebar-Menü: nur die wichtigen Apps (Spiele nur über Icons + Start)
-const SIDEBAR_APPS = ["blog", "japanisch", "photo", "video", "map", "bucket", "newsletter", "guestbook", "about"];
+const SIDEBAR_APPS = ["blog", "japanisch", "photo", "video", "map", "bucket", "gallery", "newsletter", "guestbook", "about"];
 // Start-Menü: Top-Level + ausklappbarer "Programme"-Ordner (wie Windows)
-const START_TOP = ["blog", "japanisch", "photo", "video", "map", "bucket", "guestbook"];
+const START_TOP = ["blog", "japanisch", "photo", "video", "map", "bucket", "gallery", "guestbook"];
 const START_PROGRAMS = ["paint", "snake", "pong", "newsletter", "about"];
-const W: Record<string, number> = { blog: 560, japanisch: 600, video: 560, map: 520, bucket: 480, paint: 520, snake: 340, pong: 360, newsletter: 440, about: 440, guestbook: 460, photo: 440 };
+const W: Record<string, number> = { blog: 560, japanisch: 600, video: 560, map: 520, bucket: 480, paint: 520, gallery: 560, snake: 340, pong: 360, newsletter: 440, about: 440, guestbook: 460, photo: 440 };
 function appWidth(id: string) { return id.startsWith("post:") ? 540 : (W[id] ?? 460); }
 function winMeta(id: string, data: LabPost[], lang: Lng = "de") {
   if (id.startsWith("post:")) { const p = data.find(x => x._id === id.slice(5)); return { icon: "📄", title: p?.title ?? "Post" }; }
@@ -410,6 +411,7 @@ function WindowFrame({ win, data, settings, onOpenPost, onClose, onFocus, onMin,
         {win.id === "map" && <MapApp data={data} onOpenPost={onOpenPost} />}
         {win.id === "bucket" && <BucketApp onBeep={onBeep} />}
         {win.id === "paint" && <PaintApp />}
+        {win.id === "gallery" && <GalleryApp />}
         {win.id === "snake" && <SnakeApp />}
         {win.id === "pong" && <PongApp />}
         {win.id === "newsletter" && <NewsletterApp onBeep={onBeep} />}
@@ -842,6 +844,55 @@ function PaintApp() {
                   </div>
                 ))}
               </div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Gallery (Ordner mit Paint-Zeichnungen, Finder-Style) ─────────────────────
+function GalleryApp() {
+  interface Drawing { _id?: string; name?: string; url: string; createdAt?: string }
+  const { lang } = useLanguage();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
+  const [items, setItems] = useState<Drawing[] | null>(null);
+  const [zoom, setZoom] = useState<Drawing | null>(null);
+  useEffect(() => { fetch("/api/drawings").then(r => r.json()).then(d => setItems(Array.isArray(d) ? d : [])).catch(() => setItems([])); }, []);
+
+  return (
+    <div>
+      {/* Finder-Pfadleiste */}
+      <div className="term text-base mb-2 px-2 py-1 flex items-center gap-1" style={{ ...sunken, background: "#fff", color: C.ink }}>
+        💻 <span style={{ color: C.ochre }}>System</span> ▸ 📁 <span style={{ color: C.pink }}>Gallery</span>
+      </div>
+      {items === null ? (
+        <div className="term text-lg text-center py-6" style={{ color: C.ochre }}>{L("lädt…", "loading…")} ⏳</div>
+      ) : items.length === 0 ? (
+        <div className="term text-lg text-center py-6" style={{ color: C.ochre }}>
+          {L("Dieser Ordner ist leer. Mal etwas in Paint und speichere es! 🎨", "This folder is empty. Draw something in Paint and save it! 🎨")}
+        </div>
+      ) : (
+        <>
+          <div className="term text-sm mb-2" style={{ color: C.ochre }}>{items.length} {L("Objekte", "items")}</div>
+          <div className="grid grid-cols-3 gap-2">
+            {items.map((d, i) => (
+              <button key={d._id ?? i} onClick={() => setZoom(d)} className="nb p-1 text-left" style={{ ...sunken, background: "#fff" }} title={L("öffnen", "open")}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={d.url} alt="" className="w-full h-20 object-contain" style={{ background: "#fff" }} />
+                <div className="term text-sm truncate text-center mt-0.5" style={{ color: C.ink }}>🖼 {d.name || "Anonym"}</div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {zoom && (
+        <div onClick={() => setZoom(null)} className="fixed inset-0 flex items-center justify-center p-6 cursor-pointer" style={{ background: "rgba(10,10,20,0.85)", zIndex: 99999 }}>
+          <div className="p-2 max-w-2xl" style={{ background: C.cream, ...raised }} onClick={e => e.stopPropagation()}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={zoom.url} alt="" className="w-full max-h-[70vh] object-contain" style={{ background: "#fff" }} />
+            <div className="term text-base mt-1 text-center" style={{ color: C.ink }}>{L("gezeichnet von", "drawn by")} <span style={{ color: C.pink }}>{zoom.name || "Anonym"}</span></div>
+            <button onClick={() => setZoom(null)} className="term text-base mt-2 w-full px-2 py-1" style={{ background: C.pink, color: C.cream, ...raised }}>✕ {L("Schließen", "Close")}</button>
+          </div>
         </div>
       )}
     </div>
