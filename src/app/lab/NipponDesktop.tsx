@@ -30,34 +30,40 @@ function beep(freq = 660) {
   } catch {}
 }
 
+type Lng = "de" | "en";
 const APPS = [
-  { id: "blog", icon: "✎", title: "Blog.exe" },
-  { id: "japanisch", icon: "🎌", title: "Japanisch" },
-  { id: "photo", icon: "📷", title: "Foto des Tages" },
-  { id: "video", icon: "▶", title: "Video des Tages" },
-  { id: "map", icon: "🗺", title: "Karte" },
-  { id: "bucket", icon: "🎯", title: "Bucket List" },
-  { id: "paint", icon: "🎨", title: "Paint" },
-  { id: "snake", icon: "🐍", title: "Snake" },
-  { id: "pong", icon: "🏓", title: "Pong" },
-  { id: "newsletter", icon: "📧", title: "Newsletter" },
-  { id: "guestbook", icon: "✉", title: "Gästebuch" },
-  { id: "about", icon: "★", title: "Über mich" },
+  { id: "blog", icon: "✎", title: "Blog.exe", titleEN: "Blog.exe" },
+  { id: "japanisch", icon: "🎌", title: "Japanisch", titleEN: "Japanese" },
+  { id: "photo", icon: "📷", title: "Foto des Tages", titleEN: "Photo of the Day" },
+  { id: "video", icon: "▶", title: "Video des Tages", titleEN: "Video of the Day" },
+  { id: "map", icon: "🗺", title: "Karte", titleEN: "Map" },
+  { id: "bucket", icon: "🎯", title: "Bucket List", titleEN: "Bucket List" },
+  { id: "paint", icon: "🎨", title: "Paint", titleEN: "Paint" },
+  { id: "snake", icon: "🐍", title: "Snake", titleEN: "Snake" },
+  { id: "pong", icon: "🏓", title: "Pong", titleEN: "Pong" },
+  { id: "newsletter", icon: "📧", title: "Newsletter", titleEN: "Newsletter" },
+  { id: "guestbook", icon: "✉", title: "Gästebuch", titleEN: "Guestbook" },
+  { id: "about", icon: "★", title: "Über mich", titleEN: "About me" },
 ];
+function appTitle(a: { title: string; titleEN?: string }, lang: Lng) { return lang === "en" ? (a.titleEN ?? a.title) : a.title; }
 const DESKTOP_ICONS = ["blog", "japanisch", "photo", "video", "map", "bucket", "paint", "snake", "pong", "guestbook"];
 // Linkes Sidebar-Menü: nur die wichtigen Apps (Spiele nur über Icons + Start)
 const SIDEBAR_APPS = ["blog", "japanisch", "photo", "video", "map", "bucket", "newsletter", "guestbook", "about"];
+// Start-Menü: Top-Level + ausklappbarer "Programme"-Ordner (wie Windows)
+const START_TOP = ["blog", "japanisch", "photo", "video", "map", "bucket", "guestbook"];
+const START_PROGRAMS = ["paint", "snake", "pong", "newsletter", "about"];
 const W: Record<string, number> = { blog: 560, japanisch: 600, video: 560, map: 520, bucket: 480, paint: 520, snake: 340, pong: 360, newsletter: 440, about: 440, guestbook: 460, photo: 440 };
 function appWidth(id: string) { return id.startsWith("post:") ? 540 : (W[id] ?? 460); }
-function winMeta(id: string, data: LabPost[]) {
+function winMeta(id: string, data: LabPost[], lang: Lng = "de") {
   if (id.startsWith("post:")) { const p = data.find(x => x._id === id.slice(5)); return { icon: "📄", title: p?.title ?? "Post" }; }
-  const a = APPS.find(x => x.id === id); return { icon: a?.icon ?? "▢", title: a?.title ?? id };
+  const a = APPS.find(x => x.id === id); return { icon: a?.icon ?? "▢", title: a ? appTitle(a, lang) : id };
 }
 
 interface OpenWin { id: string; x: number; y: number; z: number; min?: boolean; max?: boolean }
 
 export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPost[]; onSwitchSimple?: () => void }) {
   const { lang, toggle: toggleLang } = useLanguage();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
   const data = posts;
   const [booted, setBooted] = useState(false);
   const [shutting, setShutting] = useState(false);
@@ -66,6 +72,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   const [visitors, setVisitors] = useState(1337);
   const [sound, setSound] = useState(true);
   const [startOpen, setStartOpen] = useState(false);
+  const [progOpen, setProgOpen] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [settings, setSettings] = useState<{ bannerText: string; systems: any[] } | null>(null);
   const z = useRef(10);
@@ -123,7 +130,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   }, [booted]);
 
   function openApp(id: string) {
-    click(); setStartOpen(false);
+    click(); setStartOpen(false); setProgOpen(false);
     setWins(prev => {
       const ex = prev.find(w => w.id === id); z.current += 1;
       if (ex) return prev.map(w => w.id === id ? { ...w, z: z.current, min: false } : w);
@@ -167,7 +174,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');.pixel{font-family:'Press Start 2P',monospace}.term{font-family:'VT323',monospace}@keyframes bb{from{width:0}to{width:100%}}@keyframes pl{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
         <div className="text-7xl mb-5">🗾</div>
         <div className="pixel text-2xl mb-2" style={{ textShadow: `3px 3px 0 ${C.pink}` }}>NIPPON<span style={{ color: C.cyan }}>OS</span></div>
-        <div className="term text-2xl mb-8" style={{ color: C.ochre }}>willkommen zurück, David</div>
+        <div className="term text-2xl mb-8" style={{ color: C.ochre }}>{lang === "en" ? "welcome back" : "willkommen zurück"}</div>
         <button onClick={() => { beep(); boot(); }} className="pixel text-[11px] px-6 py-4" style={{ background: C.pink, color: C.cream, ...raised, animation: "pl 1.5s infinite" }}>
           ▶ EINLOGGEN
         </button>
@@ -191,7 +198,6 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
       `}</style>
 
       <div className="absolute inset-0 pointer-events-none" aria-hidden style={{ backgroundImage: `linear-gradient(${C.cyan}10 1px,transparent 1px),linear-gradient(90deg,${C.cyan}10 1px,transparent 1px)`, backgroundSize: "40px 40px" }} />
-      <div className="absolute right-8 top-20 text-6xl opacity-15 pointer-events-none" style={{ animation: "nf 6s ease-in-out infinite" }} aria-hidden>🌙</div>
 
       <div className="relative overflow-hidden py-1 shrink-0" style={{ background: C.pink, borderBottom: `3px solid ${C.ink}` }}>
         <div className="term text-lg whitespace-nowrap" style={{ color: C.bg, animation: "nm 22s linear infinite" }}>
@@ -206,14 +212,14 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
             <div className="p-2 text-center" style={{ background: C.cream, color: C.ink }}>
               <div className="text-4xl" style={{ animation: "nf 4s ease-in-out infinite" }}>🗾</div>
               <div className="pixel text-[9px] my-1" style={{ color: C.pink }}>~ DAVID ~</div>
-              <div className="term text-base leading-tight">Ramen-Jäger &amp;<br/>Foto-Sammler</div>
+              <div className="term text-base leading-tight">{L("Ramen-Jäger &", "Ramen hunter &")}<br/>{L("Foto-Sammler", "photo collector")}</div>
             </div>
           </div>
           <div className="p-1" style={{ background: C.ochre, ...raised }}>
             <div className="p-2" style={{ background: C.bg }}>
               <div className="pixel text-[8px] mb-2 text-center" style={{ color: C.ochre }}>● APPS ●</div>
               {SIDEBAR_APPS.map(id => { const a = APPS.find(x => x.id === id)!; return (
-                <button key={a.id} onClick={() => openApp(a.id)} className="nb term text-lg w-full text-left px-2 py-0.5 mb-1" style={{ color: C.cream, ...sunken, background: "rgba(255,255,255,0.05)" }}>{a.icon} {a.title}</button>
+                <button key={a.id} onClick={() => openApp(a.id)} className="nb term text-lg w-full text-left px-2 py-0.5 mb-1" style={{ color: C.cream, ...sunken, background: "rgba(255,255,255,0.05)" }}>{a.icon} {appTitle(a, lang)}</button>
               ); })}
             </div>
           </div>
@@ -236,8 +242,8 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
           {onSwitchSimple && (
             <div className="p-2 term text-base" style={{ background: C.bg, ...sunken, color: C.cream }}>
               <div className="pixel text-[8px] mb-1" style={{ color: C.cyan }}>ℹ INFO</div>
-              <p className="mb-1" style={{ color: C.cream }}>Das ist die verspielte Version von Nippon Diary.</p>
-              <button onClick={() => { click(); onSwitchSimple(); }} className="nb term text-base" style={{ color: C.pink }}>→ zur normalen Seite</button>
+              <p className="mb-1" style={{ color: C.cream }}>{L("Das ist die verspielte Version von Nippon Diary.", "This is the playful version of Nippon Diary.")}</p>
+              <button onClick={() => { click(); onSwitchSimple(); }} className="nb term text-base" style={{ color: C.pink }}>{L("→ zur normalen Seite", "→ to the normal site")}</button>
             </div>
           )}
         </aside>
@@ -246,10 +252,10 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
           {/* Desktop Icons */}
           <div className="absolute top-2 left-2 z-[2] flex flex-col gap-1.5">
             {DESKTOP_ICONS.map(id => {
-              const m = winMeta(id, data);
+              const m = winMeta(id, data, lang);
               return (
                 <button key={id} onDoubleClick={() => openApp(id)} onClick={() => { if (isMobile()) openApp(id); }}
-                  className="flex flex-col items-center w-16 p-1 rounded-lg hover:bg-white/10 transition-colors" title="Doppelklick">
+                  className="flex flex-col items-center w-16 p-1 rounded-lg hover:bg-white/10 transition-colors" title={L("Doppelklick", "Double-click")}>
                   <span className="text-3xl">{m.icon}</span>
                   <span className="term text-sm text-center leading-none" style={{ color: C.cream, textShadow: "0 1px 2px #000" }}>{m.title}</span>
                 </button>
@@ -271,19 +277,34 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
 
       {startOpen && (
         <>
-          <div className="fixed inset-0 z-[25]" onClick={() => setStartOpen(false)} />
+          <div className="fixed inset-0 z-[25]" onClick={() => { setStartOpen(false); setProgOpen(false); }} />
           <div className="absolute bottom-11 left-2 z-30 p-1 w-52" style={{ background: C.pink, ...raised }}>
-            <div className="p-2" style={{ background: C.bg2 }}>
+            <div className="p-2 relative" style={{ background: C.bg2 }}>
               <div className="pixel text-[8px] mb-2 text-center" style={{ color: C.cyan }}>★ NIPPON OS ★</div>
-              {APPS.map(a => (
-                <button key={a.id} onClick={() => openApp(a.id)} className="nb term text-lg w-full text-left px-2 py-1 mb-0.5" style={{ color: C.cream, ...sunken, background: "rgba(255,255,255,0.05)" }}>{a.icon} {a.title}</button>
-              ))}
+              {START_TOP.map(id => { const a = APPS.find(x => x.id === id)!; return (
+                <button key={a.id} onClick={() => openApp(a.id)} className="nb term text-lg w-full text-left px-2 py-1 mb-0.5" style={{ color: C.cream, ...sunken, background: "rgba(255,255,255,0.05)" }}>{a.icon} {appTitle(a, lang)}</button>
+              ); })}
+              {/* Programme-Ordner (klappt seitlich aus, wie Windows) */}
+              <button onMouseEnter={() => setProgOpen(true)} onClick={() => { click(); setProgOpen(o => !o); }}
+                className="nb term text-lg w-full text-left px-2 py-1 mb-0.5 flex items-center justify-between" style={{ color: C.ochre, ...sunken, background: progOpen ? "rgba(232,161,58,0.18)" : "rgba(255,255,255,0.05)" }}>
+                <span>📁 {L("Programme", "Programs")}</span><span>▸</span>
+              </button>
+              {progOpen && (
+                <div onMouseLeave={() => setProgOpen(false)} className="absolute left-full top-0 ml-1 p-1 w-44 z-40" style={{ background: C.pink, ...raised }}>
+                  <div className="p-2" style={{ background: C.bg2 }}>
+                    <div className="pixel text-[8px] mb-2 text-center" style={{ color: C.ochre }}>📁 {L("Programme", "Programs")}</div>
+                    {START_PROGRAMS.map(id => { const a = APPS.find(x => x.id === id)!; return (
+                      <button key={a.id} onClick={() => { openApp(a.id); setProgOpen(false); }} className="nb term text-lg w-full text-left px-2 py-1 mb-0.5" style={{ color: C.cream, ...sunken, background: "rgba(255,255,255,0.05)" }}>{a.icon} {appTitle(a, lang)}</button>
+                    ); })}
+                  </div>
+                </div>
+              )}
               <div className="mt-1 pt-1" style={{ borderTop: `1px solid ${C.ink}` }}>
                 {onSwitchSimple && (
-                  <button onClick={() => { click(); onSwitchSimple(); }} className="nb term text-lg w-full text-left px-2 py-1" style={{ color: C.cyan, ...sunken }}>📄 Einfache Ansicht</button>
+                  <button onClick={() => { click(); onSwitchSimple(); }} className="nb term text-lg w-full text-left px-2 py-1" style={{ color: C.cyan, ...sunken }}>📄 {L("Einfache Ansicht", "Simple view")}</button>
                 )}
-                <button onClick={shutdown} className="nb term text-lg w-full text-left px-2 py-1 mt-0.5" style={{ color: C.ochre, ...sunken }}>⏻ Herunterfahren</button>
-                {!onSwitchSimple && <Link href="/" className="block term text-base w-full text-left px-2 py-1 mt-0.5 nl">🌐 zur echten Website</Link>}
+                <button onClick={shutdown} className="nb term text-lg w-full text-left px-2 py-1 mt-0.5" style={{ color: C.ochre, ...sunken }}>⏻ {L("Herunterfahren", "Shut down")}</button>
+                {!onSwitchSimple && <Link href="/" className="block term text-base w-full text-left px-2 py-1 mt-0.5 nl">🌐 {L("zur echten Website", "to the real website")}</Link>}
               </div>
             </div>
           </div>
@@ -291,9 +312,9 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
       )}
 
       <div className="shrink-0 h-10 flex items-center gap-2 px-2 relative z-30" style={{ background: C.bg2, borderTop: `3px solid ${C.ink}` }}>
-        <button onClick={() => { click(); setStartOpen(s => !s); }} className="pixel text-[9px] px-2 py-1" style={{ background: startOpen ? C.cyan : C.pink, color: C.cream, ...raised }}>🗾 START</button>
+        <button onClick={() => { click(); setStartOpen(s => !s); setProgOpen(false); }} className="pixel text-[9px] px-2 py-1" style={{ background: startOpen ? C.cyan : C.pink, color: C.cream, ...raised }}>🗾 START</button>
         <div className="flex gap-1 flex-1 overflow-x-auto">
-          {wins.map(w => { const m = winMeta(w.id, data); return (
+          {wins.map(w => { const m = winMeta(w.id, data, lang); return (
             <button key={w.id} onClick={() => taskClick(w.id)} className="term text-base px-2 whitespace-nowrap max-w-40 truncate" style={{ color: w.min ? "#999" : C.cream, ...sunken, background: w.min ? "transparent" : "rgba(255,255,255,0.08)" }}>{m.icon} {m.title}</button>
           ); })}
         </div>
@@ -308,7 +329,8 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
 function WindowFrame({ win, data, onOpenPost, onClose, onFocus, onMin, onMax, onTitleDown, onBeep }: {
   win: OpenWin; data: LabPost[]; onOpenPost: (id: string) => void; onClose: () => void; onFocus: () => void; onMin: () => void; onMax: () => void; onTitleDown: (e: React.PointerEvent) => void; onBeep: (f?: number) => void;
 }) {
-  const m = winMeta(win.id, data);
+  const { lang } = useLanguage();
+  const m = winMeta(win.id, data, lang);
   const geom: React.CSSProperties = win.max ? { left: 0, top: 0, width: "100%", height: "100%" } : { left: win.x, top: win.y, width: `min(92vw, ${appWidth(win.id)}px)` };
   return (
     <div className="absolute p-1 flex flex-col" onPointerDown={onFocus} style={{ ...geom, zIndex: win.z, background: C.pink, ...raised, animation: "wo .2s ease-out", maxHeight: win.max ? "100%" : "84%" }}>
@@ -417,7 +439,7 @@ function PostDetailApp({ post }: { post?: LabPost }) {
         </div>
       )}
       {zoom && (
-        <div onClick={() => setZoom(null)} className="fixed inset-0 z-[200] flex items-center justify-center p-6 cursor-pointer" style={{ background: "rgba(10,10,20,0.85)" }}>
+        <div onClick={() => setZoom(null)} className="fixed inset-0 flex items-center justify-center p-6 cursor-pointer" style={{ background: "rgba(10,10,20,0.85)", zIndex: 99999 }}>
           <div className="p-2 max-w-3xl" style={{ background: C.cream, ...raised }} onClick={e => e.stopPropagation()}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={zoom.url} alt="" className="w-full max-h-[75vh] object-contain" />
