@@ -85,6 +85,13 @@ export default function MiniMap({ markers, center = [36.5, 136], zoom = 5, heigh
           });
         }
       });
+
+      // Karte auf die Marker ausrichten
+      if (markers.length === 1) {
+        map.setView([markers[0].lat, markers[0].lng], zoom);
+      } else if (markers.length > 1) {
+        map.fitBounds(markers.map(m => [m.lat, m.lng]) as [number, number][], { padding: [40, 40] });
+      }
     });
     return () => { mapRef.current?.remove(); mapRef.current = null; };
   }, []);

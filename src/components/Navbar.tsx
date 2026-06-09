@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MapPin, BookOpen, Image, List, Home, GraduationCap, Sun, Moon, MessageCircle, Menu, X } from "lucide-react";
+import { MapPin, BookOpen, Image, List, Home, GraduationCap, Sun, Moon, BookMarked, Menu, X } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { useLanguage } from "@/components/LanguageProvider";
 import BuyMeCoffee from "@/components/BuyMeCoffee";
@@ -13,6 +13,11 @@ export default function Navbar() {
   const { lang, toggle: toggleLang, t } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  function switchToOS() {
+    try { localStorage.setItem("nippon-exp", "os"); } catch {}
+    window.location.href = "/";
+  }
+
   const links = [
     { href: "/",            label: t.home,       icon: Home },
     { href: "/posts",       label: t.posts,      icon: BookOpen },
@@ -20,7 +25,7 @@ export default function Navbar() {
     { href: "/gallery",     label: t.gallery,    icon: Image },
     { href: "/bucket-list", label: t.bucketList, icon: List },
     { href: "/japanisch",   label: t.japanese,   icon: GraduationCap },
-    { href: "/community",   label: t.community,  icon: MessageCircle },
+    { href: "/guestbook",   label: t.guestbook,  icon: BookMarked },
   ];
 
   return (
@@ -44,6 +49,13 @@ export default function Navbar() {
               </Link>
             );
           })}
+
+          <button onClick={switchToOS}
+            className="ml-1 px-2 py-1 rounded-lg text-sm transition-all hover:scale-110"
+            style={{ color: "var(--text-secondary)", border: "1px solid var(--border)" }}
+            title="NipponOS Modus">
+            🗾
+          </button>
 
           <button onClick={toggleLang}
             className="ml-1 px-2 py-1 rounded-lg text-xs font-bold transition-all hover:scale-110"
@@ -93,6 +105,13 @@ export default function Navbar() {
                   </Link>
                 );
               })}
+
+              {/* NipponOS switch */}
+              <button onClick={switchToOS}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-all mt-1"
+                style={{ color: "var(--accent-pink)", border: "1px solid var(--border)" }}>
+                🗾 NipponOS Modus
+              </button>
 
               {/* Untere Reihe: Sprache, Theme, Support */}
               <div className="flex items-center gap-3 mt-2 pt-3" style={{ borderTop: "1px solid var(--border)" }}>

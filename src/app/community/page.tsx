@@ -1,7 +1,5 @@
-import { getCommunity } from "@/lib/fetchData";
-import CommunityClient from "./CommunityClient";
+import { redirect } from "next/navigation";
 
-export default async function CommunityPage() {
-  const posts = await getCommunity();
-  return <CommunityClient initialPosts={posts} />;
+export default function CommunityPage() {
+  redirect("/guestbook");
 }

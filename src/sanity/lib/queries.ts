@@ -16,6 +16,7 @@ export const allPostsQuery = groq`
     tags,
     youtubeId,
     "coverImage": photos[0].image.asset->url,
+    "photos": photos[]{ "url": image.asset->url, caption },
     "likes": 0
   }
 `

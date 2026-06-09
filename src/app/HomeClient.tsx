@@ -134,7 +134,7 @@ export default function HomeClient({ posts, bucketItems, settings, stats }: Prop
           <p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>{t.supportText}</p>
           <div className="flex gap-3 justify-center flex-wrap">
             <Link
-              href="/community#newsletter"
+              href="/guestbook#newsletter"
               className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 hover:scale-105 glow-cyan"
               style={{ background: "var(--accent-cyan)", color: "#0d1117", minWidth: "180px" }}
             >
