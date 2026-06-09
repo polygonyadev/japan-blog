@@ -224,7 +224,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
       </div>
 
       <div className="flex flex-1 min-h-0 relative">
-        <aside className="w-40 lg:w-52 shrink-0 overflow-y-auto p-2 flex flex-col gap-3 relative z-10" style={{ background: C.bg2, borderRight: `3px solid ${C.ink}` }}>
+        <aside className="w-40 lg:w-52 shrink-0 overflow-y-auto p-2 hidden md:flex flex-col gap-3 relative z-10" style={{ background: C.bg2, borderRight: `3px solid ${C.ink}` }}>
           <div className="text-center pt-1"><div className="pixel text-sm" style={{ color: C.cream, textShadow: `2px 2px 0 ${C.pink}` }}>NIPPON<span style={{ color: C.cyan }}>OS</span></div></div>
           <div className="p-1" style={{ background: C.cyan, ...raised }}>
             <div className="p-2 text-center" style={{ background: C.cream, color: C.ink }}>
@@ -340,7 +340,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
             <div className="text-4xl mb-1" style={{ animation: "nf 2s ease-in-out infinite" }}>☕</div>
             <div className="pixel text-[9px] mb-2" style={{ color: C.pink }}>{L("MAGST DU NIPPONOS?", "ENJOYING NIPPONOS?")}</div>
             <p className="term text-lg leading-tight mb-3" style={{ color: C.ink }}>
-              {L("Unterstütze mein Japan-Abenteuer und spendier mir einen Kaffee! ♥", "Support my Japan adventure and buy me a coffee! ♥")}
+              {L("Gefällt dir mein kleines Eck im Netz? Dann spendier mir einen Kaffee… oder ein Bier! 🍺 Du unterstützt damit mein Japan-Abenteuer. ♥", "Enjoying my little corner of the web? Then buy me a coffee… or a beer! 🍺 You'll support my Japan adventure. ♥")}
             </p>
             <a href={KOFI_URL} target="_blank" rel="noopener noreferrer" onClick={() => click(880)}
               className="nb inline-block pixel text-[9px] px-4 py-2" style={{ background: C.pink, color: C.cream, ...raised, textDecoration: "none" }}>
@@ -359,7 +359,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
         </div>
         <button onClick={() => setSound(s => !s)} className="term text-base px-2" style={{ color: sound ? C.cyan : "#888", ...sunken }} title="Sound an/aus">{sound ? "🔊" : "🔇"}</button>
         <button onClick={() => { click(520); toggleLang(); }} className="term text-base px-2" style={{ color: C.ochre, ...sunken }} title={lang === "de" ? "Switch to English" : "Auf Deutsch wechseln"}>{lang === "de" ? "DE" : "EN"}</button>
-        <button onClick={() => { click(740); setKofiOpen(o => !o); }} className="term text-base px-2" style={{ color: kofiOpen ? C.cyan : C.pink, ...(kofiOpen ? raised : sunken) }} title={L("Support me ☕", "Support me ☕")}>☕</button>
+        <button onClick={() => { click(740); setKofiOpen(o => !o); }} className="term text-base px-2 whitespace-nowrap" style={{ color: kofiOpen ? C.cyan : C.pink, ...(kofiOpen ? raised : sunken) }} title={L("Support me ☕", "Support me ☕")}>☕ <span className="hidden sm:inline">support me</span></button>
         <span className="term text-lg px-2 hidden sm:inline" style={{ color: C.cyan }}>🇯🇵 {clock}</span>
       </div>
     </div>
