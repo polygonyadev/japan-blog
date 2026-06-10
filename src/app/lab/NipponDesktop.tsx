@@ -42,6 +42,7 @@ const APPS = [
   { id: "bucket", icon: "🎯", title: "Bucket List", titleEN: "Bucket List" },
   { id: "paint", icon: "🎨", title: "Paint", titleEN: "Paint" },
   { id: "gallery", icon: "📁", title: "Gallery", titleEN: "Gallery" },
+  { id: "files", icon: "💻", title: "Datei-Explorer", titleEN: "File Explorer" },
   { id: "snake", icon: "🐍", title: "Snake", titleEN: "Snake" },
   { id: "pong", icon: "🏓", title: "Pong", titleEN: "Pong" },
   { id: "newsletter", icon: "📧", title: "Newsletter", titleEN: "Newsletter" },
@@ -50,13 +51,14 @@ const APPS = [
   { id: "about", icon: "★", title: "Über mich", titleEN: "About me" },
 ];
 function appTitle(a: { title: string; titleEN?: string }, lang: Lng) { return lang === "en" ? (a.titleEN ?? a.title) : a.title; }
-const DESKTOP_ICONS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "paint", "pong", "guestbook"];
+function isMobileView() { return typeof window !== "undefined" && window.innerWidth < 760; }
+const DESKTOP_ICONS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "files", "paint", "pong", "guestbook"];
 // Linkes Sidebar-Menü: nur die wichtigen Apps (Spiele nur über Icons + Start)
-const SIDEBAR_APPS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "newsletter", "guestbook", "about"];
+const SIDEBAR_APPS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "files", "newsletter", "guestbook", "about"];
 // Start-Menü: Top-Level + ausklappbarer "Programme"-Ordner (wie Windows)
-const START_TOP = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "guestbook"];
+const START_TOP = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "files", "guestbook"];
 const START_PROGRAMS = ["paint", "snake", "pong", "terminal", "newsletter", "about"];
-const W: Record<string, number> = { blog: 560, japanisch: 600, video: 560, map: 520, bucket: 480, paint: 520, gallery: 560, fotofeed: 600, snake: 340, pong: 360, newsletter: 440, about: 440, guestbook: 460, photo: 440, terminal: 560 };
+const W: Record<string, number> = { blog: 560, japanisch: 600, video: 560, map: 520, bucket: 480, paint: 520, gallery: 560, fotofeed: 600, files: 600, snake: 340, pong: 360, newsletter: 440, about: 440, guestbook: 460, photo: 440, terminal: 560 };
 function appWidth(id: string) { return id.startsWith("post:") ? 540 : (W[id] ?? 460); }
 function winMeta(id: string, data: LabPost[], lang: Lng = "de") {
   if (id.startsWith("post:")) { const p = data.find(x => x._id === id.slice(5)); return { icon: "📄", title: p?.title ?? "Post" }; }
@@ -427,6 +429,7 @@ function WindowFrame({ win, data, settings, onOpenPost, onOpenApp, onClose, onFo
         {win.id === "bucket" && <BucketApp onBeep={onBeep} />}
         {win.id === "paint" && <PaintApp />}
         {win.id === "gallery" && <GalleryApp />}
+        {win.id === "files" && <FilesApp data={data} onOpenApp={onOpenApp} onBeep={onBeep} />}
         {win.id === "snake" && <SnakeApp />}
         {win.id === "pong" && <PongApp />}
         {win.id === "newsletter" && <NewsletterApp onBeep={onBeep} />}
@@ -1178,6 +1181,133 @@ function GalleryApp() {
     </div>
   );
 }
+
+// ─── Datei-Explorer (Finder-Style mit echten Ordnern) ────────────────────────
+function FilesApp({ data, onOpenApp, onBeep }: { data: LabPost[]; onOpenApp: (id: string) => void; onBeep: (f?: number) => void }) {
+  interface Img { url: string; caption?: string; title?: string; name?: string }
+  const { lang } = useLanguage();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
+  const [path, setPath] = useState<string[]>([]); // [] = Root
+  const [photos, setPhotos] = useState<Img[] | null>(null);
+  const [drawings, setDrawings] = useState<Img[] | null>(null);
+  const [zoom, setZoom] = useState<Img | null>(null);
+
+  const folder = path[0]; // "fotos" | "zeichnungen" | "dokumente" | "papierkorb" | "readme"
+  useEffect(() => {
+    if (folder === "fotos" && photos === null) fetch("/api/gallery").then(r => r.json()).then(d => setPhotos(Array.isArray(d) ? d : [])).catch(() => setPhotos([]));
+    if (folder === "zeichnungen" && drawings === null) fetch("/api/drawings").then(r => r.json()).then(d => setDrawings(Array.isArray(d) ? d : [])).catch(() => setDrawings([]));
+  }, [folder, photos, drawings]);
+
+  const ROOT = [
+    { id: "fotos", icon: "📁", label: L("Fotos", "Photos") },
+    { id: "zeichnungen", icon: "📁", label: L("Zeichnungen", "Drawings") },
+    { id: "dokumente", icon: "📁", label: L("Dokumente", "Documents") },
+    { id: "readme", icon: "📄", label: "readme.txt" },
+    { id: "papierkorb", icon: "🗑️", label: L("Papierkorb", "Trash") },
+  ];
+  const crumbLabel = (id?: string) => ROOT.find(r => r.id === id)?.label ?? id;
+
+  function open(id: string) { onBeep(); setPath([id]); }
+  function goRoot() { onBeep(440); setPath([]); }
+
+  return (
+    <div>
+      {/* Pfadleiste + Zurück */}
+      <div className="flex items-center gap-2 mb-2">
+        <button onClick={goRoot} disabled={!folder} className="term text-base px-2 disabled:opacity-40" style={{ ...sunken, background: "#fff", color: C.ink }}>⬆ {L("Zurück", "Back")}</button>
+        <div className="term text-base px-2 py-1 flex-1 truncate" style={{ ...sunken, background: "#fff", color: C.ink }}>
+          <button onClick={goRoot} className="hover:underline" style={{ color: C.ochre }}>💻 System</button>
+          {folder && <> ▸ <span style={{ color: C.pink }}>{ROOT.find(r => r.id === folder)?.icon} {crumbLabel(folder)}</span></>}
+        </div>
+      </div>
+
+      {/* Root: Ordner */}
+      {!folder && (
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {ROOT.map(f => (
+            <button key={f.id} onDoubleClick={() => open(f.id)} onClick={() => { if (isMobileView()) open(f.id); }}
+              className="nb flex flex-col items-center p-2 rounded-lg hover:bg-black/5" title={L("Doppelklick zum Öffnen", "Double-click to open")}>
+              <span className="text-4xl">{f.icon}</span>
+              <span className="term text-base text-center leading-tight" style={{ color: C.ink }}>{f.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Fotos */}
+      {folder === "fotos" && (
+        photos === null ? <Loading lang={lang} />
+          : photos.length === 0 ? <Empty text={L("Keine Fotos.", "No photos.")} />
+            : <div className="grid grid-cols-3 sm:grid-cols-4 gap-1">
+                {photos.map((p, i) => (
+                  <button key={i} onClick={() => setZoom(p)} className="aspect-square overflow-hidden" style={{ ...sunken, background: C.bg }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.url} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                  </button>
+                ))}
+              </div>
+      )}
+
+      {/* Zeichnungen */}
+      {folder === "zeichnungen" && (
+        drawings === null ? <Loading lang={lang} />
+          : drawings.length === 0 ? <Empty text={L("Noch keine Zeichnungen — mal was in Paint! 🎨", "No drawings yet — draw in Paint! 🎨")} />
+            : <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {drawings.map((d, i) => (
+                  <button key={i} onClick={() => setZoom(d)} className="p-1" style={{ ...sunken, background: "#fff" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={d.url} alt="" className="w-full h-20 object-contain" />
+                    <div className="term text-sm text-center truncate" style={{ color: C.ink }}>🖼 {d.name || "Anonym"}</div>
+                  </button>
+                ))}
+              </div>
+      )}
+
+      {/* Dokumente = Blog-Posts */}
+      {folder === "dokumente" && (
+        data.length === 0 ? <Empty text={L("Noch keine Posts.", "No posts yet.")} />
+          : <div className="flex flex-col gap-1">
+              {data.map(p => (
+                <button key={p._id} onDoubleClick={() => { onBeep(); onOpenApp(`post:${p._id}`); }} onClick={() => { if (isMobileView()) { onBeep(); onOpenApp(`post:${p._id}`); } }}
+                  className="nb flex items-center gap-2 p-1.5 text-left" style={{ ...sunken, background: "#fff" }} title={L("Doppelklick zum Öffnen", "Double-click to open")}>
+                  <span className="text-xl shrink-0">📄</span>
+                  <span className="term text-base truncate" style={{ color: C.ink }}>{p.title}<span style={{ color: C.ochre }}> · {p.date ? new Date(p.date).toLocaleDateString(lang === "en" ? "en-US" : "de-DE") : ""}</span></span>
+                </button>
+              ))}
+            </div>
+      )}
+
+      {/* readme.txt */}
+      {folder === "readme" && (
+        <div className="p-3 term text-lg" style={{ ...sunken, background: "#fff", color: C.ink, lineHeight: 1.4 }}>
+          <div className="pixel text-[9px] mb-2" style={{ color: C.pink }}>readme.txt</div>
+          <p>こんにちは！ {L("Willkommen im NipponOS-Dateisystem.", "Welcome to the NipponOS file system.")}</p>
+          <p className="mt-2">{L("Hier findest du meine Fotos, Zeichnungen der Besucher und alle Blog-Einträge — ordentlich in Ordnern. Viel Spaß beim Stöbern!", "Here you'll find my photos, visitor drawings and all blog posts — neatly in folders. Enjoy browsing!")}</p>
+          <p className="mt-2" style={{ color: C.ochre }}>— David 🗾</p>
+        </div>
+      )}
+
+      {/* Papierkorb */}
+      {folder === "papierkorb" && (
+        <div className="text-center py-10 term text-xl" style={{ color: C.ochre }}>🗑️<br />{L("Papierkorb ist leer.", "Trash is empty.")}<br /><span className="text-base">{L("(Nichts wegzuwerfen hier!)", "(Nothing to throw away here!)")}</span></div>
+      )}
+
+      {/* Lightbox */}
+      {zoom && (
+        <div onClick={() => setZoom(null)} className="fixed inset-0 flex items-center justify-center p-6 cursor-pointer" style={{ background: "rgba(10,10,20,0.85)", zIndex: 99999 }}>
+          <div className="p-2 max-w-2xl" style={{ background: C.cream, ...raised }} onClick={e => e.stopPropagation()}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={zoom.url} alt="" className="w-full max-h-[70vh] object-contain" style={{ background: "#fff" }} />
+            {(zoom.caption || zoom.name) && <div className="term text-base mt-1 text-center" style={{ color: C.ink }}>{zoom.caption ?? `${L("von", "by")} ${zoom.name}`}</div>}
+            <button onClick={() => setZoom(null)} className="term text-base mt-2 w-full px-2 py-1" style={{ background: C.pink, color: C.cream, ...raised }}>✕ {L("Schließen", "Close")}</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+function Loading({ lang }: { lang: Lng }) { return <div className="term text-lg text-center py-6" style={{ color: C.ochre }}>{lang === "en" ? "loading…" : "lädt…"} ⏳</div>; }
+function Empty({ text }: { text: string }) { return <div className="term text-lg text-center py-8" style={{ color: C.ochre }}>{text}</div>; }
 
 // ─── Snake ────────────────────────────────────────────────────────────────────
 function SnakeApp() {
