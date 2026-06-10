@@ -40,6 +40,7 @@ const APPS = [
   { id: "video", icon: "▶", title: "Video des Tages", titleEN: "Video of the Day" },
   { id: "map", icon: "🗺", title: "Karte", titleEN: "Map" },
   { id: "clock", icon: "🕒", title: "Welt-Uhr", titleEN: "World Clock" },
+  { id: "cassette", icon: "📻", title: "City-Pop", titleEN: "City-Pop" },
   { id: "bucket", icon: "🎯", title: "Bucket List", titleEN: "Bucket List" },
   { id: "paint", icon: "🎨", title: "Paint", titleEN: "Paint" },
   { id: "gallery", icon: "📁", title: "Gallery", titleEN: "Gallery" },
@@ -53,13 +54,34 @@ const APPS = [
 ];
 function appTitle(a: { title: string; titleEN?: string }, lang: Lng) { return lang === "en" ? (a.titleEN ?? a.title) : a.title; }
 function isMobileView() { return typeof window !== "undefined" && window.innerWidth < 760; }
-const DESKTOP_ICONS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "files", "paint", "pong", "guestbook"];
+
+// YouTube IFrame API einmalig laden (für den Kassetten-Player)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let ytReadyPromise: Promise<any> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function loadYouTubeAPI(): Promise<any> {
+  if (ytReadyPromise) return ytReadyPromise;
+  ytReadyPromise = new Promise((resolve) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any;
+    if (w.YT && w.YT.Player) { resolve(w.YT); return; }
+    const prev = w.onYouTubeIframeAPIReady;
+    w.onYouTubeIframeAPIReady = () => { if (typeof prev === "function") prev(); resolve(w.YT); };
+    if (!document.getElementById("yt-iframe-api")) {
+      const tag = document.createElement("script");
+      tag.id = "yt-iframe-api"; tag.src = "https://www.youtube.com/iframe_api";
+      document.head.appendChild(tag);
+    }
+  });
+  return ytReadyPromise;
+}
+const DESKTOP_ICONS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "cassette", "bucket", "gallery", "files", "paint", "pong", "guestbook"];
 // Linkes Sidebar-Menü: nur die wichtigen Apps (Spiele nur über Icons + Start)
 const SIDEBAR_APPS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "files", "newsletter", "guestbook", "about"];
 // Start-Menü: Top-Level + ausklappbarer "Programme"-Ordner (wie Windows)
-const START_TOP = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "clock", "bucket", "gallery", "files", "guestbook"];
+const START_TOP = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "clock", "cassette", "bucket", "gallery", "files", "guestbook"];
 const START_PROGRAMS = ["paint", "snake", "pong", "terminal", "newsletter", "about"];
-const W: Record<string, number> = { blog: 560, japanisch: 600, video: 560, map: 520, bucket: 480, paint: 520, gallery: 560, fotofeed: 600, files: 600, snake: 340, pong: 360, newsletter: 440, about: 440, guestbook: 460, photo: 440, terminal: 560, clock: 440 };
+const W: Record<string, number> = { blog: 560, japanisch: 600, video: 560, map: 520, bucket: 480, paint: 520, gallery: 560, fotofeed: 600, files: 600, snake: 340, pong: 360, newsletter: 440, about: 440, guestbook: 460, photo: 440, terminal: 560, clock: 440, cassette: 460 };
 function appWidth(id: string) { return id.startsWith("post:") ? 540 : (W[id] ?? 460); }
 function winMeta(id: string, data: LabPost[], lang: Lng = "de") {
   if (id.startsWith("post:")) { const p = data.find(x => x._id === id.slice(5)); return { icon: "📄", title: p?.title ?? "Post" }; }
@@ -84,6 +106,7 @@ interface NipponSettings {
   stickyNote?: string | null;
   photoOfDay?: { url: string; caption?: string } | null;
   videoOfDay?: { id: string; title?: string } | null;
+  playlist?: { title: string; artist?: string; id: string }[];
   departureDate?: string | null;
 }
 
@@ -517,6 +540,7 @@ function WindowFrame({ win, data, settings, onOpenPost, onOpenApp, onClose, onFo
         {win.id === "video" && <VideoApp data={data} settings={settings} />}
         {win.id === "map" && <MapApp data={data} onOpenPost={onOpenPost} />}
         {win.id === "clock" && <ClockApp />}
+        {win.id === "cassette" && <CassetteApp settings={settings} onBeep={onBeep} />}
         {win.id === "bucket" && <BucketApp onBeep={onBeep} />}
         {win.id === "paint" && <PaintApp />}
         {win.id === "gallery" && <GalleryApp />}
@@ -823,6 +847,111 @@ function ClockApp() {
       </div>
       <div className="term text-lg text-center mt-3 px-2 py-1" style={{ ...sunken, background: "#fff", color: C.ink }}>
         ⏱ {L(`Tokio ist ${Math.abs(diffH)} Std. ${diffH >= 0 ? "voraus" : "zurück"}`, `Tokyo is ${Math.abs(diffH)}h ${diffH >= 0 ? "ahead" : "behind"}`)}
+      </div>
+    </div>
+  );
+}
+
+// ─── City-Pop Kassetten-Player (YouTube) ──────────────────────────────────────
+function CassetteApp({ settings, onBeep }: { settings: NipponSettings | null; onBeep: (f?: number) => void }) {
+  const { lang } = useLanguage();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
+  const tracks = settings?.playlist ?? [];
+  const [idx, setIdx] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [ready, setReady] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const playerRef = useRef<any>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const idxRef = useRef(0); idxRef.current = idx;
+
+  useEffect(() => {
+    if (!tracks.length || !wrapRef.current) return;
+    const host = document.createElement("div");
+    wrapRef.current.appendChild(host);
+    let cancelled = false;
+    loadYouTubeAPI().then((YT) => {
+      if (cancelled) return;
+      playerRef.current = new YT.Player(host, {
+        height: "150", width: "100%",
+        videoId: tracks[0].id,
+        playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
+        events: {
+          onReady: () => setReady(true),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          onStateChange: (e: any) => {
+            if (e.data === YT.PlayerState.PLAYING) setPlaying(true);
+            else if (e.data === YT.PlayerState.PAUSED) setPlaying(false);
+            else if (e.data === YT.PlayerState.ENDED) {
+              const n = (idxRef.current + 1) % tracks.length;
+              setIdx(n); playerRef.current?.loadVideoById(tracks[n].id);
+            }
+          },
+        },
+      });
+    });
+    return () => { cancelled = true; try { playerRef.current?.destroy(); } catch {} playerRef.current = null; if (wrapRef.current) wrapRef.current.innerHTML = ""; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tracks.length]);
+
+  function playPause() { onBeep(); const p = playerRef.current; if (!p) return; if (playing) p.pauseVideo(); else p.playVideo(); }
+  function go(delta: number) { onBeep(660); const n = (idx + delta + tracks.length) % tracks.length; setIdx(n); playerRef.current?.loadVideoById(tracks[n].id); }
+  function jump(i: number) { onBeep(); setIdx(i); playerRef.current?.loadVideoById(tracks[i].id); }
+
+  if (!tracks.length) {
+    return (
+      <div className="text-center">
+        <div className="pixel text-[10px] mb-3" style={{ color: C.pink }}>📻 CITY-POP 📻</div>
+        <div className="term text-lg py-6" style={{ color: C.ochre }}>{L("Noch keine Tracks — füg im Studio YouTube-Links hinzu 🎵", "No tracks yet — add YouTube links in the Studio 🎵")}</div>
+      </div>
+    );
+  }
+
+  const cur = tracks[idx];
+  const reel = (key: string) => (
+    <div key={key} style={{ width: 44, height: 44, borderRadius: "50%", border: "3px solid #aaa", background: "repeating-conic-gradient(#cbd5e1 0deg 10deg, #2a2a3a 10deg 20deg)", animation: "ccspin 1.8s linear infinite", animationPlayState: playing ? "running" : "paused" }}>
+      <div style={{ position: "relative", top: "35%", left: "35%", width: "30%", height: "30%", borderRadius: "50%", background: "#e5e7eb", border: "2px solid #555" }} />
+    </div>
+  );
+
+  return (
+    <div>
+      <style>{`@keyframes ccspin{to{transform:rotate(360deg)}}`}</style>
+      <div className="pixel text-[10px] mb-2 text-center" style={{ color: C.pink }}>📻 CITY-POP 📻</div>
+
+      {/* Sichtbarer YouTube-Player (ToS-konform) */}
+      <div className="p-1 mb-2" style={{ background: "#000", ...sunken }}>
+        <div ref={wrapRef} />
+        {!ready && <div className="term text-base text-center py-2" style={{ color: C.cyan }}>{L("Player lädt…", "Loading player…")}</div>}
+      </div>
+
+      {/* Kassette */}
+      <div className="p-3 mb-2" style={{ background: C.ochre, ...raised, borderRadius: 8 }}>
+        <div className="px-3 py-2" style={{ background: "#2a2a3a", borderRadius: 6 }}>
+          <div className="term text-base text-center mb-2 truncate" style={{ color: C.cream }}>♪ {cur.title}{cur.artist ? ` — ${cur.artist}` : ""}</div>
+          <div className="flex items-center justify-center gap-6">
+            {reel("l")}
+            <div className="term text-sm" style={{ color: playing ? "#33ff66" : "#888" }}>{playing ? "▶ PLAY" : "❚❚ PAUSE"}</div>
+            {reel("r")}
+          </div>
+        </div>
+      </div>
+
+      {/* Steuerung */}
+      <div className="flex items-center justify-center gap-2 mb-2">
+        <button onClick={() => go(-1)} className="nb term text-xl px-3 py-1" style={{ ...raised, background: "#fff", color: C.ink }} title={L("Zurück", "Previous")}>⏮</button>
+        <button onClick={playPause} className="nb pixel text-[11px] px-4 py-2" style={{ ...raised, background: C.pink, color: C.cream }}>{playing ? "❚❚" : "▶"}</button>
+        <button onClick={() => go(1)} className="nb term text-xl px-3 py-1" style={{ ...raised, background: "#fff", color: C.ink }} title={L("Weiter", "Next")}>⏭</button>
+      </div>
+
+      {/* Playlist */}
+      <div className="flex flex-col gap-1" style={{ maxHeight: 140, overflowY: "auto" }}>
+        {tracks.map((t, i) => (
+          <button key={i} onClick={() => jump(i)} className="nb term text-base text-left px-2 py-1 flex items-center gap-2" style={{ ...sunken, background: i === idx ? C.cyan : "#fff", color: C.ink }}>
+            <span>{i === idx && playing ? "🔊" : "♪"}</span>
+            <span className="truncate">{t.title}{t.artist ? <span style={{ color: "#666" }}> — {t.artist}</span> : null}</span>
+          </button>
+        ))}
       </div>
     </div>
   );

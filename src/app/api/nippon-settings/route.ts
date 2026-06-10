@@ -12,6 +12,7 @@ const DEFAULTS = {
   stickyNote: null as null | string,
   photoOfDay: null as null | { url: string; caption?: string },
   videoOfDay: null as null | { id: string; title?: string },
+  playlist: [] as { title: string; artist?: string; id: string }[],
   departureDate: null as null | string,
 }
 
@@ -36,7 +37,8 @@ export async function GET() {
           "photoUrl": photoOfDay.asset->url,
           "photoCaption": photoOfDay.caption,
           videoOfDay,
-          videoOfDayTitle
+          videoOfDayTitle,
+          playlist
         },
         "departureDate": *[_type == "siteSettings"][0].departureDate
       }`,
@@ -53,6 +55,8 @@ export async function GET() {
         stickyNote: s?.stickyNote || null,
         photoOfDay: s?.photoUrl ? { url: s.photoUrl, caption: s.photoCaption || undefined } : null,
         videoOfDay: vid ? { id: vid, title: s.videoOfDayTitle || undefined } : null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        playlist: Array.isArray(s?.playlist) ? s.playlist.map((t: any) => ({ title: t.title, artist: t.artist || undefined, id: youtubeId(t.youtubeUrl) })).filter((t: { id: string | null }) => t.id) : [],
         departureDate,
       })
     }

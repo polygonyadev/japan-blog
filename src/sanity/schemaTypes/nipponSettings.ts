@@ -41,6 +41,21 @@ export const nipponSettingsType = defineType({
       type: 'string',
     }),
     defineField({
+      name: 'playlist',
+      title: 'City-Pop Kassetten-Player (Playlist)',
+      type: 'array',
+      description: 'Tracks für den Kassetten-Player. Jeder Eintrag ist ein YouTube-Link.',
+      of: [{
+        type: 'object',
+        fields: [
+          defineField({ name: 'title', title: 'Titel', type: 'string', validation: r => r.required() }),
+          defineField({ name: 'artist', title: 'Artist', type: 'string' }),
+          defineField({ name: 'youtubeUrl', title: 'YouTube-Link', type: 'url', validation: r => r.required() }),
+        ],
+        preview: { select: { title: 'title', subtitle: 'artist' } },
+      }],
+    }),
+    defineField({
       name: 'systems',
       title: 'SYSTEMS-Anzeige (Sidebar)',
       type: 'array',
