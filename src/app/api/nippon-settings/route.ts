@@ -9,6 +9,7 @@ const DEFAULTS = {
     { label: 'Magen', value: 'VOLL', color: 'ochre' },
     { label: 'Heimweh', value: '12%', color: 'pink' },
   ],
+  stickyNote: null as null | string,
   photoOfDay: null as null | { url: string; caption?: string },
   videoOfDay: null as null | { id: string; title?: string },
   departureDate: null as null | string,
@@ -31,6 +32,7 @@ export async function GET() {
         "nippon": *[_type == "nipponSettings"][0]{
           bannerText,
           systems,
+          stickyNote,
           "photoUrl": photoOfDay.asset->url,
           "photoCaption": photoOfDay.caption,
           videoOfDay,
@@ -48,6 +50,7 @@ export async function GET() {
       return NextResponse.json({
         bannerText: s?.bannerText || DEFAULTS.bannerText,
         systems: s?.systems?.length ? s.systems : DEFAULTS.systems,
+        stickyNote: s?.stickyNote || null,
         photoOfDay: s?.photoUrl ? { url: s.photoUrl, caption: s.photoCaption || undefined } : null,
         videoOfDay: vid ? { id: vid, title: s.videoOfDayTitle || undefined } : null,
         departureDate,

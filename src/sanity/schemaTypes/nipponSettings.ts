@@ -13,6 +13,13 @@ export const nipponSettingsType = defineType({
       initialValue: '★ ようこそ！ Willkommen in meinem NipponOS ★ 日本大好き ★',
     }),
     defineField({
+      name: 'stickyNote',
+      title: 'Notizzettel (Desktop)',
+      type: 'text',
+      rows: 3,
+      description: 'Erscheint als gelber Notizzettel auf dem NipponOS-Desktop (oben rechts, frei verschiebbar). Leer lassen = kein Zettel.',
+    }),
+    defineField({
       name: 'photoOfDay',
       title: 'Foto des Tages',
       type: 'image',

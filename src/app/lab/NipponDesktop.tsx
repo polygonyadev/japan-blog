@@ -49,7 +49,7 @@ const APPS = [
   { id: "about", icon: "★", title: "Über mich", titleEN: "About me" },
 ];
 function appTitle(a: { title: string; titleEN?: string }, lang: Lng) { return lang === "en" ? (a.titleEN ?? a.title) : a.title; }
-const DESKTOP_ICONS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "paint", "snake", "pong", "guestbook"];
+const DESKTOP_ICONS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "paint", "pong", "guestbook"];
 // Linkes Sidebar-Menü: nur die wichtigen Apps (Spiele nur über Icons + Start)
 const SIDEBAR_APPS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "newsletter", "guestbook", "about"];
 // Start-Menü: Top-Level + ausklappbarer "Programme"-Ordner (wie Windows)
@@ -67,6 +67,7 @@ interface SysLine { label: string; value: string; color?: string }
 interface NipponSettings {
   bannerText: string;
   systems: SysLine[];
+  stickyNote?: string | null;
   photoOfDay?: { url: string; caption?: string } | null;
   videoOfDay?: { id: string; title?: string } | null;
   departureDate?: string | null;
@@ -289,8 +290,8 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
         </aside>
 
         <div id="neko-area" className="flex-1 relative overflow-hidden">
-          {/* Desktop Icons */}
-          <div className="absolute top-2 left-2 z-[2] flex flex-col gap-1.5">
+          {/* Desktop Icons — füllt nach unten, bricht dann in neue Spalte rechts um */}
+          <div className="absolute top-2 left-2 z-[2] flex flex-col flex-wrap content-start gap-1.5" style={{ maxHeight: "calc(100% - 1rem)" }}>
             {DESKTOP_ICONS.map(id => {
               const m = winMeta(id, data, lang);
               return (
@@ -302,6 +303,17 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
               );
             })}
           </div>
+
+          {/* Snake als loses Spaß-Icon unten auf dem Desktop 🐍 (mittig, damit es das Ko-fi-Banner unten rechts nicht überlappt) */}
+          <button onDoubleClick={() => openApp("snake")} onClick={() => { if (isMobile()) openApp("snake"); }}
+            className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[3] flex flex-col items-center w-16 p-1 rounded-lg hover:bg-white/10 transition-colors"
+            title={L("Doppelklick — Snake spielen!", "Double-click — play Snake!")} style={{ animation: "nf 5s ease-in-out infinite" }}>
+            <span className="text-3xl" style={{ display: "inline-block", animation: "wig 2.5s ease-in-out infinite" }}>🐍</span>
+            <span className="term text-sm text-center leading-none" style={{ color: C.cream, textShadow: "0 1px 2px #000" }}>Snake</span>
+          </button>
+
+          {/* Notizzettel (Text aus Studio, frei verschiebbar, Start oben rechts) */}
+          {settings?.stickyNote && <StickyNote text={settings.stickyNote} />}
 
           {/* Cat */}
           <button ref={catRef} onClick={() => click(990)} className="absolute top-0 left-0 text-3xl z-[5]" style={{ cursor: cursorUrl, willChange: "transform" }} title="にゃ～">🐱</button>
@@ -767,6 +779,52 @@ function GuestbookApp({ onBeep }: { onBeep: (f?: number) => void }) {
               )}
             </div>
           ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Notizzettel auf dem Desktop (frei verschiebbar) ──────────────────────────
+function StickyNote({ text }: { text: string }) {
+  const NOTE_W = 190;
+  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const drag = useRef<{ dx: number; dy: number } | null>(null);
+
+  // Startposition: oben rechts mit Abstand zum Rand (relativ zum Desktop-Bereich)
+  useEffect(() => {
+    const parent = ref.current?.parentElement;
+    const pw = parent?.clientWidth ?? 800;
+    setPos({ x: Math.max(8, pw - NOTE_W - 24), y: 16 });
+  }, []);
+
+  function down(e: React.PointerEvent) {
+    e.preventDefault();
+    const r = ref.current!.getBoundingClientRect();
+    drag.current = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {}
+  }
+  function move(e: React.PointerEvent) {
+    if (!drag.current) return;
+    const parent = ref.current!.parentElement!;
+    const pr = parent.getBoundingClientRect();
+    let x = e.clientX - pr.left - drag.current.dx;
+    let y = e.clientY - pr.top - drag.current.dy;
+    x = Math.max(0, Math.min(x, parent.clientWidth - NOTE_W));
+    y = Math.max(0, Math.min(y, parent.clientHeight - 40));
+    setPos({ x, y });
+  }
+  function up(e: React.PointerEvent) { drag.current = null; try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch {} }
+
+  if (!pos) return null;
+  return (
+    <div ref={ref} className="absolute z-[4] select-none" style={{ left: pos.x, top: pos.y, width: NOTE_W, transform: "rotate(-2deg)" }}>
+      <div style={{ background: "#fde68a", boxShadow: "3px 4px 10px rgba(0,0,0,0.4)", border: "1px solid #d9b441" }}>
+        {/* Kopfleiste zum Ziehen */}
+        <div onPointerDown={down} onPointerMove={move} onPointerUp={up}
+          className="cursor-grab active:cursor-grabbing py-1"
+          style={{ background: "#fcd34d", borderBottom: "1px solid #d9b441", touchAction: "none" }} />
+        <div className="term text-lg px-2 py-1.5 whitespace-pre-wrap break-words" style={{ color: "#4a3b10", lineHeight: 1.2 }}>{text}</div>
       </div>
     </div>
   );
