@@ -39,6 +39,7 @@ const APPS = [
   { id: "fotofeed", icon: "📸", title: "Camera Roll", titleEN: "Camera Roll" },
   { id: "video", icon: "▶", title: "Video des Tages", titleEN: "Video of the Day" },
   { id: "map", icon: "🗺", title: "Karte", titleEN: "Map" },
+  { id: "clock", icon: "🕒", title: "Welt-Uhr", titleEN: "World Clock" },
   { id: "bucket", icon: "🎯", title: "Bucket List", titleEN: "Bucket List" },
   { id: "paint", icon: "🎨", title: "Paint", titleEN: "Paint" },
   { id: "gallery", icon: "📁", title: "Gallery", titleEN: "Gallery" },
@@ -52,13 +53,13 @@ const APPS = [
 ];
 function appTitle(a: { title: string; titleEN?: string }, lang: Lng) { return lang === "en" ? (a.titleEN ?? a.title) : a.title; }
 function isMobileView() { return typeof window !== "undefined" && window.innerWidth < 760; }
-const DESKTOP_ICONS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "files", "paint", "pong", "guestbook"];
+const DESKTOP_ICONS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "clock", "bucket", "gallery", "files", "paint", "pong", "guestbook"];
 // Linkes Sidebar-Menü: nur die wichtigen Apps (Spiele nur über Icons + Start)
-const SIDEBAR_APPS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "files", "newsletter", "guestbook", "about"];
+const SIDEBAR_APPS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "clock", "bucket", "gallery", "files", "newsletter", "guestbook", "about"];
 // Start-Menü: Top-Level + ausklappbarer "Programme"-Ordner (wie Windows)
-const START_TOP = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "files", "guestbook"];
+const START_TOP = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "clock", "bucket", "gallery", "files", "guestbook"];
 const START_PROGRAMS = ["paint", "snake", "pong", "terminal", "newsletter", "about"];
-const W: Record<string, number> = { blog: 560, japanisch: 600, video: 560, map: 520, bucket: 480, paint: 520, gallery: 560, fotofeed: 600, files: 600, snake: 340, pong: 360, newsletter: 440, about: 440, guestbook: 460, photo: 440, terminal: 560 };
+const W: Record<string, number> = { blog: 560, japanisch: 600, video: 560, map: 520, bucket: 480, paint: 520, gallery: 560, fotofeed: 600, files: 600, snake: 340, pong: 360, newsletter: 440, about: 440, guestbook: 460, photo: 440, terminal: 560, clock: 440 };
 function appWidth(id: string) { return id.startsWith("post:") ? 540 : (W[id] ?? 460); }
 function winMeta(id: string, data: LabPost[], lang: Lng = "de") {
   if (id.startsWith("post:")) { const p = data.find(x => x._id === id.slice(5)); return { icon: "📄", title: p?.title ?? "Post" }; }
@@ -505,6 +506,7 @@ function WindowFrame({ win, data, settings, onOpenPost, onOpenApp, onClose, onFo
         {win.id === "fotofeed" && <FotoFeedApp data={data} onOpenPost={onOpenPost} />}
         {win.id === "video" && <VideoApp data={data} settings={settings} />}
         {win.id === "map" && <MapApp data={data} onOpenPost={onOpenPost} />}
+        {win.id === "clock" && <ClockApp />}
         {win.id === "bucket" && <BucketApp onBeep={onBeep} />}
         {win.id === "paint" && <PaintApp />}
         {win.id === "gallery" && <GalleryApp />}
@@ -772,6 +774,50 @@ function MapApp({ data, onOpenPost }: { data: LabPost[]; onOpenPost: (id: string
     </div>
   );
 }
+// ─── Welt-Uhr (Tokio ⇄ Schweiz, live) ─────────────────────────────────────────
+function ClockApp() {
+  const { lang } = useLanguage();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+
+  const loc = lang === "en" ? "en-US" : "de-DE";
+  function parts(tz: string) {
+    const d = new Date(now);
+    const time = d.toLocaleTimeString(loc, { timeZone: tz, hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+    const date = d.toLocaleDateString(loc, { timeZone: tz, weekday: "long", day: "numeric", month: "long" });
+    const hour = parseInt(d.toLocaleString("en-US", { timeZone: tz, hour: "2-digit", hour12: false }));
+    const day = hour >= 6 && hour < 19;
+    return { time, date, icon: day ? "☀️" : "🌙", sky: day ? "#3df0e0" : "#a78bfa" };
+  }
+  const tokyo = parts("Asia/Tokyo");
+  const swiss = parts("Europe/Zurich");
+  // Zeitverschiebung dynamisch (DST-sicher)
+  const tzMs = (tz: string) => new Date(new Date(now).toLocaleString("en-US", { timeZone: tz })).getTime();
+  const diffH = Math.round((tzMs("Asia/Tokyo") - tzMs("Europe/Zurich")) / 3600000);
+
+  const Card = ({ flag, name, p }: { flag: string; name: string; p: ReturnType<typeof parts> }) => (
+    <div className="p-3 text-center" style={{ background: C.bg, ...sunken }}>
+      <div className="term text-xl mb-1" style={{ color: C.ochre }}>{flag} {name} {p.icon}</div>
+      <div className="pixel text-2xl my-2" style={{ color: p.sky, textShadow: `2px 2px 0 ${C.ink}`, letterSpacing: "1px" }}>{p.time}</div>
+      <div className="term text-base" style={{ color: C.cream }}>{p.date}</div>
+    </div>
+  );
+
+  return (
+    <div>
+      <div className="pixel text-[10px] mb-3 text-center" style={{ color: C.pink }}>🕒 {L("WELT-UHR", "WORLD CLOCK")} 🕒</div>
+      <div className="flex flex-col gap-2">
+        <Card flag="🗾" name={L("Tokio", "Tokyo")} p={tokyo} />
+        <Card flag="🇨🇭" name={L("Schweiz", "Switzerland")} p={swiss} />
+      </div>
+      <div className="term text-lg text-center mt-3 px-2 py-1" style={{ ...sunken, background: "#fff", color: C.ink }}>
+        ⏱ {L(`Tokio ist ${Math.abs(diffH)} Std. ${diffH >= 0 ? "voraus" : "zurück"}`, `Tokyo is ${Math.abs(diffH)}h ${diffH >= 0 ? "ahead" : "behind"}`)}
+      </div>
+    </div>
+  );
+}
+
 function AboutApp() {
   return (
     <div className="term text-xl leading-snug">
