@@ -105,6 +105,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   const [wallpaper, setWallpaper] = useState(0);
   const [notes, setNotes] = useState<LocalNote[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [screensaver, setScreensaver] = useState(false);
   const z = useRef(10);
   const drag = useRef<{ id: string; sx: number; sy: number; wx: number; wy: number } | null>(null);
   const soundRef = useRef(true); soundRef.current = sound;
@@ -144,6 +145,19 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
     function tick() { setClock(new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" })).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })); }
     tick(); const t = setInterval(tick, 20000); return () => clearInterval(t);
   }, []);
+
+  // Bildschirmschoner: nach 60 Sek. Inaktivität, jede Aktivität blendet ihn aus
+  useEffect(() => {
+    if (!booted) return;
+    const IDLE_MS = 60000;
+    let timer: ReturnType<typeof setTimeout>;
+    const arm = () => { clearTimeout(timer); timer = setTimeout(() => setScreensaver(true), IDLE_MS); };
+    const onActivity = () => { setScreensaver(false); arm(); };
+    const evs = ["pointermove", "pointerdown", "keydown", "wheel", "touchstart"];
+    evs.forEach(e => window.addEventListener(e, onActivity, { passive: true }));
+    arm();
+    return () => { clearTimeout(timer); evs.forEach(e => window.removeEventListener(e, onActivity)); };
+  }, [booted]);
 
   const sysColor: Record<string, string> = { green: "#33ff66", pink: C.pink, ochre: C.ochre, cyan: C.cyan };
 
@@ -374,6 +388,9 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
           ))}
         </div>
       </div>
+
+      {/* Bildschirmschoner (DVD-Logo) */}
+      {booted && screensaver && <Screensaver />}
 
       {/* Rechtsklick-Kontextmenü */}
       {ctxMenu && (
@@ -1092,6 +1109,39 @@ function LocalNoteCard({ note, onChange, onDelete, lang }: { note: LocalNote; on
         <textarea value={note.text} onChange={(e) => onChange({ text: e.target.value })} rows={3} autoFocus
           placeholder={lang === "en" ? "type…" : "tippen…"} spellCheck={false}
           className="term text-base w-full px-2 py-1.5 bg-transparent outline-none resize-none" style={{ color: "#33450a", lineHeight: 1.2 }} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Bildschirmschoner (DVD-Logo, das in den Ecken abprallt) ──────────────────
+function Screensaver() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let x = 80, y = 80, vx = 2.1, vy = 1.7, ci = 0, raf = 0;
+    const colors = [C.pink, C.cyan, C.ochre, "#33ff66", "#a78bfa"];
+    function step() {
+      const el = ref.current; if (!el) { raf = requestAnimationFrame(step); return; }
+      const W = window.innerWidth, H = window.innerHeight;
+      const bw = el.offsetWidth, bh = el.offsetHeight;
+      x += vx; y += vy;
+      let bounce = false;
+      if (x <= 0) { x = 0; vx = -vx; bounce = true; }
+      if (x + bw >= W) { x = W - bw; vx = -vx; bounce = true; }
+      if (y <= 0) { y = 0; vy = -vy; bounce = true; }
+      if (y + bh >= H) { y = H - bh; vy = -vy; bounce = true; }
+      if (bounce) { ci = (ci + 1) % colors.length; el.style.color = colors[ci]; }
+      el.style.transform = `translate(${x}px, ${y}px)`;
+      raf = requestAnimationFrame(step);
+    }
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  return (
+    <div className="fixed inset-0 z-[120] cursor-none" style={{ background: "#000" }} aria-hidden>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');`}</style>
+      <div ref={ref} className="absolute top-0 left-0 pixel text-2xl" style={{ color: C.pink, willChange: "transform", textShadow: "2px 2px 0 rgba(0,0,0,0.6)", padding: 6 }}>
+        NIPPON<span style={{ filter: "brightness(1.4)" }}>OS</span> <span className="text-xl">🗾</span>
       </div>
     </div>
   );
