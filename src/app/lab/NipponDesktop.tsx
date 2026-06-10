@@ -46,6 +46,7 @@ const APPS = [
   { id: "pong", icon: "🏓", title: "Pong", titleEN: "Pong" },
   { id: "newsletter", icon: "📧", title: "Newsletter", titleEN: "Newsletter" },
   { id: "guestbook", icon: "✉", title: "Gästebuch", titleEN: "Guestbook" },
+  { id: "terminal", icon: "🖥", title: "Terminal", titleEN: "Terminal" },
   { id: "about", icon: "★", title: "Über mich", titleEN: "About me" },
 ];
 function appTitle(a: { title: string; titleEN?: string }, lang: Lng) { return lang === "en" ? (a.titleEN ?? a.title) : a.title; }
@@ -54,8 +55,8 @@ const DESKTOP_ICONS = ["blog", "japanisch", "photo", "fotofeed", "video", "map",
 const SIDEBAR_APPS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "newsletter", "guestbook", "about"];
 // Start-Menü: Top-Level + ausklappbarer "Programme"-Ordner (wie Windows)
 const START_TOP = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "guestbook"];
-const START_PROGRAMS = ["paint", "snake", "pong", "newsletter", "about"];
-const W: Record<string, number> = { blog: 560, japanisch: 600, video: 560, map: 520, bucket: 480, paint: 520, gallery: 560, fotofeed: 600, snake: 340, pong: 360, newsletter: 440, about: 440, guestbook: 460, photo: 440 };
+const START_PROGRAMS = ["paint", "snake", "pong", "terminal", "newsletter", "about"];
+const W: Record<string, number> = { blog: 560, japanisch: 600, video: 560, map: 520, bucket: 480, paint: 520, gallery: 560, fotofeed: 600, snake: 340, pong: 360, newsletter: 440, about: 440, guestbook: 460, photo: 440, terminal: 560 };
 function appWidth(id: string) { return id.startsWith("post:") ? 540 : (W[id] ?? 460); }
 function winMeta(id: string, data: LabPost[], lang: Lng = "de") {
   if (id.startsWith("post:")) { const p = data.find(x => x._id === id.slice(5)); return { icon: "📄", title: p?.title ?? "Post" }; }
@@ -319,7 +320,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
           <button ref={catRef} onClick={() => click(990)} className="absolute top-0 left-0 text-3xl z-[5]" style={{ cursor: cursorUrl, willChange: "transform" }} title="にゃ～">🐱</button>
 
           {wins.filter(w => !w.min).map(w => (
-            <WindowFrame key={w.id} win={w} data={data} settings={settings} onOpenPost={openPost}
+            <WindowFrame key={w.id} win={w} data={data} settings={settings} onOpenPost={openPost} onOpenApp={openApp}
               onClose={() => { click(440); closeWin(w.id); }} onFocus={() => focusWin(w.id)}
               onMin={() => { click(440); minWin(w.id); }} onMax={() => { click(); maxWin(w.id); }}
               onTitleDown={(e) => onTitleDown(e, w.id)} onBeep={click} />
@@ -400,8 +401,8 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   );
 }
 
-function WindowFrame({ win, data, settings, onOpenPost, onClose, onFocus, onMin, onMax, onTitleDown, onBeep }: {
-  win: OpenWin; data: LabPost[]; settings: NipponSettings | null; onOpenPost: (id: string) => void; onClose: () => void; onFocus: () => void; onMin: () => void; onMax: () => void; onTitleDown: (e: React.PointerEvent) => void; onBeep: (f?: number) => void;
+function WindowFrame({ win, data, settings, onOpenPost, onOpenApp, onClose, onFocus, onMin, onMax, onTitleDown, onBeep }: {
+  win: OpenWin; data: LabPost[]; settings: NipponSettings | null; onOpenPost: (id: string) => void; onOpenApp: (id: string) => void; onClose: () => void; onFocus: () => void; onMin: () => void; onMax: () => void; onTitleDown: (e: React.PointerEvent) => void; onBeep: (f?: number) => void;
 }) {
   const { lang } = useLanguage();
   const m = winMeta(win.id, data, lang);
@@ -429,6 +430,7 @@ function WindowFrame({ win, data, settings, onOpenPost, onClose, onFocus, onMin,
         {win.id === "snake" && <SnakeApp />}
         {win.id === "pong" && <PongApp />}
         {win.id === "newsletter" && <NewsletterApp onBeep={onBeep} />}
+        {win.id === "terminal" && <TerminalApp settings={settings} onOpenApp={onOpenApp} onBeep={onBeep} />}
         {win.id === "about" && <AboutApp />}
         {win.id === "guestbook" && <GuestbookApp onBeep={onBeep} />}
         {win.id.startsWith("post:") && <PostDetailApp post={data.find(p => p._id === win.id.slice(5))} />}
@@ -700,6 +702,168 @@ function AboutApp() {
     </div>
   );
 }
+
+// ─── Terminal (Fake-CLI) ──────────────────────────────────────────────────────
+function TerminalApp({ settings, onOpenApp, onBeep }: { settings: NipponSettings | null; onOpenApp: (id: string) => void; onBeep: (f?: number) => void }) {
+  const { lang } = useLanguage();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
+  interface Line { text: string; color?: string }
+  const banner: Line[] = [
+    { text: "NipponOS [Version 1.0]  🗾", color: C.cyan },
+    { text: L("Tippe 'help' für alle Befehle.", "Type 'help' for all commands."), color: "#8aa" },
+  ];
+  const [lines, setLines] = useState<Line[]>(banner);
+  const [input, setInput] = useState("");
+  const hist = useRef<string[]>([]);
+  const [histIdx, setHistIdx] = useState(-1);
+  const endRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [lines]);
+
+  function tokyoTime() {
+    return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }))
+      .toLocaleString(lang === "en" ? "en-US" : "de-DE", { dateStyle: "full", timeStyle: "medium" });
+  }
+  function japanStatus() {
+    const dep = settings?.departureDate;
+    if (!dep) return L("Standort: unterwegs", "Location: somewhere");
+    const start = new Date(dep).getTime(); const now = Date.now(); const day = 86400000;
+    if (now >= start) return L(`In Japan seit Tag ${Math.floor((now - start) / day)} 🇯🇵`, `In Japan since day ${Math.floor((now - start) / day)} 🇯🇵`);
+    return L(`Ankunft in Japan in ${Math.ceil((start - now) / day)} Tagen`, `Arriving in Japan in ${Math.ceil((start - now) / day)} days`);
+  }
+
+  function out(text: string, color?: string) { setLines(p => [...p, { text, color }]); }
+  function outMany(arr: Line[]) { setLines(p => [...p, ...arr]); }
+
+  function run(raw: string) {
+    const cmd = raw.trim();
+    setLines(p => [...p, { text: `david@nipponos:~$ ${raw}`, color: C.cream }]);
+    if (!cmd) return;
+    const [name, ...args] = cmd.split(/\s+/);
+    const arg = args.join(" ");
+    switch (name.toLowerCase()) {
+      case "help":
+        outMany([
+          { text: L("Verfügbare Befehle:", "Available commands:"), color: C.ochre },
+          { text: "  help        " + L("diese Hilfe", "this help") },
+          { text: "  about       " + L("über mich", "about me") },
+          { text: "  neofetch    " + L("System-Infos", "system info") },
+          { text: "  ls          " + L("Apps auflisten", "list apps") },
+          { text: "  open <app>  " + L("App öffnen (z.B. open snake)", "open an app (e.g. open snake)") },
+          { text: "  date        " + L("Zeit in Tokio", "time in Tokyo") },
+          { text: "  whoami      david" },
+          { text: "  echo <text> " + L("Text ausgeben", "print text") },
+          { text: "  clear       " + L("Terminal leeren", "clear terminal") },
+        ]);
+        break;
+      case "about":
+        outMany([
+          { text: "こんにちは！ Ich bin David 🙋", color: C.cyan },
+          { text: L("Schweizer in Japan — Fotos, Ramen, kleine Entdeckungen.", "Swiss guy in Japan — photos, ramen, little discoveries.") },
+          { text: japanStatus(), color: C.ochre },
+        ]);
+        break;
+      case "neofetch":
+        outMany([
+          { text: "        ▄▄▄▄▄        david@nipponos", color: C.pink },
+          { text: "      ▟███████▙      ─────────────────", color: C.pink },
+          { text: "      ███▘ ▝███      OS:     NipponOS 1.0", color: C.pink },
+          { text: "      ███   ███      " + L("Host:   Pixel-Desktop", "Host:   Pixel-Desktop"), color: C.pink },
+          { text: "      ▜███████▛      Shell:  nyan-sh 🐱", color: C.pink },
+          { text: "        ▀▀▀▀▀        " + japanStatus(), color: C.pink },
+          { text: "                     " + L("Standort:", "Location:") + " 日本 / Japan", color: C.pink },
+          { text: "                     Theme:  Neocities-Retro", color: C.pink },
+        ]);
+        break;
+      case "ls":
+        out(APPS.map(a => a.id).join("   "), C.cyan);
+        break;
+      case "open": {
+        const target = APPS.find(a => a.id === arg.toLowerCase());
+        if (!arg) { out(L("Verwendung: open <app>  (siehe 'ls')", "Usage: open <app>  (see 'ls')"), C.ochre); break; }
+        if (!target) { out(`open: '${arg}' ${L("nicht gefunden. 'ls' zeigt alle Apps.", "not found. 'ls' lists all apps.")}`, C.pink); break; }
+        out(`${L("öffne", "opening")} ${appTitle(target, lang)}…`, "#8aa");
+        onOpenApp(target.id);
+        break;
+      }
+      case "date":
+        out(tokyoTime(), C.cyan);
+        break;
+      case "whoami":
+        out("david", C.cyan);
+        break;
+      case "echo":
+        out(arg);
+        break;
+      case "clear":
+        setLines(banner);
+        return;
+      // ── Easter Eggs ──
+      case "sudo":
+        out(L("nice try 😏 — du bist hier nicht root.", "nice try 😏 — you are not root here."), C.pink);
+        break;
+      case "matrix":
+        outMany(Array.from({ length: 4 }, () => ({ text: Array.from({ length: 46 }, (_, i) => "日ｱｲｳ01ﾝﾊﾐﾄ".charAt((i * 7) % 11)).join(""), color: "#33ff66" })));
+        break;
+      case "coffee":
+      case "kaffee":
+        out(L("☕ Spendier mir einen über den 'support me'-Button! 🍺", "☕ Buy me one via the 'support me' button! 🍺"), C.ochre);
+        break;
+      case "日本":
+      case "japan":
+        out("日本大好き！ ❤️🗾", C.pink);
+        break;
+      case "cat":
+        if (arg === "secret.txt") out(L("🤫 Das echte Geheimnis: jag die Katze nicht.", "🤫 The real secret: don't chase the cat."), C.ochre);
+        else out(`cat: ${arg || "?"}: ${L("Datei nicht gefunden", "No such file")}`, C.pink);
+        break;
+      case "exit":
+        out(L("Schließ das Fenster oben rechts mit ✕ 😉", "Close the window with ✕ top-right 😉"), "#8aa");
+        break;
+      default:
+        out(`${name}: ${L("Befehl nicht gefunden. Tippe 'help'.", "command not found. Type 'help'.")}`, C.pink);
+    }
+  }
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    onBeep(720);
+    if (input.trim()) { hist.current.push(input); setHistIdx(-1); }
+    run(input);
+    setInput("");
+  }
+  function onKey(e: React.KeyboardEvent) {
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (!hist.current.length) return;
+      const idx = histIdx < 0 ? hist.current.length - 1 : Math.max(0, histIdx - 1);
+      setHistIdx(idx); setInput(hist.current[idx]);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (histIdx < 0) return;
+      const idx = histIdx + 1;
+      if (idx >= hist.current.length) { setHistIdx(-1); setInput(""); }
+      else { setHistIdx(idx); setInput(hist.current[idx]); }
+    }
+  }
+
+  return (
+    <div onClick={() => inputRef.current?.focus()} style={{ background: "#0c0c14", ...sunken, cursor: "text" }} className="p-2">
+      <div className="overflow-y-auto" style={{ maxHeight: "50vh", minHeight: 220 }}>
+        {lines.map((l, i) => (
+          <div key={i} className="term text-base whitespace-pre-wrap break-words" style={{ color: l.color ?? "#cfe", lineHeight: 1.25 }}>{l.text || " "}</div>
+        ))}
+        <form onSubmit={submit} className="flex items-center gap-1">
+          <span className="term text-base shrink-0" style={{ color: "#33ff66" }}>david@nipponos:~$</span>
+          <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={onKey} autoFocus spellCheck={false} autoComplete="off"
+            className="term text-base flex-1 bg-transparent outline-none" style={{ color: "#cfe" }} />
+        </form>
+        <div ref={endRef} />
+      </div>
+    </div>
+  );
+}
+
 function GuestbookApp({ onBeep }: { onBeep: (f?: number) => void }) {
   interface Reply { _key?: string; name: string; message: string }
   interface Entry { _id?: string; name: string; message: string; antworten?: Reply[] }
