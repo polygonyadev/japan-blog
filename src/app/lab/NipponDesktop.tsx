@@ -107,6 +107,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   const [notes, setNotes] = useState<LocalNote[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [screensaver, setScreensaver] = useState(false);
+  const [wotdOn, setWotdOn] = useState(false);
   const z = useRef(10);
   const drag = useRef<{ id: string; sx: number; sy: number; wx: number; wy: number } | null>(null);
   const soundRef = useRef(true); soundRef.current = sound;
@@ -143,6 +144,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
     // Wallpaper + lokale Notizen aus localStorage laden
     try { const w = parseInt(localStorage.getItem("nippon-wallpaper") ?? "0"); if (!isNaN(w) && w >= 0 && w < WALLPAPERS.length) setWallpaper(w); } catch {}
     try { const n = JSON.parse(localStorage.getItem("nippon-notes") ?? "[]"); if (Array.isArray(n)) setNotes(n); } catch {}
+    try { setWotdOn(localStorage.getItem("nippon-wotd") === "1"); } catch {}
     function tick() { setClock(new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" })).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })); }
     tick(); const t = setInterval(tick, 20000); return () => clearInterval(t);
   }, []);
@@ -183,6 +185,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   }
   function updateNote(id: string, patch: Partial<LocalNote>) { saveNotes(notes.map(n => n.id === id ? { ...n, ...patch } : n)); }
   function deleteNote(id: string) { click(440); saveNotes(notes.filter(n => n.id !== id)); }
+  function toggleWotd(on: boolean) { click(on ? 720 : 440); setWotdOn(on); try { localStorage.setItem("nippon-wotd", on ? "1" : "0"); } catch {} }
 
   // Tage in Japan aus dem "Abreisedatum" der Website-Einstellungen (Studio)
   function japanLine(): SysLine | null {
@@ -378,6 +381,9 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
             <LocalNoteCard key={n.id} note={n} onChange={(patch) => updateNote(n.id, patch)} onDelete={() => deleteNote(n.id)} lang={lang} />
           ))}
 
+          {/* Wort des Tages — Desktop-Widget (per Rechtsklick an/aus) */}
+          {wotdOn && <WotdWidget onClose={() => toggleWotd(false)} lang={lang} onBeep={click} />}
+
           {/* Cat */}
           <button ref={catRef} onClick={() => click(990)} className="absolute top-0 left-0 text-3xl z-[5]" style={{ cursor: cursorUrl, willChange: "transform" }} title="にゃ～">🐱</button>
 
@@ -404,7 +410,11 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
                 <span>🖼️ {L("Hintergrund ändern", "Change wallpaper")}</span>
                 <span className="text-xs" style={{ color: C.cyan }}>{wallpaper + 1}/{WALLPAPERS.length}</span>
               </button>
-              <button onClick={() => { addNote(ctxMenu.x, ctxMenu.y); setCtxMenu(null); }} className="nb term text-lg w-full text-left px-2 py-1" style={{ color: C.ochre, ...sunken, background: "rgba(255,255,255,0.05)" }}>📝 {L("Neue Notiz", "New note")}</button>
+              <button onClick={() => { addNote(ctxMenu.x, ctxMenu.y); setCtxMenu(null); }} className="nb term text-lg w-full text-left px-2 py-1 mb-0.5" style={{ color: C.ochre, ...sunken, background: "rgba(255,255,255,0.05)" }}>📝 {L("Neue Notiz", "New note")}</button>
+              <button onClick={() => { toggleWotd(!wotdOn); setCtxMenu(null); }} className="nb term text-lg w-full text-left px-2 py-1 flex justify-between items-center" style={{ color: C.cream, ...sunken, background: "rgba(255,255,255,0.05)" }}>
+                <span>🎴 {L("Wort des Tages", "Word of the Day")}</span>
+                <span className="text-xs" style={{ color: wotdOn ? "#33ff66" : "#888" }}>{wotdOn ? L("an", "on") : L("aus", "off")}</span>
+              </button>
             </div>
           </div>
         </>
@@ -1155,6 +1165,62 @@ function LocalNoteCard({ note, onChange, onDelete, lang }: { note: LocalNote; on
         <textarea value={note.text} onChange={(e) => onChange({ text: e.target.value })} rows={3} autoFocus
           placeholder={lang === "en" ? "type…" : "tippen…"} spellCheck={false}
           className="term text-base w-full px-2 py-1.5 bg-transparent outline-none resize-none" style={{ color: "#33450a", lineHeight: 1.2 }} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Wort des Tages (Desktop-Widget, gemischt Vokabel/Kanji) ──────────────────
+function WotdWidget({ onClose, lang, onBeep }: { onClose: () => void; lang: Lng; onBeep: (f?: number) => void }) {
+  interface Word { jp: string; reading: string; meaning: string; jlpt?: string; kind: "vokabel" | "kanji" }
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
+  const W_PX = 188;
+  const ref = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ dx: number; dy: number } | null>(null);
+  const [pos, setPos] = useState<{ x: number; y: number }>(() => { try { return JSON.parse(localStorage.getItem("nippon-wotd-pos") || "") || { x: 8, y: 8 }; } catch { return { x: 8, y: 8 }; } });
+  const [words, setWords] = useState<Word[] | null>(null);
+  const [offset, setOffset] = useState(0);
+
+  useEffect(() => {
+    fetch("/api/japanisch").then(r => r.json()).then(d => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const vok: Word[] = (d?.vokabeln ?? []).map((it: any) => ({ jp: it.wort, reading: it.kana ?? "", meaning: it.bedeutung ?? "", jlpt: it.jlpt, kind: "vokabel" as const })).filter((w: Word) => w.jp);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const kan: Word[] = (d?.kanji ?? []).map((it: any) => ({ jp: it.zeichen, reading: it.onYomi ?? it.kunYomi ?? "", meaning: it.bedeutung ?? "", jlpt: it.jlpt, kind: "kanji" as const })).filter((w: Word) => w.jp);
+      setWords([...vok, ...kan]);
+    }).catch(() => setWords([]));
+  }, []);
+
+  function persist(p: { x: number; y: number }) { setPos(p); try { localStorage.setItem("nippon-wotd-pos", JSON.stringify(p)); } catch {} }
+  function down(e: React.PointerEvent) { e.preventDefault(); const r = ref.current!.getBoundingClientRect(); drag.current = { dx: e.clientX - r.left, dy: e.clientY - r.top }; try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {} }
+  function move(e: React.PointerEvent) { if (!drag.current) return; const parent = ref.current!.parentElement!; const pr = parent.getBoundingClientRect(); const x = Math.max(0, Math.min(e.clientX - pr.left - drag.current.dx, parent.clientWidth - W_PX)); const y = Math.max(0, Math.min(e.clientY - pr.top - drag.current.dy, parent.clientHeight - 30)); persist({ x, y }); }
+  function up(e: React.PointerEvent) { drag.current = null; try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch {} }
+
+  // Tages-Auswahl (gleicher Tag = gleiches Wort), + Offset für "nächstes"
+  const word = words && words.length ? words[(Math.floor(Date.now() / 86400000) + offset) % words.length] : null;
+
+  return (
+    <div ref={ref} className="absolute z-[4] select-none" style={{ left: pos.x, top: pos.y, width: W_PX }}>
+      <div style={{ background: C.cream, ...raised, border: `2px solid ${C.ink}` }}>
+        <div onPointerDown={down} onPointerMove={move} onPointerUp={up}
+          className="cursor-grab active:cursor-grabbing flex items-center justify-between px-2 py-0.5"
+          style={{ background: C.pink, touchAction: "none" }}>
+          <span className="term text-sm" style={{ color: C.cream }}>🎴 {L("Wort des Tages", "Word of the Day")}</span>
+          <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onClose(); }} className="term text-xs w-4 h-4 flex items-center justify-center" style={{ background: C.cream, color: C.ink, touchAction: "none" }} title={L("ausblenden", "hide")}>✕</button>
+        </div>
+        <div className="p-2 text-center" style={{ color: C.ink }}>
+          {!words ? <div className="term text-base py-3" style={{ color: C.ochre }}>{L("lädt…", "loading…")}</div>
+            : !word ? <div className="term text-base py-3" style={{ color: C.ochre }}>{L("Noch nichts im Studio.", "Nothing in the Studio yet.")}</div>
+              : <>
+                  <div className="text-3xl my-1" style={{ color: C.pink }}>{word.jp}</div>
+                  {word.reading && <div className="term text-lg" style={{ color: "#0a8a8a" }}>{word.reading}</div>}
+                  <div className="term text-lg" style={{ color: C.ink }}>{word.meaning}</div>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="term text-sm px-1" style={{ background: word.kind === "kanji" ? C.ochre : C.pink, color: C.cream }}>{word.kind === "kanji" ? "漢" : "語"}{word.jlpt ? ` ${word.jlpt}` : ""}</span>
+                    <button onClick={() => { onBeep(660); setOffset(o => o + 1); }} className="nb term text-sm px-1.5" style={{ ...sunken, background: "#fff", color: C.ink }}>🔄 {L("nächstes", "next")}</button>
+                  </div>
+                </>}
+        </div>
       </div>
     </div>
   );
