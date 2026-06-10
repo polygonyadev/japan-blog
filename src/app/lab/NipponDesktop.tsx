@@ -67,6 +67,16 @@ function winMeta(id: string, data: LabPost[], lang: Lng = "de") {
 
 interface OpenWin { id: string; x: number; y: number; z: number; min?: boolean; max?: boolean }
 interface SysLine { label: string; value: string; color?: string }
+interface LocalNote { id: string; text: string; x: number; y: number }
+
+// Desktop-Hintergründe (durchschaltbar per Rechtsklick → "Hintergrund ändern")
+const WALLPAPERS: { name: string; bg: string; overlay: React.CSSProperties }[] = [
+  { name: "Cyan-Gitter", bg: "#1a1a2e", overlay: { backgroundImage: `linear-gradient(#3df0e010 1px,transparent 1px),linear-gradient(90deg,#3df0e010 1px,transparent 1px)`, backgroundSize: "40px 40px" } },
+  { name: "Pink-Punkte", bg: "#1a1a2e", overlay: { backgroundImage: `radial-gradient(#ff2a6d22 1.5px, transparent 1.5px)`, backgroundSize: "22px 22px" } },
+  { name: "Sunset", bg: "#2a1b3d", overlay: { background: "linear-gradient(180deg, #2a1b3d 0%, #44318d 55%, #e8a13a 130%)" } },
+  { name: "Nacht", bg: "#0d0d18", overlay: { backgroundImage: `radial-gradient(#ffffff14 1px, transparent 1px)`, backgroundSize: "30px 30px" } },
+  { name: "Uni-Dunkel", bg: "#16213e", overlay: {} },
+];
 interface NipponSettings {
   bannerText: string;
   systems: SysLine[];
@@ -89,8 +99,12 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   const [startOpen, setStartOpen] = useState(false);
   const [progOpen, setProgOpen] = useState(false);
   const [kofiOpen, setKofiOpen] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [settings, setSettings] = useState<NipponSettings | null>(null);
+  // Rechtsklick-Menü + Wallpaper + lokale Notizen
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
+  const [wallpaper, setWallpaper] = useState(0);
+  const [notes, setNotes] = useState<LocalNote[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
   const z = useRef(10);
   const drag = useRef<{ id: string; sx: number; sy: number; wx: number; wy: number } | null>(null);
   const soundRef = useRef(true); soundRef.current = sound;
@@ -124,11 +138,36 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   useEffect(() => {
     setVisitors(1337 + Math.floor((Date.now() / 86400000) % 500));
     fetch("/api/nippon-settings").then(r => r.json()).then(setSettings).catch(() => {});
+    // Wallpaper + lokale Notizen aus localStorage laden
+    try { const w = parseInt(localStorage.getItem("nippon-wallpaper") ?? "0"); if (!isNaN(w) && w >= 0 && w < WALLPAPERS.length) setWallpaper(w); } catch {}
+    try { const n = JSON.parse(localStorage.getItem("nippon-notes") ?? "[]"); if (Array.isArray(n)) setNotes(n); } catch {}
     function tick() { setClock(new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" })).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })); }
     tick(); const t = setInterval(tick, 20000); return () => clearInterval(t);
   }, []);
 
   const sysColor: Record<string, string> = { green: "#33ff66", pink: C.pink, ochre: C.ochre, cyan: C.cyan };
+
+  // ── Rechtsklick-Menü-Aktionen ──
+  function refreshDesktop() {
+    click(660); setRefreshing(true);
+    fetch("/api/nippon-settings").then(r => r.json()).then(setSettings).catch(() => {}).finally(() => setTimeout(() => setRefreshing(false), 400));
+  }
+  function cycleWallpaper() {
+    click(560);
+    setWallpaper(w => { const next = (w + 1) % WALLPAPERS.length; try { localStorage.setItem("nippon-wallpaper", String(next)); } catch {} return next; });
+  }
+  function saveNotes(next: LocalNote[]) { setNotes(next); try { localStorage.setItem("nippon-notes", JSON.stringify(next)); } catch {} }
+  function addNote(x: number, y: number) {
+    click(880);
+    // Position relativ zum Desktop-Bereich (neko-area)
+    const area = document.getElementById("neko-area");
+    const r = area?.getBoundingClientRect();
+    const nx = r ? Math.max(4, x - r.left - 80) : 80;
+    const ny = r ? Math.max(4, y - r.top - 12) : 40;
+    saveNotes([...notes, { id: Math.random().toString(36).slice(2), text: "", x: nx, y: ny }]);
+  }
+  function updateNote(id: string, patch: Partial<LocalNote>) { saveNotes(notes.map(n => n.id === id ? { ...n, ...patch } : n)); }
+  function deleteNote(id: string) { click(440); saveNotes(notes.filter(n => n.id !== id)); }
 
   // Tage in Japan aus dem "Abreisedatum" der Website-Einstellungen (Studio)
   function japanLine(): SysLine | null {
@@ -226,7 +265,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   const cursorUrl = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath d='M2 2 L2 15 L6 11 L9 17 L11 16 L8 10 L14 10 Z' fill='%23fff' stroke='%23ff2a6d' stroke-width='1.5'/%3E%3C/svg%3E\") 2 2, auto";
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden" style={{ background: C.bg, color: C.cream, cursor: cursorUrl }} onPointerMove={onMove} onPointerUp={onUp}>
+    <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden" style={{ background: WALLPAPERS[wallpaper].bg, color: C.cream, cursor: cursorUrl }} onPointerMove={onMove} onPointerUp={onUp}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
         .pixel{font-family:'Press Start 2P',monospace}.term{font-family:'VT323',monospace}
@@ -238,7 +277,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
         .nb:hover{animation:wig .3s}
       `}</style>
 
-      <div className="absolute inset-0 pointer-events-none" aria-hidden style={{ backgroundImage: `linear-gradient(${C.cyan}10 1px,transparent 1px),linear-gradient(90deg,${C.cyan}10 1px,transparent 1px)`, backgroundSize: "40px 40px" }} />
+      <div className="absolute inset-0 pointer-events-none transition-opacity" aria-hidden style={{ ...WALLPAPERS[wallpaper].overlay, opacity: refreshing ? 0.3 : 1 }} />
 
       <div className="relative overflow-hidden py-1 shrink-0" style={{ background: C.pink, borderBottom: `3px solid ${C.ink}` }}>
         <div className="term text-lg whitespace-nowrap" style={{ color: C.bg, animation: "nm 22s linear infinite" }}>
@@ -292,7 +331,8 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
           )}
         </aside>
 
-        <div id="neko-area" className="flex-1 relative overflow-hidden">
+        <div id="neko-area" className="flex-1 relative overflow-hidden"
+          onContextMenu={(e) => { e.preventDefault(); setStartOpen(false); setCtxMenu({ x: e.clientX, y: e.clientY }); }}>
           {/* Desktop Icons — füllt nach unten, bricht dann in neue Spalte rechts um */}
           <div className="absolute top-2 left-2 z-[2] flex flex-col flex-wrap content-start gap-1.5" style={{ maxHeight: "calc(100% - 1rem)" }}>
             {DESKTOP_ICONS.map(id => {
@@ -318,6 +358,11 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
           {/* Notizzettel (Text aus Studio, frei verschiebbar, Start oben rechts) */}
           {settings?.stickyNote && <StickyNote text={settings.stickyNote} />}
 
+          {/* Lokale, eigene Notizen (per Rechtsklick → "Neue Notiz") */}
+          {notes.map(n => (
+            <LocalNoteCard key={n.id} note={n} onChange={(patch) => updateNote(n.id, patch)} onDelete={() => deleteNote(n.id)} lang={lang} />
+          ))}
+
           {/* Cat */}
           <button ref={catRef} onClick={() => click(990)} className="absolute top-0 left-0 text-3xl z-[5]" style={{ cursor: cursorUrl, willChange: "transform" }} title="にゃ～">🐱</button>
 
@@ -329,6 +374,23 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
           ))}
         </div>
       </div>
+
+      {/* Rechtsklick-Kontextmenü */}
+      {ctxMenu && (
+        <>
+          <div className="fixed inset-0 z-[45]" onClick={() => setCtxMenu(null)} onContextMenu={(e) => { e.preventDefault(); setCtxMenu(null); }} />
+          <div className="fixed z-[46] p-1 w-52" style={{ left: Math.min(ctxMenu.x, (typeof window !== "undefined" ? window.innerWidth : 9999) - 220), top: Math.min(ctxMenu.y, (typeof window !== "undefined" ? window.innerHeight : 9999) - 160), background: C.pink, ...raised, animation: "wo .12s ease-out" }}>
+            <div className="p-1" style={{ background: C.bg2 }}>
+              <button onClick={() => { refreshDesktop(); setCtxMenu(null); }} className="nb term text-lg w-full text-left px-2 py-1 mb-0.5" style={{ color: C.cream, ...sunken, background: "rgba(255,255,255,0.05)" }}>🔄 {L("Aktualisieren", "Refresh")}</button>
+              <button onClick={() => { cycleWallpaper(); }} className="nb term text-lg w-full text-left px-2 py-1 mb-0.5 flex justify-between items-center" style={{ color: C.cream, ...sunken, background: "rgba(255,255,255,0.05)" }}>
+                <span>🖼️ {L("Hintergrund ändern", "Change wallpaper")}</span>
+                <span className="text-xs" style={{ color: C.cyan }}>{wallpaper + 1}/{WALLPAPERS.length}</span>
+              </button>
+              <button onClick={() => { addNote(ctxMenu.x, ctxMenu.y); setCtxMenu(null); }} className="nb term text-lg w-full text-left px-2 py-1" style={{ color: C.ochre, ...sunken, background: "rgba(255,255,255,0.05)" }}>📝 {L("Neue Notiz", "New note")}</button>
+            </div>
+          </div>
+        </>
+      )}
 
       {startOpen && (
         <>
@@ -992,6 +1054,43 @@ function StickyNote({ text }: { text: string }) {
           className="cursor-grab active:cursor-grabbing py-1"
           style={{ background: "#fcd34d", borderBottom: "1px solid #d9b441", touchAction: "none" }} />
         <div className="term text-lg px-2 py-1.5 whitespace-pre-wrap break-words" style={{ color: "#4a3b10", lineHeight: 1.2 }}>{text}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Eigene, lokale Notiz (per Rechtsklick angelegt, editierbar) ───────────────
+function LocalNoteCard({ note, onChange, onDelete, lang }: { note: LocalNote; onChange: (p: Partial<LocalNote>) => void; onDelete: () => void; lang: Lng }) {
+  const NOTE_W = 170;
+  const ref = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ dx: number; dy: number } | null>(null);
+  function down(e: React.PointerEvent) {
+    e.preventDefault();
+    const r = ref.current!.getBoundingClientRect();
+    drag.current = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {}
+  }
+  function move(e: React.PointerEvent) {
+    if (!drag.current) return;
+    const parent = ref.current!.parentElement!;
+    const pr = parent.getBoundingClientRect();
+    const x = Math.max(0, Math.min(e.clientX - pr.left - drag.current.dx, parent.clientWidth - NOTE_W));
+    const y = Math.max(0, Math.min(e.clientY - pr.top - drag.current.dy, parent.clientHeight - 30));
+    onChange({ x, y });
+  }
+  function up(e: React.PointerEvent) { drag.current = null; try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch {} }
+  return (
+    <div ref={ref} className="absolute z-[4] select-none" style={{ left: note.x, top: note.y, width: NOTE_W, transform: "rotate(1.5deg)" }}>
+      <div style={{ background: "#bef264", boxShadow: "3px 4px 10px rgba(0,0,0,0.4)", border: "1px solid #84a93b" }}>
+        <div onPointerDown={down} onPointerMove={move} onPointerUp={up}
+          className="cursor-grab active:cursor-grabbing flex items-center justify-between px-1 py-0.5"
+          style={{ background: "#a3e635", borderBottom: "1px solid #84a93b", touchAction: "none" }}>
+          <span className="term text-sm" style={{ color: "#33450a" }}>{lang === "en" ? "note" : "Notiz"}</span>
+          <button onClick={onDelete} className="term text-xs w-4 h-4 flex items-center justify-center" style={{ background: "#fff", color: C.ink }} title={lang === "en" ? "Delete" : "Löschen"}>✕</button>
+        </div>
+        <textarea value={note.text} onChange={(e) => onChange({ text: e.target.value })} rows={3} autoFocus
+          placeholder={lang === "en" ? "type…" : "tippen…"} spellCheck={false}
+          className="term text-base w-full px-2 py-1.5 bg-transparent outline-none resize-none" style={{ color: "#33450a", lineHeight: 1.2 }} />
       </div>
     </div>
   );
