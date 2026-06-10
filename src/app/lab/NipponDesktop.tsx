@@ -820,12 +820,10 @@ function StickyNote({ text }: { text: string }) {
   return (
     <div ref={ref} className="absolute z-[4] select-none" style={{ left: pos.x, top: pos.y, width: NOTE_W, transform: "rotate(-2deg)" }}>
       <div style={{ background: "#fde68a", boxShadow: "3px 4px 10px rgba(0,0,0,0.4)", border: "1px solid #d9b441" }}>
-        {/* Kopfleiste zum Ziehen + Pin */}
+        {/* Kopfleiste zum Ziehen */}
         <div onPointerDown={down} onPointerMove={move} onPointerUp={up}
-          className="cursor-grab active:cursor-grabbing flex items-center justify-center py-0.5"
-          style={{ background: "#fcd34d", borderBottom: "1px solid #d9b441", touchAction: "none" }}>
-          <span className="text-lg" style={{ filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.3))" }}>📌</span>
-        </div>
+          className="cursor-grab active:cursor-grabbing py-1"
+          style={{ background: "#fcd34d", borderBottom: "1px solid #d9b441", touchAction: "none" }} />
         <div className="term text-lg px-2 py-1.5 whitespace-pre-wrap break-words" style={{ color: "#4a3b10", lineHeight: 1.2 }}>{text}</div>
       </div>
     </div>
