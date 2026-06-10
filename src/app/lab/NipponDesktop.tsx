@@ -940,7 +940,7 @@ function CassetteApp({ settings, onBeep }: { settings: NipponSettings | null; on
             {cur.title}{cur.artist ? ` — ${cur.artist}` : ""}
           </div>
           {/* Spulen-Fenster (höher) — Steuerung sitzt im dunklen Mittelteil */}
-          <div style={{ position: "relative", padding: "26px 16px 34px", background: "linear-gradient(#efe4ca,#e4d7b6)" }}>
+          <div style={{ position: "relative", padding: "44px 16px 52px", background: "linear-gradient(#efe4ca,#e4d7b6)" }}>
             <div className="flex items-center justify-between" style={{ gap: 10 }}>
               {reel("l")}
               {/* Steuerung mittig im dunklen Tape-Fenster */}
@@ -970,7 +970,7 @@ function CassetteApp({ settings, onBeep }: { settings: NipponSettings | null; on
       {/* Playlist */}
       <div className="flex flex-col gap-1" style={{ maxHeight: 130, overflowY: "auto" }}>
         {tracks.map((t, i) => (
-          <button key={i} onClick={() => jump(i)} className="nb term text-base text-left px-2 py-1 flex items-center gap-2" style={{ ...sunken, background: i === idx ? C.cyan : "#fff", color: C.ink }}>
+          <button key={i} onClick={() => jump(i)} className="term text-base text-left px-2 py-1 flex items-center gap-2" style={{ ...sunken, background: i === idx ? C.cyan : "#fff", color: C.ink }}>
             <span>{i === idx && playing ? "🔊" : "♪"}</span>
             <span className="truncate">{t.title}{t.artist ? <span style={{ color: "#666" }}> — {t.artist}</span> : null}</span>
           </button>
