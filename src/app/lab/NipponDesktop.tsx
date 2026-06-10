@@ -1086,7 +1086,8 @@ function LocalNoteCard({ note, onChange, onDelete, lang }: { note: LocalNote; on
           className="cursor-grab active:cursor-grabbing flex items-center justify-between px-1 py-0.5"
           style={{ background: "#a3e635", borderBottom: "1px solid #84a93b", touchAction: "none" }}>
           <span className="term text-sm" style={{ color: "#33450a" }}>{lang === "en" ? "note" : "Notiz"}</span>
-          <button onClick={onDelete} className="term text-xs w-4 h-4 flex items-center justify-center" style={{ background: "#fff", color: C.ink }} title={lang === "en" ? "Delete" : "Löschen"}>✕</button>
+          <button onPointerDown={(e) => { e.stopPropagation(); }} onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="term text-xs w-4 h-4 flex items-center justify-center" style={{ background: "#fff", color: C.ink, touchAction: "none" }} title={lang === "en" ? "Delete" : "Löschen"}>✕</button>
         </div>
         <textarea value={note.text} onChange={(e) => onChange({ text: e.target.value })} rows={3} autoFocus
           placeholder={lang === "en" ? "type…" : "tippen…"} spellCheck={false}
