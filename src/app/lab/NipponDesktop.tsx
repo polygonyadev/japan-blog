@@ -49,7 +49,7 @@ const APPS = [
   { id: "about", icon: "★", title: "Über mich", titleEN: "About me" },
 ];
 function appTitle(a: { title: string; titleEN?: string }, lang: Lng) { return lang === "en" ? (a.titleEN ?? a.title) : a.title; }
-const DESKTOP_ICONS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "paint", "snake", "pong", "guestbook"];
+const DESKTOP_ICONS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "paint", "pong", "guestbook"];
 // Linkes Sidebar-Menü: nur die wichtigen Apps (Spiele nur über Icons + Start)
 const SIDEBAR_APPS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "newsletter", "guestbook", "about"];
 // Start-Menü: Top-Level + ausklappbarer "Programme"-Ordner (wie Windows)
@@ -289,8 +289,8 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
         </aside>
 
         <div id="neko-area" className="flex-1 relative overflow-hidden">
-          {/* Desktop Icons */}
-          <div className="absolute top-2 left-2 z-[2] flex flex-col gap-1.5">
+          {/* Desktop Icons — füllt nach unten, bricht dann in neue Spalte rechts um */}
+          <div className="absolute top-2 left-2 z-[2] flex flex-col flex-wrap content-start gap-1.5" style={{ maxHeight: "calc(100% - 1rem)" }}>
             {DESKTOP_ICONS.map(id => {
               const m = winMeta(id, data, lang);
               return (
@@ -302,6 +302,14 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
               );
             })}
           </div>
+
+          {/* Snake als loses Spaß-Icon unten rechts auf dem Desktop 🐍 */}
+          <button onDoubleClick={() => openApp("snake")} onClick={() => { if (isMobile()) openApp("snake"); }}
+            className="absolute bottom-3 right-3 z-[3] flex flex-col items-center w-16 p-1 rounded-lg hover:bg-white/10 transition-colors"
+            title={L("Doppelklick — Snake spielen!", "Double-click — play Snake!")} style={{ animation: "nf 5s ease-in-out infinite" }}>
+            <span className="text-3xl" style={{ display: "inline-block", animation: "wig 2.5s ease-in-out infinite" }}>🐍</span>
+            <span className="term text-sm text-center leading-none" style={{ color: C.cream, textShadow: "0 1px 2px #000" }}>Snake</span>
+          </button>
 
           {/* Cat */}
           <button ref={catRef} onClick={() => click(990)} className="absolute top-0 left-0 text-3xl z-[5]" style={{ cursor: cursorUrl, willChange: "transform" }} title="にゃ～">🐱</button>
