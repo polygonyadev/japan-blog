@@ -53,9 +53,9 @@ const APPS = [
 ];
 function appTitle(a: { title: string; titleEN?: string }, lang: Lng) { return lang === "en" ? (a.titleEN ?? a.title) : a.title; }
 function isMobileView() { return typeof window !== "undefined" && window.innerWidth < 760; }
-const DESKTOP_ICONS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "clock", "bucket", "gallery", "files", "paint", "pong", "guestbook"];
+const DESKTOP_ICONS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "files", "paint", "pong", "guestbook"];
 // Linkes Sidebar-Menü: nur die wichtigen Apps (Spiele nur über Icons + Start)
-const SIDEBAR_APPS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "clock", "bucket", "gallery", "files", "newsletter", "guestbook", "about"];
+const SIDEBAR_APPS = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "bucket", "gallery", "files", "newsletter", "guestbook", "about"];
 // Start-Menü: Top-Level + ausklappbarer "Programme"-Ordner (wie Windows)
 const START_TOP = ["blog", "japanisch", "photo", "fotofeed", "video", "map", "clock", "bucket", "gallery", "files", "guestbook"];
 const START_PROGRAMS = ["paint", "snake", "pong", "terminal", "newsletter", "about"];
