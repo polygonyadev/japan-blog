@@ -911,10 +911,10 @@ function CassetteApp({ settings, onBeep }: { settings: NipponSettings | null; on
   const cur = tracks[idx];
   // Spule (drehendes Zahnrad), dreht nur beim Abspielen
   const reel = (key: string) => (
-    <div key={key} style={{ width: 58, height: 58, borderRadius: "50%", background: "#111", border: "3px solid #333", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ width: 50, height: 50, borderRadius: "50%", background: "repeating-conic-gradient(#fff 0deg 9deg, #1c1c1c 9deg 18deg)", animation: "ccspin 2s linear infinite", animationPlayState: playing ? "running" : "paused", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div key={key} style={{ width: 70, height: 70, borderRadius: "50%", background: "#111", border: "3px solid #333", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      <div style={{ width: 60, height: 60, borderRadius: "50%", background: "repeating-conic-gradient(#fff 0deg 9deg, #1c1c1c 9deg 18deg)", animation: "ccspin 2s linear infinite", animationPlayState: playing ? "running" : "paused", display: "flex", alignItems: "center", justifyContent: "center" }}>
         {/* Nabe mit Zacken */}
-        <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#e8e8e8", border: "2px solid #888", boxShadow: "inset 0 0 0 3px #1c1c1c" }} />
+        <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#e8e8e8", border: "2px solid #888", boxShadow: "inset 0 0 0 4px #1c1c1c" }} />
       </div>
     </div>
   );
@@ -924,46 +924,45 @@ function CassetteApp({ settings, onBeep }: { settings: NipponSettings | null; on
       <style>{`@keyframes ccspin{to{transform:rotate(360deg)}}`}</style>
       <div className="pixel text-[10px] mb-2 text-center" style={{ color: C.pink }}>📻 CITY-POP 📻</div>
 
+      {/* YouTube-Player ÜBER der Kassette (wenn eingeblendet), sonst off-screen (Audio läuft weiter) */}
+      <div style={showVideo
+        ? { marginBottom: 10 }
+        : { position: "absolute", left: -10000, top: 0, width: 240, height: 135, overflow: "hidden", opacity: 0, pointerEvents: "none" }}>
+        <div className="p-1" style={{ background: "#000", ...(showVideo ? sunken : {}) }}><div ref={wrapRef} /></div>
+      </div>
+
       {/* ───── Kassette ───── */}
       <div style={{ background: "#1a1a1a", borderRadius: 14, border: "2px solid #000", padding: 12, boxShadow: "0 4px 14px rgba(0,0,0,0.5), inset 0 2px 0 rgba(255,255,255,0.08)" }}>
         {/* Label */}
         <div style={{ background: "#f3e9d2", borderRadius: 6, overflow: "hidden", border: "1px solid #000" }}>
           {/* oranger Streifen + Titel */}
-          <div className="term truncate" style={{ background: C.ochre, color: "#2a2a2a", padding: "3px 10px", borderBottom: "2px solid #b9791f", fontSize: 17, fontWeight: 700 }}>
+          <div className="term truncate" style={{ background: C.ochre, color: "#2a2a2a", padding: "4px 10px", borderBottom: "2px solid #b9791f", fontSize: 17, fontWeight: 700 }}>
             {cur.title}{cur.artist ? ` — ${cur.artist}` : ""}
           </div>
-          {/* Spulen-Fenster */}
-          <div style={{ position: "relative", padding: "16px 18px", background: "linear-gradient(#efe4ca,#e4d7b6)" }}>
-            <div className="flex items-center justify-between">
+          {/* Spulen-Fenster (höher) — Steuerung sitzt im dunklen Mittelteil */}
+          <div style={{ position: "relative", padding: "26px 16px 34px", background: "linear-gradient(#efe4ca,#e4d7b6)" }}>
+            <div className="flex items-center justify-between" style={{ gap: 10 }}>
               {reel("l")}
-              {/* Bandbrücke */}
-              <div style={{ flex: 1, margin: "0 6px", height: 26, background: "linear-gradient(#3a3a3a,#1a1a1a)", borderRadius: 3, border: "1px solid #000", boxShadow: "inset 0 1px 2px rgba(255,255,255,0.15)" }} />
+              {/* Steuerung mittig im dunklen Tape-Fenster */}
+              <div className="flex items-center justify-center" style={{ flex: 1, gap: 8, background: "linear-gradient(#2a2a2a,#141414)", borderRadius: 8, padding: "10px 6px", border: "1px solid #000", boxShadow: "inset 0 1px 3px rgba(255,255,255,0.12), inset 0 -2px 4px rgba(0,0,0,0.5)" }}>
+                <button onClick={() => go(-1)} className="nb term text-lg" style={{ ...raised, background: "#fff", color: C.ink, padding: "2px 7px", borderRadius: 4 }} title={L("Zurück", "Previous")}>⏮</button>
+                <button onClick={playPause} className="nb pixel text-[10px]" style={{ ...raised, background: C.pink, color: C.cream, padding: "7px 12px", borderRadius: 4 }}>{playing ? "❚❚" : "▶"}</button>
+                <button onClick={() => go(1)} className="nb term text-lg" style={{ ...raised, background: "#fff", color: C.ink, padding: "2px 7px", borderRadius: 4 }} title={L("Weiter", "Next")}>⏭</button>
+              </div>
               {reel("r")}
             </div>
-            <div className="term" style={{ position: "absolute", right: 12, bottom: 2, color: "#8a7a52", fontSize: 13 }}>90 min</div>
-            <div className="term" style={{ position: "absolute", left: 12, bottom: 2, color: playing ? "#1f9d4d" : "#a59",  fontSize: 13 }}>{playing ? "▶ PLAY" : "❚❚ PAUSE"}</div>
+            <div className="term" style={{ position: "absolute", right: 12, bottom: 6, color: "#8a7a52", fontSize: 13 }}>90 min</div>
+            <div className="term" style={{ position: "absolute", left: 12, bottom: 6, color: playing ? "#1f9d4d" : "#a59", fontSize: 13 }}>{playing ? "▶ PLAY" : "❚❚ PAUSE"}</div>
           </div>
         </div>
         {/* Unterteil mit Löchern */}
-        <div className="flex items-center justify-center gap-3" style={{ padding: "8px 0 2px" }}>
+        <div className="flex items-center justify-center gap-3" style={{ padding: "10px 0 2px" }}>
           {[0, 1, 2, 3, 4].map(i => <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#000", boxShadow: "inset 0 0 0 1px #444" }} />)}
         </div>
       </div>
 
-      {/* YouTube-Player: bei "Video zeigen" sichtbar, sonst off-screen (Audio läuft weiter) */}
-      <div style={showVideo
-        ? { marginTop: 8 }
-        : { position: "absolute", left: -10000, top: 0, width: 240, height: 135, overflow: "hidden", opacity: 0, pointerEvents: "none" }}>
-        <div className="p-1" style={{ background: "#000", ...(showVideo ? sunken : {}) }}><div ref={wrapRef} /></div>
-      </div>
-
-      {/* Steuerung */}
-      <div className="flex items-center justify-center gap-2 mt-3 mb-1">
-        <button onClick={() => go(-1)} className="nb term text-xl px-3 py-1" style={{ ...raised, background: "#fff", color: C.ink }} title={L("Zurück", "Previous")}>⏮</button>
-        <button onClick={playPause} className="nb pixel text-[11px] px-5 py-2" style={{ ...raised, background: C.pink, color: C.cream }}>{playing ? "❚❚" : "▶"}</button>
-        <button onClick={() => go(1)} className="nb term text-xl px-3 py-1" style={{ ...raised, background: "#fff", color: C.ink }} title={L("Weiter", "Next")}>⏭</button>
-      </div>
-      <div className="text-center mb-2">
+      {/* Video-Umschalter */}
+      <div className="text-center mt-2 mb-2">
         <button onClick={() => { onBeep(520); setShowVideo(v => !v); }} className="nb term text-base px-2" style={{ color: C.cyan }}>{showVideo ? L("📺 Video ausblenden", "📺 Hide video") : L("📺 Video zeigen", "📺 Show video")}</button>
         {!ready && <span className="term text-base ml-2" style={{ color: C.ochre }}>{L("lädt…", "loading…")}</span>}
       </div>
