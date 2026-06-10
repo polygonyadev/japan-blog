@@ -303,9 +303,9 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
             })}
           </div>
 
-          {/* Snake als loses Spaß-Icon unten rechts auf dem Desktop 🐍 */}
+          {/* Snake als loses Spaß-Icon unten auf dem Desktop 🐍 (mittig, damit es das Ko-fi-Banner unten rechts nicht überlappt) */}
           <button onDoubleClick={() => openApp("snake")} onClick={() => { if (isMobile()) openApp("snake"); }}
-            className="absolute bottom-3 right-3 z-[3] flex flex-col items-center w-16 p-1 rounded-lg hover:bg-white/10 transition-colors"
+            className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[3] flex flex-col items-center w-16 p-1 rounded-lg hover:bg-white/10 transition-colors"
             title={L("Doppelklick — Snake spielen!", "Double-click — play Snake!")} style={{ animation: "nf 5s ease-in-out infinite" }}>
             <span className="text-3xl" style={{ display: "inline-block", animation: "wig 2.5s ease-in-out infinite" }}>🐍</span>
             <span className="term text-sm text-center leading-none" style={{ color: C.cream, textShadow: "0 1px 2px #000" }}>Snake</span>
