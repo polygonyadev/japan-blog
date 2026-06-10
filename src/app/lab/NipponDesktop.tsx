@@ -163,7 +163,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
 
   useEffect(() => {
     setVisitors(1337 + Math.floor((Date.now() / 86400000) % 500));
-    fetch("/api/nippon-settings").then(r => r.json()).then(setSettings).catch(() => {});
+    fetch("/api/nippon-settings", { cache: "no-store" }).then(r => r.json()).then(setSettings).catch(() => {});
     // Wallpaper + lokale Notizen aus localStorage laden
     try { const w = parseInt(localStorage.getItem("nippon-wallpaper") ?? "0"); if (!isNaN(w) && w >= 0 && w < WALLPAPERS.length) setWallpaper(w); } catch {}
     try { const n = JSON.parse(localStorage.getItem("nippon-notes") ?? "[]"); if (Array.isArray(n)) setNotes(n); } catch {}
@@ -190,7 +190,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   // ── Rechtsklick-Menü-Aktionen ──
   function refreshDesktop() {
     click(660); setRefreshing(true);
-    fetch("/api/nippon-settings").then(r => r.json()).then(setSettings).catch(() => {}).finally(() => setTimeout(() => setRefreshing(false), 400));
+    fetch("/api/nippon-settings", { cache: "no-store" }).then(r => r.json()).then(setSettings).catch(() => {}).finally(() => setTimeout(() => setRefreshing(false), 400));
   }
   function cycleWallpaper() {
     click(560);
@@ -860,6 +860,7 @@ function CassetteApp({ settings, onBeep }: { settings: NipponSettings | null; on
   const [idx, setIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [ready, setReady] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const playerRef = useRef<any>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -908,9 +909,13 @@ function CassetteApp({ settings, onBeep }: { settings: NipponSettings | null; on
   }
 
   const cur = tracks[idx];
+  // Spule (drehendes Zahnrad), dreht nur beim Abspielen
   const reel = (key: string) => (
-    <div key={key} style={{ width: 44, height: 44, borderRadius: "50%", border: "3px solid #aaa", background: "repeating-conic-gradient(#cbd5e1 0deg 10deg, #2a2a3a 10deg 20deg)", animation: "ccspin 1.8s linear infinite", animationPlayState: playing ? "running" : "paused" }}>
-      <div style={{ position: "relative", top: "35%", left: "35%", width: "30%", height: "30%", borderRadius: "50%", background: "#e5e7eb", border: "2px solid #555" }} />
+    <div key={key} style={{ width: 70, height: 70, borderRadius: "50%", background: "#111", border: "3px solid #333", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      <div style={{ width: 60, height: 60, borderRadius: "50%", background: "repeating-conic-gradient(#fff 0deg 9deg, #1c1c1c 9deg 18deg)", animation: "ccspin 2s linear infinite", animationPlayState: playing ? "running" : "paused", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {/* Nabe mit Zacken */}
+        <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#e8e8e8", border: "2px solid #888", boxShadow: "inset 0 0 0 4px #1c1c1c" }} />
+      </div>
     </div>
   );
 
@@ -919,35 +924,53 @@ function CassetteApp({ settings, onBeep }: { settings: NipponSettings | null; on
       <style>{`@keyframes ccspin{to{transform:rotate(360deg)}}`}</style>
       <div className="pixel text-[10px] mb-2 text-center" style={{ color: C.pink }}>📻 CITY-POP 📻</div>
 
-      {/* Sichtbarer YouTube-Player (ToS-konform) */}
-      <div className="p-1 mb-2" style={{ background: "#000", ...sunken }}>
-        <div ref={wrapRef} />
-        {!ready && <div className="term text-base text-center py-2" style={{ color: C.cyan }}>{L("Player lädt…", "Loading player…")}</div>}
+      {/* YouTube-Player ÜBER der Kassette (wenn eingeblendet), sonst off-screen (Audio läuft weiter) */}
+      <div style={showVideo
+        ? { marginBottom: 10 }
+        : { position: "absolute", left: -10000, top: 0, width: 240, height: 135, overflow: "hidden", opacity: 0, pointerEvents: "none" }}>
+        <div className="p-1" style={{ background: "#000", ...(showVideo ? sunken : {}) }}><div ref={wrapRef} /></div>
       </div>
 
-      {/* Kassette */}
-      <div className="p-3 mb-2" style={{ background: C.ochre, ...raised, borderRadius: 8 }}>
-        <div className="px-3 py-2" style={{ background: "#2a2a3a", borderRadius: 6 }}>
-          <div className="term text-base text-center mb-2 truncate" style={{ color: C.cream }}>♪ {cur.title}{cur.artist ? ` — ${cur.artist}` : ""}</div>
-          <div className="flex items-center justify-center gap-6">
-            {reel("l")}
-            <div className="term text-sm" style={{ color: playing ? "#33ff66" : "#888" }}>{playing ? "▶ PLAY" : "❚❚ PAUSE"}</div>
-            {reel("r")}
+      {/* ───── Kassette ───── */}
+      <div style={{ background: "#1a1a1a", borderRadius: 14, border: "2px solid #000", padding: 12, boxShadow: "0 4px 14px rgba(0,0,0,0.5), inset 0 2px 0 rgba(255,255,255,0.08)" }}>
+        {/* Label */}
+        <div style={{ background: "#f3e9d2", borderRadius: 6, overflow: "hidden", border: "1px solid #000" }}>
+          {/* oranger Streifen + Titel */}
+          <div className="term truncate" style={{ background: C.ochre, color: "#2a2a2a", padding: "4px 10px", borderBottom: "2px solid #b9791f", fontSize: 17, fontWeight: 700 }}>
+            {cur.title}{cur.artist ? ` — ${cur.artist}` : ""}
           </div>
+          {/* Spulen-Fenster (höher) — Steuerung sitzt im dunklen Mittelteil */}
+          <div style={{ position: "relative", padding: "44px 16px 52px", background: "linear-gradient(#efe4ca,#e4d7b6)" }}>
+            <div className="flex items-center justify-between" style={{ gap: 10 }}>
+              {reel("l")}
+              {/* Steuerung mittig im dunklen Tape-Fenster */}
+              <div className="flex items-center justify-center" style={{ flex: 1, gap: 8, background: "linear-gradient(#2a2a2a,#141414)", borderRadius: 8, padding: "10px 6px", border: "1px solid #000", boxShadow: "inset 0 1px 3px rgba(255,255,255,0.12), inset 0 -2px 4px rgba(0,0,0,0.5)" }}>
+                <button onClick={() => go(-1)} className="nb term text-lg" style={{ ...raised, background: "#fff", color: C.ink, padding: "2px 7px", borderRadius: 4 }} title={L("Zurück", "Previous")}>⏮</button>
+                <button onClick={playPause} className="nb pixel text-[10px]" style={{ ...raised, background: C.pink, color: C.cream, padding: "7px 12px", borderRadius: 4 }}>{playing ? "❚❚" : "▶"}</button>
+                <button onClick={() => go(1)} className="nb term text-lg" style={{ ...raised, background: "#fff", color: C.ink, padding: "2px 7px", borderRadius: 4 }} title={L("Weiter", "Next")}>⏭</button>
+              </div>
+              {reel("r")}
+            </div>
+            <div className="term" style={{ position: "absolute", right: 12, bottom: 6, color: "#8a7a52", fontSize: 13 }}>90 min</div>
+            <div className="term" style={{ position: "absolute", left: 12, bottom: 6, color: playing ? "#1f9d4d" : "#a59", fontSize: 13 }}>{playing ? "▶ PLAY" : "❚❚ PAUSE"}</div>
+          </div>
+        </div>
+        {/* Unterteil mit Löchern */}
+        <div className="flex items-center justify-center gap-3" style={{ padding: "10px 0 2px" }}>
+          {[0, 1, 2, 3, 4].map(i => <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#000", boxShadow: "inset 0 0 0 1px #444" }} />)}
         </div>
       </div>
 
-      {/* Steuerung */}
-      <div className="flex items-center justify-center gap-2 mb-2">
-        <button onClick={() => go(-1)} className="nb term text-xl px-3 py-1" style={{ ...raised, background: "#fff", color: C.ink }} title={L("Zurück", "Previous")}>⏮</button>
-        <button onClick={playPause} className="nb pixel text-[11px] px-4 py-2" style={{ ...raised, background: C.pink, color: C.cream }}>{playing ? "❚❚" : "▶"}</button>
-        <button onClick={() => go(1)} className="nb term text-xl px-3 py-1" style={{ ...raised, background: "#fff", color: C.ink }} title={L("Weiter", "Next")}>⏭</button>
+      {/* Video-Umschalter */}
+      <div className="text-center mt-2 mb-2">
+        <button onClick={() => { onBeep(520); setShowVideo(v => !v); }} className="nb term text-base px-2" style={{ color: C.cyan }}>{showVideo ? L("📺 Video ausblenden", "📺 Hide video") : L("📺 Video zeigen", "📺 Show video")}</button>
+        {!ready && <span className="term text-base ml-2" style={{ color: C.ochre }}>{L("lädt…", "loading…")}</span>}
       </div>
 
       {/* Playlist */}
-      <div className="flex flex-col gap-1" style={{ maxHeight: 140, overflowY: "auto" }}>
+      <div className="flex flex-col gap-1" style={{ maxHeight: 130, overflowY: "auto" }}>
         {tracks.map((t, i) => (
-          <button key={i} onClick={() => jump(i)} className="nb term text-base text-left px-2 py-1 flex items-center gap-2" style={{ ...sunken, background: i === idx ? C.cyan : "#fff", color: C.ink }}>
+          <button key={i} onClick={() => jump(i)} className="term text-base text-left px-2 py-1 flex items-center gap-2" style={{ ...sunken, background: i === idx ? C.cyan : "#fff", color: C.ink }}>
             <span>{i === idx && playing ? "🔊" : "♪"}</span>
             <span className="truncate">{t.title}{t.artist ? <span style={{ color: "#666" }}> — {t.artist}</span> : null}</span>
           </button>
