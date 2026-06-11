@@ -9,7 +9,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 interface Photo { url?: string; caption?: string }
 interface LabPost {
   _id: string; title: string; slug?: string; date?: string; location?: string;
-  lat?: number; lng?: number; excerpt?: string; excerptEN?: string; tags?: string[]; youtubeId?: string;
+  lat?: number; lng?: number; excerpt?: string; excerptEN?: string; content?: string; contentEN?: string; tags?: string[]; youtubeId?: string;
   cover?: string; coverImage?: string; photos?: Photo[];
 }
 
@@ -118,7 +118,6 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   const [shutting, setShutting] = useState(false);
   const [wins, setWins] = useState<OpenWin[]>([]);
   const [clock, setClock] = useState("");
-  const [visitors, setVisitors] = useState(1337);
   const [sound, setSound] = useState(true);
   const [startOpen, setStartOpen] = useState(false);
   const [progOpen, setProgOpen] = useState(false);
@@ -162,7 +161,6 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
 
 
   useEffect(() => {
-    setVisitors(1337 + Math.floor((Date.now() / 86400000) % 500));
     fetch("/api/nippon-settings", { cache: "no-store" }).then(r => r.json()).then(setSettings).catch(() => {});
     // Wallpaper + lokale Notizen aus localStorage laden
     try { const w = parseInt(localStorage.getItem("nippon-wallpaper") ?? "0"); if (!isNaN(w) && w >= 0 && w < WALLPAPERS.length) setWallpaper(w); } catch {}
@@ -358,10 +356,6 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
               <div key={i}>{s.label} {"·".repeat(Math.max(2, 11 - s.label.length))} <span style={{ color: sysColor[s.color ?? "green"] ?? "#33ff66" }}>{s.value}</span></div>
             ))}
           </div>
-          <div className="p-2 text-center" style={{ background: C.ink, ...raised }}>
-            <div className="pixel text-[8px] mb-1" style={{ color: C.cream }}>VISITORS</div>
-            <span className="term text-xl px-2" style={{ background: "#000", color: "#33ff66", letterSpacing: "2px" }}>{String(visitors).padStart(6, "0")}</span>
-          </div>
           {/* Info / Umschalter */}
           {onSwitchSimple && (
             <div className="p-2 term text-base" style={{ background: C.bg, ...sunken, color: C.cream }}>
@@ -490,7 +484,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
             <div className="text-4xl mb-1" style={{ animation: "nf 2s ease-in-out infinite" }}>☕</div>
             <div className="pixel text-[9px] mb-2" style={{ color: C.pink }}>{L("MAGST DU NIPPONOS?", "ENJOYING NIPPONOS?")}</div>
             <p className="term text-lg leading-tight mb-3" style={{ color: C.ink }}>
-              {L("Gefällt dir mein kleines Eck im Netz? Dann spendier mir einen Kaffee… oder ein Bier! 🍺 Du unterstützt damit mein Japan-Abenteuer. ♥", "Enjoying my little corner of the web? Then buy me a coffee… or a beer! 🍺 You'll support my Japan adventure. ♥")}
+              {L("Gefällt dir mein digitales Wohnzimmer? Dann spendier mir einen Kaffee… oder ein Bier! 🍺 Du unterstützt damit mein Japan-Abenteuer. ♥", "Enjoying my digital living room? Then buy me a coffee… or a beer! 🍺 You'll support my Japan adventure. ♥")}
             </p>
             <a href={KOFI_URL} target="_blank" rel="noopener noreferrer" onClick={() => click(880)}
               className="nb inline-block pixel text-[9px] px-4 py-2" style={{ background: C.pink, color: C.cream, ...raised, textDecoration: "none" }}>
@@ -608,6 +602,7 @@ function PostDetailApp({ post }: { post?: LabPost }) {
   const [zoom, setZoom] = useState<Photo | null>(null);
   if (!post) return <div className="term text-xl">{lang === "en" ? "Post not found." : "Post nicht gefunden."}</div>;
   const photos = (post.photos ?? []).filter(p => p.url);
+  const body = (lang === "en" ? post.contentEN || post.content : post.content) ?? "";
   const text = (lang === "en" ? post.excerptEN || post.excerpt : post.excerpt) ?? "";
   return (
     <div>
@@ -620,7 +615,7 @@ function PostDetailApp({ post }: { post?: LabPost }) {
           ? <img src={photos[0].url} alt="" onClick={() => setZoom(photos[0])} className="w-full max-h-64 object-cover cursor-pointer" title={lang === "en" ? "Click to enlarge" : "Klick zum Vergrößern"} />
           : <div className="w-full h-44 flex items-center justify-center text-5xl" style={{ background: `linear-gradient(135deg,${C.pink},${C.cyan})` }}>📷</div>}
       </div>
-      <p className="text-sm leading-relaxed mb-3">{text}</p>
+      {body ? <NipponMarkdown content={body} /> : <p className="text-sm leading-relaxed mb-3">{text}</p>}
       {photos.length > 1 && (
         <div className="grid grid-cols-3 gap-1 mb-3">
           {photos.slice(1).map((p, i) => (
@@ -630,7 +625,7 @@ function PostDetailApp({ post }: { post?: LabPost }) {
         </div>
       )}
       {post.lat && post.lng && (
-        <div className="p-1" style={{ background: C.bg, ...sunken }}>
+        <div style={{ ...sunken, borderRadius: 12, overflow: "hidden", lineHeight: 0 }}>
           <MiniMap markers={[{ lat: post.lat, lng: post.lng, label: post.location ?? post.title }]} height="180px" zoom={11} />
         </div>
       )}
@@ -802,8 +797,8 @@ function MapApp({ data, onOpenPost }: { data: LabPost[]; onOpenPost: (id: string
   return (
     <div>
       <div className="pixel text-[10px] mb-2 text-center" style={{ color: C.pink }}>{lang === "en" ? "🗺 MY PLACES 🗺" : "🗺 MEINE ORTE 🗺"}</div>
-      <div className="p-1" style={{ background: C.bg, ...sunken }}>
-        {markers.length ? <MiniMap markers={markers} height="300px" zoom={6} onMarkerClick={(id) => onOpenPost(id)} /> : <div className="h-40 flex items-center justify-center term text-xl" style={{ color: C.cyan }}>{lang === "en" ? "no places yet ◔_◔" : "noch keine Orte ◔_◔"}</div>}
+      <div style={{ ...sunken, borderRadius: 12, overflow: "hidden", lineHeight: 0 }}>
+        {markers.length ? <MiniMap markers={markers} height="300px" zoom={6} onMarkerClick={(id) => onOpenPost(id)} /> : <div className="h-40 flex items-center justify-center term text-xl" style={{ color: C.cyan, background: C.bg }}>{lang === "en" ? "no places yet ◔_◔" : "noch keine Orte ◔_◔"}</div>}
       </div>
     </div>
   );
@@ -988,7 +983,7 @@ function AboutApp() {
       <p className="mt-2">Ich sammle hier Momente — Fotos, Ramen-Funde, kleine Entdeckungen.</p>
       <p className="mt-2" style={{ color: C.pink }}>Lieblings-Konbini: 7-Eleven 🍙</p>
       <p style={{ color: C.ochre }}>Aktueller Skill: Stäbchen-Profi 🥢</p>
-      <p className="mt-2">Dieses NipponOS ist mein kleines Eck im Netz. Bleib eine Weile! (-‿‿-)</p>
+      <p className="mt-2">Dieses NipponOS ist mein digitales Wohnzimmer. Bleib eine Weile! (-‿‿-)</p>
     </div>
   );
 }

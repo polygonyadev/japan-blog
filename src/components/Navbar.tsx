@@ -14,6 +14,11 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   function switchToOS() {
+    // Auf nippondiary.com → zur NipponOS-Domain wechseln.
+    if (typeof window !== "undefined" && window.location.hostname.includes("nippondiary")) {
+      window.location.href = "https://nippon-os.com";
+      return;
+    }
     try { localStorage.setItem("nippon-exp", "os"); } catch {}
     window.location.href = "/";
   }
