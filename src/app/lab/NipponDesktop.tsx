@@ -57,6 +57,36 @@ const APPS = [
 function appTitle(a: { title: string; titleEN?: string }, lang: Lng) { return lang === "en" ? (a.titleEN ?? a.title) : a.title; }
 function isMobileView() { return typeof window !== "undefined" && window.innerWidth < 760; }
 
+// Süße Pixel-Art-Katze (als SVG-Sprite)
+const CAT_PX = [
+  "..DD......DD..",
+  ".DGGD....DGGD.",
+  ".DGPGD..DGPGD.",
+  ".DGGGD..DGGGD.",
+  "DDGGGDDDDGGGDD",
+  "DGGGGGGGGGGGGD",
+  "DGGGGGGGGGGGGD",
+  "DGGWEGGGGWEGGD",
+  "DGGEEGGGGEEGGD",
+  "DGGPGGGGGGPGGD",
+  "DGGGGGNNGGGGGD",
+  ".DGGGGGGGGGGD.",
+  "DGGGCCCCCCGGGD",
+  "DGGCCCCCCCCGGD",
+  ".DGCCGGGGCCGD.",
+];
+const CAT_COLORS: Record<string, string> = { D: "#27374a", G: "#98a4ad", C: "#f5eccf", P: "#e9a9a1", E: "#1b1b2b", W: "#ffffff", N: "#b96f6a" };
+function CatSprite() {
+  const cols = CAT_PX[0].length, rows = CAT_PX.length, px = 2.8;
+  return (
+    <svg width={cols * px} height={rows * px} viewBox={`0 0 ${cols} ${rows}`} shapeRendering="crispEdges" style={{ display: "block", filter: "drop-shadow(0 2px 1px rgba(0,0,0,0.35))" }}>
+      {CAT_PX.flatMap((row, y) => row.split("").map((ch, x) => ch === "." ? null : (
+        <rect key={`${x}-${y}`} x={x} y={y} width={1.02} height={1.02} fill={CAT_COLORS[ch]} />
+      )))}
+    </svg>
+  );
+}
+
 // YouTube IFrame API einmalig laden (für den Kassetten-Player)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let ytReadyPromise: Promise<any> | null = null;
@@ -106,6 +136,7 @@ interface NipponSettings {
   bannerText: string;
   systems: SysLine[];
   stickyNote?: string | null;
+  aboutText?: string | null;
   photoOfDay?: { url: string; caption?: string } | null;
   videoOfDay?: { id: string; title?: string } | null;
   playlist?: { title: string; artist?: string; id: string }[];
@@ -142,6 +173,10 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   const catRef = useRef<HTMLButtonElement>(null);
   const mouse = useRef({ x: 400, y: 300 });
   const catPos = useRef({ x: 150, y: 150 });
+  const catMode = useRef<"wander" | "follow">("wander");
+  const wander = useRef({ x: 200, y: 200, nextPick: 0 });
+  const catMoving = useRef(false);
+  const catFlip = useRef(1);
 
   function boot() {
     setBooted(true); z.current += 3;
@@ -232,17 +267,44 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
     const onMM = (e: PointerEvent) => { mouse.current = { x: e.clientX, y: e.clientY }; };
     window.addEventListener("pointermove", onMM);
     let raf = 0;
+    const SIZE = 40;
     const loop = () => {
       const area = document.getElementById("neko-area");
       if (area && catRef.current) {
         const r = area.getBoundingClientRect();
-        const tx = mouse.current.x - r.left - 16, ty = mouse.current.y - r.top + 12;
-        catPos.current.x += (tx - catPos.current.x) * 0.018;
-        catPos.current.y += (ty - catPos.current.y) * 0.018;
-        const cx = Math.max(0, Math.min(r.width - 34, catPos.current.x));
-        const cy = Math.max(0, Math.min(r.height - 34, catPos.current.y));
-        const flip = tx < catPos.current.x ? -1 : 1;
-        catRef.current.style.transform = `translate(${cx}px, ${cy}px) scaleX(${flip})`;
+        const mx = mouse.current.x - r.left, my = mouse.current.y - r.top;
+        const ccx = catPos.current.x + SIZE / 2, ccy = catPos.current.y + SIZE / 2;
+        const dToMouse = Math.hypot(mx - ccx, my - ccy);
+        // Modus mit Hysterese: nah → folgen, weit weg → wieder wandern
+        if (catMode.current === "wander" && dToMouse < 160) catMode.current = "follow";
+        else if (catMode.current === "follow" && dToMouse > 240) catMode.current = "wander";
+
+        let tx: number, ty: number, speed: number;
+        if (catMode.current === "follow") {
+          tx = mx - SIZE / 2; ty = my - SIZE / 2 + 8; speed = 0.045;
+        } else {
+          const now = Date.now();
+          if (now >= wander.current.nextPick) {
+            wander.current.x = Math.random() * Math.max(1, r.width - SIZE);
+            wander.current.y = Math.random() * Math.max(1, r.height - SIZE);
+            wander.current.nextPick = now + 3500 + Math.random() * 4000;
+          }
+          tx = wander.current.x; ty = wander.current.y; speed = 0.014;
+        }
+        catPos.current.x += (tx - catPos.current.x) * speed;
+        catPos.current.y += (ty - catPos.current.y) * speed;
+        const cx = Math.max(0, Math.min(r.width - SIZE, catPos.current.x));
+        const cy = Math.max(0, Math.min(r.height - SIZE, catPos.current.y));
+        const dx = tx - catPos.current.x;
+        const moving = Math.hypot(dx, ty - catPos.current.y) > 3;
+        if (moving !== catMoving.current) {
+          catMoving.current = moving;
+          const inner = catRef.current.firstElementChild as HTMLElement | null;
+          if (inner) inner.style.animationPlayState = moving ? "running" : "paused";
+        }
+        // Flip nur bei klarer Richtung (Deadzone), sonst letzte Richtung behalten
+        if (dx < -12) catFlip.current = -1; else if (dx > 12) catFlip.current = 1;
+        catRef.current.style.transform = `translate(${cx}px, ${cy}px) scaleX(${catFlip.current})`;
       }
       raf = requestAnimationFrame(loop);
     };
@@ -313,6 +375,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
         @keyframes nm{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
         @keyframes nf{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
         @keyframes wig{0%,100%{transform:rotate(0)}25%{transform:rotate(-2deg)}75%{transform:rotate(2deg)}}
+        @keyframes catwalk{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
         @keyframes wo{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
         .nl{color:${C.pink};text-decoration:none}.nl:hover{text-shadow:0 0 8px ${C.pink};text-decoration:underline}
         .nb:hover{animation:wig .3s}
@@ -404,7 +467,9 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
           {wotdOn && <WotdWidget onClose={() => toggleWotd(false)} lang={lang} onBeep={click} />}
 
           {/* Cat */}
-          <button ref={catRef} onClick={() => click(990)} className="absolute top-0 left-0 text-3xl z-[5]" style={{ cursor: cursorUrl, willChange: "transform" }} title="にゃ～">🐱</button>
+          <button ref={catRef} onClick={() => click(990)} className="absolute top-0 left-0 z-[5]" style={{ cursor: cursorUrl, willChange: "transform" }} title="にゃ～">
+            <span style={{ display: "inline-block", animation: "catwalk 1.3s ease-in-out infinite", animationPlayState: "paused" }}><CatSprite /></span>
+          </button>
 
           {wins.filter(w => !w.min).map(w => (
             <WindowFrame key={w.id} win={w} data={data} settings={settings} onOpenPost={openPost} onOpenApp={openApp}
@@ -545,7 +610,7 @@ function WindowFrame({ win, data, settings, onOpenPost, onOpenApp, onClose, onFo
         {win.id === "pong" && <PongApp />}
         {win.id === "newsletter" && <NewsletterApp onBeep={onBeep} />}
         {win.id === "terminal" && <TerminalApp settings={settings} onOpenApp={onOpenApp} onBeep={onBeep} />}
-        {win.id === "about" && <AboutApp />}
+        {win.id === "about" && <AboutApp settings={settings} />}
         {win.id === "guestbook" && <GuestbookApp onBeep={onBeep} />}
         {win.id.startsWith("post:") && <PostDetailApp post={data.find(p => p._id === win.id.slice(5))} />}
       </div>
@@ -978,15 +1043,22 @@ function CassetteApp({ settings, onBeep }: { settings: NipponSettings | null; on
   );
 }
 
-function AboutApp() {
+function AboutApp({ settings }: { settings: NipponSettings | null }) {
+  const about = settings?.aboutText?.trim();
   return (
     <div className="term text-xl leading-snug">
       <div className="pixel text-[10px] mb-3" style={{ color: C.pink }}>★ ÜBER MICH ★</div>
-      <p>こんにちは！ Ich bin David 🙋</p>
-      <p className="mt-2">Ich sammle hier Momente — Fotos, Ramen-Funde, kleine Entdeckungen.</p>
-      <p className="mt-2" style={{ color: C.pink }}>Lieblings-Konbini: 7-Eleven 🍙</p>
-      <p style={{ color: C.ochre }}>Aktueller Skill: Stäbchen-Profi 🥢</p>
-      <p className="mt-2">Dieses NipponOS ist mein digitales Wohnzimmer. Bleib eine Weile! (-‿‿-)</p>
+      {about ? (
+        <NipponMarkdown content={about} />
+      ) : (
+        <>
+          <p>こんにちは！ Ich bin David 🙋</p>
+          <p className="mt-2">Ich sammle hier Momente — Fotos, Ramen-Funde, kleine Entdeckungen.</p>
+          <p className="mt-2" style={{ color: C.pink }}>Lieblings-Konbini: 7-Eleven 🍙</p>
+          <p style={{ color: C.ochre }}>Aktueller Skill: Stäbchen-Profi 🥢</p>
+          <p className="mt-2">Dieses NipponOS ist mein digitales Wohnzimmer. Bleib eine Weile! (-‿‿-)</p>
+        </>
+      )}
     </div>
   );
 }

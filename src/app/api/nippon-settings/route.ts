@@ -10,6 +10,7 @@ const DEFAULTS = {
     { label: 'Heimweh', value: '12%', color: 'pink' },
   ],
   stickyNote: null as null | string,
+  aboutText: null as null | string,
   photoOfDay: null as null | { url: string; caption?: string },
   videoOfDay: null as null | { id: string; title?: string },
   playlist: [] as { title: string; artist?: string; id: string }[],
@@ -34,6 +35,7 @@ export async function GET() {
           bannerText,
           systems,
           stickyNote,
+          aboutText,
           "photoUrl": photoOfDay.asset->url,
           "photoCaption": photoOfDay.caption,
           videoOfDay,
@@ -53,6 +55,7 @@ export async function GET() {
         bannerText: s?.bannerText || DEFAULTS.bannerText,
         systems: s?.systems?.length ? s.systems : DEFAULTS.systems,
         stickyNote: s?.stickyNote || null,
+        aboutText: s?.aboutText || null,
         photoOfDay: s?.photoUrl ? { url: s.photoUrl, caption: s.photoCaption || undefined } : null,
         videoOfDay: vid ? { id: vid, title: s.videoOfDayTitle || undefined } : null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
