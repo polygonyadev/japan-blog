@@ -4,12 +4,14 @@ import Link from "next/link";
 import MiniMap from "@/components/MiniMap";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { PortableText } from "@portabletext/react";
 import { useLanguage } from "@/components/LanguageProvider";
 
 interface Photo { url?: string; caption?: string }
 interface LabPost {
   _id: string; title: string; slug?: string; date?: string; location?: string;
-  lat?: number; lng?: number; excerpt?: string; excerptEN?: string; content?: string; contentEN?: string; tags?: string[]; youtubeId?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  lat?: number; lng?: number; excerpt?: string; excerptEN?: string; content?: any; contentEN?: any; tags?: string[]; youtubeId?: string;
   cover?: string; coverImage?: string; photos?: Photo[];
 }
 
@@ -602,7 +604,8 @@ function PostDetailApp({ post }: { post?: LabPost }) {
   const [zoom, setZoom] = useState<Photo | null>(null);
   if (!post) return <div className="term text-xl">{lang === "en" ? "Post not found." : "Post nicht gefunden."}</div>;
   const photos = (post.photos ?? []).filter(p => p.url);
-  const body = (lang === "en" ? post.contentEN || post.content : post.content) ?? "";
+  const blocks = (lang === "en" ? (post.contentEN?.length ? post.contentEN : post.content) : post.content);
+  const hasBody = Array.isArray(blocks) && blocks.length > 0;
   const text = (lang === "en" ? post.excerptEN || post.excerpt : post.excerpt) ?? "";
   return (
     <div>
@@ -615,7 +618,7 @@ function PostDetailApp({ post }: { post?: LabPost }) {
           ? <img src={photos[0].url} alt="" onClick={() => setZoom(photos[0])} className="w-full max-h-64 object-cover cursor-pointer" title={lang === "en" ? "Click to enlarge" : "Klick zum Vergrößern"} />
           : <div className="w-full h-44 flex items-center justify-center text-5xl" style={{ background: `linear-gradient(135deg,${C.pink},${C.cyan})` }}>📷</div>}
       </div>
-      {body ? <NipponMarkdown content={body} /> : <p className="text-sm leading-relaxed mb-3">{text}</p>}
+      {hasBody ? <NipponPortableText value={blocks} /> : <p className="text-sm leading-relaxed mb-3">{text}</p>}
       {photos.length > 1 && (
         <div className="grid grid-cols-3 gap-1 mb-3">
           {photos.slice(1).map((p, i) => (
@@ -1787,6 +1790,55 @@ function SnakeApp() {
 }
 
 // ─── Schön formatiertes Markdown (für Japanisch-Inhalte) ──────────────────────
+// ─── Portable Text (Blog-Inhalte aus dem Studio) im NipponOS-Stil ─────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function NipponPortableText({ value }: { value: any }) {
+  // Falls der Text als Markdown in die Blöcke gepastet wurde (## / ** / - ),
+  // rendern wir ihn als Markdown — sonst normal als Portable Text.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = (Array.isArray(value) ? value : []).filter((b: any) => b?._type === "block")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .map((b: any) => (b.children ?? []).map((c: any) => c.text ?? "").join("")).join("\n\n");
+  if (/(\*\*[^*]+\*\*|(^|\n)\s*#{1,6}\s|(^|\n)\s*[-*]\s|(^|\n)\s*\d+\.\s)/.test(raw)) {
+    return <NipponMarkdown content={raw} />;
+  }
+  return (
+    <div className="text-sm leading-relaxed mt-1 mb-3" style={{ color: C.ink }}>
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+      <PortableText value={value} components={{
+        block: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          normal: ({ children }: any) => <p className="mb-2">{children}</p>,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          h1: ({ children }: any) => <h2 className="text-lg font-bold mt-3 mb-1" style={{ color: C.pink }}>{children}</h2>,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          h2: ({ children }: any) => <h3 className="text-base font-bold mt-3 mb-1 pb-0.5" style={{ color: C.pink, borderBottom: `2px solid ${C.ochre}` }}>{children}</h3>,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          h3: ({ children }: any) => <h4 className="text-sm font-bold mt-2 mb-1" style={{ color: C.ochre }}>{children}</h4>,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          h4: ({ children }: any) => <h4 className="text-sm font-bold mt-2 mb-1" style={{ color: C.ochre }}>{children}</h4>,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          blockquote: ({ children }: any) => <blockquote className="pl-2 my-2 italic" style={{ borderLeft: `3px solid ${C.cyan}`, color: "#555" }}>{children}</blockquote>,
+        },
+        list: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          bullet: ({ children }: any) => <ul className="list-disc list-inside mb-2 space-y-0.5">{children}</ul>,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          number: ({ children }: any) => <ol className="list-decimal list-inside mb-2 space-y-0.5">{children}</ol>,
+        },
+        marks: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          strong: ({ children }: any) => <strong className="font-bold" style={{ color: C.pink }}>{children}</strong>,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          em: ({ children }: any) => <em className="italic">{children}</em>,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          link: ({ children, value }: any) => <a href={value?.href} target="_blank" rel="noopener noreferrer" className="underline" style={{ color: C.pink }}>{children}</a>,
+        },
+      }} />
+    </div>
+  );
+}
+
 function NipponMarkdown({ content }: { content: string }) {
   return (
     <div className="text-sm leading-relaxed mt-1" style={{ color: C.ink }}>
