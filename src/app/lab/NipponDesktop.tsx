@@ -279,31 +279,38 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
         if (catMode.current === "wander" && dToMouse < 160) catMode.current = "follow";
         else if (catMode.current === "follow" && dToMouse > 240) catMode.current = "wander";
 
-        let tx: number, ty: number, speed: number;
+        let tx: number, ty: number, step: number;
         if (catMode.current === "follow") {
-          tx = mx - SIZE / 2; ty = my - SIZE / 2 + 8; speed = 0.045;
+          tx = mx - SIZE / 2; ty = my - SIZE / 2 + 8; step = 1.1; // konstante Folge-Geschwindigkeit
         } else {
           const now = Date.now();
-          if (now >= wander.current.nextPick) {
-            wander.current.x = Math.random() * Math.max(1, r.width - SIZE);
-            wander.current.y = Math.random() * Math.max(1, r.height - SIZE);
-            wander.current.nextPick = now + 3500 + Math.random() * 4000;
+          const arrived = Math.hypot(wander.current.x - catPos.current.x, wander.current.y - catPos.current.y) < 2;
+          if (arrived) {
+            // angekommen → kurz verweilen, dann neues Ziel
+            if (wander.current.nextPick === 0) wander.current.nextPick = now + 1500 + Math.random() * 3000;
+            else if (now >= wander.current.nextPick) {
+              wander.current.x = Math.random() * Math.max(1, r.width - SIZE);
+              wander.current.y = Math.random() * Math.max(1, r.height - SIZE);
+              wander.current.nextPick = 0;
+            }
           }
-          tx = wander.current.x; ty = wander.current.y; speed = 0.014;
+          tx = wander.current.x; ty = wander.current.y; step = 0.45; // gemächliches Schlendern
         }
-        catPos.current.x += (tx - catPos.current.x) * speed;
-        catPos.current.y += (ty - catPos.current.y) * speed;
+        // konstante, lineare Bewegung Richtung Ziel (kein Lerp → kein „Springen")
+        const ddx = tx - catPos.current.x, ddy = ty - catPos.current.y;
+        const dist = Math.hypot(ddx, ddy);
+        let moving = false;
+        if (dist > step) { catPos.current.x += (ddx / dist) * step; catPos.current.y += (ddy / dist) * step; moving = true; }
+        else { catPos.current.x = tx; catPos.current.y = ty; }
         const cx = Math.max(0, Math.min(r.width - SIZE, catPos.current.x));
         const cy = Math.max(0, Math.min(r.height - SIZE, catPos.current.y));
-        const dx = tx - catPos.current.x;
-        const moving = Math.hypot(dx, ty - catPos.current.y) > 3;
         if (moving !== catMoving.current) {
           catMoving.current = moving;
           const inner = catRef.current.firstElementChild as HTMLElement | null;
           if (inner) inner.style.animationPlayState = moving ? "running" : "paused";
         }
         // Flip nur bei klarer Richtung (Deadzone), sonst letzte Richtung behalten
-        if (dx < -12) catFlip.current = -1; else if (dx > 12) catFlip.current = 1;
+        if (ddx < -10) catFlip.current = -1; else if (ddx > 10) catFlip.current = 1;
         catRef.current.style.transform = `translate(${cx}px, ${cy}px) scaleX(${catFlip.current})`;
       }
       raf = requestAnimationFrame(loop);
