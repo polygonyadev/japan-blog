@@ -13,6 +13,8 @@ export const allPostsQuery = groq`
     weather,
     excerpt,
     excerptEN,
+    content,
+    contentEN,
     tags,
     youtubeId,
     "coverImage": photos[0].image.asset->url,

@@ -15,11 +15,20 @@ export default function EntryGate(props: Props) {
   const [mode, setMode] = useState<Mode>("loading");
 
   useEffect(() => {
-    // Standard: NipponOS. Nur wenn explizit "classic" gewählt → klassische Seite.
+    const host = window.location.hostname;
+    // Domain entscheidet: nippondiary.com → klassisch, nippon-os.com → NipponOS.
+    if (host.includes("nippon-os")) { setMode("os"); return; }
+    if (host.includes("nippondiary")) { setMode("classic"); return; }
+    // Vorschau/localhost: lokale Auswahl, Standard NipponOS.
     setMode(localStorage.getItem(KEY) === "classic" ? "classic" : "os");
   }, []);
 
   function switchTo(m: "os" | "classic") {
+    const host = window.location.hostname;
+    // Auf den echten Domains zur jeweils anderen Domain wechseln.
+    if (host.includes("nippon-os") && m === "classic") { window.location.href = "https://nippondiary.com"; return; }
+    if (host.includes("nippondiary") && m === "os") { window.location.href = "https://nippon-os.com"; return; }
+    // Vorschau/localhost: lokal umschalten.
     localStorage.setItem(KEY, m);
     setMode(m);
   }
