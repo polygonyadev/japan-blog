@@ -20,6 +20,13 @@ export const nipponSettingsType = defineType({
       description: 'Erscheint als gelber Notizzettel auf dem NipponOS-Desktop (oben rechts, frei verschiebbar). Leer lassen = kein Zettel.',
     }),
     defineField({
+      name: 'aboutText',
+      title: 'Über mich (Text)',
+      type: 'text',
+      rows: 8,
+      description: 'Text für die "Über mich"-App im NipponOS. Markdown möglich (## Überschrift, **fett**, - Liste). Leer lassen = Standardtext.',
+    }),
+    defineField({
       name: 'photoOfDay',
       title: 'Foto des Tages',
       type: 'image',
