@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { MapPin, Calendar } from "lucide-react";
 import { getPostBySlug, getPosts } from "@/lib/fetchData";
-import Comments from "@/components/Comments";
+import BlogComments from "@/components/BlogComments";
 import { SEASON_INFO, WEATHER_INFO } from "@/lib/data";
 import LikeButton from "@/components/LikeButton";
 import PostContent from "@/components/PostContent";
@@ -108,8 +108,8 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           </div>
         )}
 
-        {/* Comments */}
-        <Comments />
+        {/* Comments — geteiltes Sanity-System (gleiche Kommentare wie im NipponOS) */}
+        <BlogComments postId={post._id ?? post.slug} postTitle={post.title} />
 
         {/* Navigation */}
         <div className="mt-10 pt-6" style={{ borderTop: "1px solid var(--border)" }}>
