@@ -350,7 +350,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   // ── Shutdown screen ──
   if (shutting) {
     return (
-      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center" style={{ background: "#000", color: C.cream }}>
+      <div className="fixed inset-0 z-[1200] flex flex-col items-center justify-center" style={{ background: "#000", color: C.cream }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');.pixel{font-family:'Press Start 2P',monospace}.term{font-family:'VT323',monospace}`}</style>
         <div className="pixel text-sm mb-3">NipponOS</div>
         <div className="term text-2xl" style={{ color: C.cyan }}>wird heruntergefahren…</div>
@@ -361,7 +361,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   // ── Boot / Login ──
   if (!booted) {
     return (
-      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center" style={{ background: C.bg, color: C.cream }}>
+      <div className="fixed inset-0 z-[1200] flex flex-col items-center justify-center" style={{ background: C.bg, color: C.cream }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');.pixel{font-family:'Press Start 2P',monospace}.term{font-family:'VT323',monospace}@keyframes bb{from{width:0}to{width:100%}}@keyframes pl{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
         <div className="text-7xl mb-5">🗾</div>
         <div className="pixel text-2xl mb-2" style={{ textShadow: `3px 3px 0 ${C.pink}` }}>NIPPON<span style={{ color: C.cyan }}>OS</span></div>
@@ -376,7 +376,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
   const cursorUrl = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath d='M2 2 L2 15 L6 11 L9 17 L11 16 L8 10 L14 10 Z' fill='%23fff' stroke='%23ff2a6d' stroke-width='1.5'/%3E%3C/svg%3E\") 2 2, auto";
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden" style={{ background: WALLPAPERS[wallpaper].bg, color: C.cream, cursor: cursorUrl }} onPointerMove={onMove} onPointerUp={onUp}>
+    <div className="fixed inset-0 z-[1200] flex flex-col overflow-hidden" style={{ background: WALLPAPERS[wallpaper].bg, color: C.cream, cursor: cursorUrl }} onPointerMove={onMove} onPointerUp={onUp}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
         .pixel{font-family:'Press Start 2P',monospace}.term{font-family:'VT323',monospace}
