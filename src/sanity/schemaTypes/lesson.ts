@@ -47,9 +47,17 @@ export const lessonType = defineType({
       description: 'z.B. Alltag, Essen, Reise, Begrüssung',
     }),
     defineField({
+      name: 'markdown',
+      title: 'Inhalt (Markdown)',
+      type: 'text',
+      rows: 20,
+      description: 'Ganze .md-Datei hier einfügen — wie bei den Lektionen. Markdown wird formatiert angezeigt (## Überschrift, **fett**, - Listen, Tabellen, Links).',
+    }),
+    defineField({
       name: 'phrases',
-      title: 'Phrasen',
+      title: 'Phrasen (optional)',
       type: 'array',
+      description: 'Optional — strukturierte Phrasen. Du kannst stattdessen einfach das Markdown-Feld oben nutzen.',
       of: [
         {
           type: 'object',
