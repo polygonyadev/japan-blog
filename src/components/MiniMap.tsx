@@ -9,6 +9,7 @@ interface Marker {
   label: string;
   slug?: string;
   id?: string;
+  type?: "post" | "bucket";
 }
 
 interface MiniMapProps {
@@ -27,6 +28,8 @@ export default function MiniMap({ markers, center = [36.5, 136], zoom = 5, heigh
   const tileRef = useRef<import("leaflet").TileLayer | null>(null);
   const { theme } = useTheme();
   const router = useRouter();
+  // Signatur der Marker — Karte neu aufbauen, wenn sich Marker ändern (z.B. async nachgeladen)
+  const markersKey = markers.map(m => `${m.lat},${m.lng},${m.type ?? "post"}`).join("|");
   const clickRef = useRef(onMarkerClick);
   clickRef.current = onMarkerClick;
 
@@ -63,22 +66,26 @@ export default function MiniMap({ markers, center = [36.5, 136], zoom = 5, heigh
         : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
       tileRef.current = L.tileLayer(tileUrl, { attribution: "©OpenStreetMap ©CartoDB" }).addTo(map);
 
-      const icon = L.divIcon({
-        html: `<div style="width:12px;height:12px;border-radius:50%;background:var(--accent-pink);box-shadow:0 0 8px rgba(255,45,107,0.8);border:2px solid white;"></div>`,
+      const makeIcon = (color: string, glow: string) => L.divIcon({
+        html: `<div style="width:12px;height:12px;border-radius:50%;background:${color};box-shadow:0 0 8px ${glow};border:2px solid white;"></div>`,
         className: "",
         iconSize: [12, 12],
         iconAnchor: [6, 6],
       });
+      const postIcon = makeIcon("var(--accent-pink)", "rgba(255,45,107,0.8)");
+      const bucketIcon = makeIcon("#f5b301", "rgba(245,179,1,0.85)");
 
       markers.forEach(m => {
+        const isBucket = m.type === "bucket";
         const clickable = !!(m.slug || (m.id && clickRef.current));
         const popup = L.popup({ closeButton: false }).setContent(
           `<div style="padding:6px 10px;font-size:13px;white-space:nowrap;cursor:${clickable ? "pointer" : "default"}">
-            📝 ${m.label}
+            ${isBucket ? "🎯" : "📝"} ${m.label}
+            ${isBucket ? `<div style="font-size:11px;color:#b8860b;margin-top:3px">noch geplant</div>` : ""}
             ${clickable ? `<div style="font-size:11px;color:var(--accent-cyan);margin-top:3px">→ Post öffnen</div>` : ""}
           </div>`
         );
-        const marker = L.marker([m.lat, m.lng], { icon }).addTo(map).bindPopup(popup);
+        const marker = L.marker([m.lat, m.lng], { icon: isBucket ? bucketIcon : postIcon }).addTo(map).bindPopup(popup);
         if (clickable) {
           const slug = m.slug;
           const id = m.id;
@@ -105,7 +112,8 @@ export default function MiniMap({ markers, center = [36.5, 136], zoom = 5, heigh
       }
     });
     return () => { mapRef.current?.remove(); mapRef.current = null; };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [markersKey]);
 
   return <div ref={ref} style={{ height, borderRadius: "12px", overflow: "hidden" }} />;
 }
