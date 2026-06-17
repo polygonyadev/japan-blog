@@ -2062,7 +2062,7 @@ function BucketApp({ onBeep, onOpenApp }: { onBeep: (f?: number) => void; onOpen
             <div className="h-3 p-0.5" style={{ ...sunken, background: "#fff" }}><div className="h-full" style={{ width: `${(done / items.length) * 100}%`, background: `linear-gradient(90deg,${C.cyan},${C.pink})` }} /></div>
           </div>
           <div className="flex flex-col gap-1.5">
-            {items.map(i => (
+            {[...items].sort((a, b) => Number(a.done) - Number(b.done)).map(i => (
               <div key={i._id} className="p-2 text-left flex items-start gap-2" style={{ ...sunken, background: "#fff", opacity: i.done ? 0.6 : 1 }}>
                 <span className="term text-xl" style={{ color: i.done ? C.cyan : C.ink }}>{i.done ? "☑" : "☐"}</span>
                 <div className="min-w-0">

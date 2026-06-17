@@ -55,7 +55,7 @@ export default function BucketListClient({ initialItems }: { initialItems: Bucke
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {items.map(item => (
+          {[...items].sort((a, b) => Number(a.done) - Number(b.done)).map(item => (
             <div
               key={item._id}
               className="glass rounded-xl p-4 flex items-start gap-4"
