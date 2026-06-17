@@ -34,7 +34,7 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass" style={{ borderBottom: "1px solid var(--border)" }}>
+    <nav className="fixed top-0 left-0 right-0 z-[1100] glass" style={{ borderBottom: "1px solid var(--border)" }}>
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-bold text-lg" onClick={() => setMenuOpen(false)}>
           <span style={{ color: "var(--accent-pink)" }}>日</span>
