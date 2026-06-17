@@ -180,7 +180,7 @@ export default function NipponDesktop({ posts, onSwitchSimple }: { posts: LabPos
 
   function boot() {
     setBooted(true); z.current += 3;
-    setWins([{ id: "blog", x: 150, y: 28, z: 11, max: isMobile() }, ...(isMobile() ? [] : [{ id: "photo", x: 530, y: 90, z: 12 }])]);
+    setWins([]); // beim Start kein Fenster offen — sauberer Desktop
     // Ko-fi "Banner-Ad" einmal pro Session nach kurzer Zeit aufploppen lassen
     let shown = false;
     try { shown = sessionStorage.getItem("nippon-kofi-seen") === "1"; } catch {}
