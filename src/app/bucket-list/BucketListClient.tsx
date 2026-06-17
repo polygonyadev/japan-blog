@@ -12,13 +12,10 @@ interface BucketItem {
 }
 
 export default function BucketListClient({ initialItems }: { initialItems: BucketItem[] }) {
-  const [items, setItems] = useState(initialItems);
+  // Status (erledigt/offen) wird nur im Studio gesetzt — Besucher können nicht abhaken
+  const [items] = useState(initialItems);
   const done = items.filter(i => i.done).length;
   const { t } = useLanguage();
-
-  function toggle(id: string) {
-    setItems(prev => prev.map(i => i._id === id ? { ...i, done: !i.done } : i));
-  }
 
   return (
     <div className="min-h-screen pt-14 max-w-4xl mx-auto px-4 py-10">
@@ -60,8 +57,7 @@ export default function BucketListClient({ initialItems }: { initialItems: Bucke
           {items.map(item => (
             <div
               key={item._id}
-              onClick={() => toggle(item._id)}
-              className="glass rounded-xl p-4 flex items-start gap-4 cursor-pointer transition-all duration-200 hover:scale-[1.01]"
+              className="glass rounded-xl p-4 flex items-start gap-4"
               style={{
                 border: `1px solid ${item.done ? "rgba(0,212,255,0.3)" : "var(--border)"}`,
                 opacity: item.done ? 0.7 : 1,
