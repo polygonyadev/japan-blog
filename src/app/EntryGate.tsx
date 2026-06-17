@@ -33,7 +33,7 @@ export default function EntryGate(props: Props) {
     setMode(m);
   }
 
-  if (mode === "loading") return <div className="fixed inset-0 z-[100]" style={{ background: "#1a1a2e" }} />;
+  if (mode === "loading") return <div className="fixed inset-0 z-[1200]" style={{ background: "#1a1a2e" }} />;
   if (mode === "os") return <NipponDesktop posts={props.posts} onSwitchSimple={() => switchTo("classic")} />;
   return <HomeClient posts={props.posts} bucketItems={props.bucketItems} settings={props.settings} stats={props.stats} />;
 }
