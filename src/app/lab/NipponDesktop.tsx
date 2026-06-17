@@ -869,13 +869,27 @@ function VideoApp({ data, settings }: { data: LabPost[]; settings: NipponSetting
 }
 function MapApp({ data, onOpenPost }: { data: LabPost[]; onOpenPost: (id: string) => void }) {
   const { lang } = useLanguage();
-  const markers = data.filter(p => p.lat && p.lng).map(p => ({ lat: p.lat!, lng: p.lng!, label: p.location ?? p.title, id: p._id }));
+  interface BItem { _id: string; title: string; lat?: number; lng?: number; done?: boolean }
+  const [buckets, setBuckets] = useState<BItem[]>([]);
+  useEffect(() => { fetch("/api/bucket").then(r => r.json()).then((d: BItem[]) => setBuckets(Array.isArray(d) ? d : [])).catch(() => {}); }, []);
+
+  const postMarkers = data.filter(p => p.lat && p.lng).map(p => ({ lat: p.lat!, lng: p.lng!, label: p.location ?? p.title, id: p._id, type: "post" as const }));
+  // offene (noch nicht erledigte) Bucket-Orte als geplante Pins
+  const bucketMarkers = buckets.filter(b => b.lat && b.lng && !b.done).map(b => ({ lat: b.lat!, lng: b.lng!, label: b.title, type: "bucket" as const }));
+  const markers = [...postMarkers, ...bucketMarkers];
+
   return (
     <div>
       <div className="pixel text-[10px] mb-2 text-center" style={{ color: C.pink }}>{lang === "en" ? "🗺 MY PLACES 🗺" : "🗺 MEINE ORTE 🗺"}</div>
       <div style={{ ...sunken, borderRadius: 12, overflow: "hidden", lineHeight: 0 }}>
         {markers.length ? <MiniMap markers={markers} height="300px" zoom={6} onMarkerClick={(id) => onOpenPost(id)} /> : <div className="h-40 flex items-center justify-center term text-xl" style={{ color: C.cyan, background: C.bg }}>{lang === "en" ? "no places yet ◔_◔" : "noch keine Orte ◔_◔"}</div>}
       </div>
+      {bucketMarkers.length > 0 && (
+        <div className="term text-base mt-2 flex items-center justify-center gap-4" style={{ color: C.ink }}>
+          <span><span style={{ color: C.pink }}>●</span> {lang === "en" ? "Posts" : "Beiträge"}</span>
+          <span><span style={{ color: "#f5b301" }}>●</span> {lang === "en" ? "Planned (bucket list)" : "Geplant (Bucket List)"}</span>
+        </div>
+      )}
     </div>
   );
 }
