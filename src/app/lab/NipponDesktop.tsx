@@ -1962,7 +1962,7 @@ function NipponMarkdown({ content }: { content: string }) {
 function JapanischApp({ onBeep }: { onBeep: (f?: number) => void }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [data, setData] = useState<any>(null);
-  const [tab, setTab] = useState("notizen");
+  const [tab, setTab] = useState("lessons");
   const [q, setQ] = useState("");
   const [jlpt, setJlpt] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
@@ -1970,7 +1970,7 @@ function JapanischApp({ onBeep }: { onBeep: (f?: number) => void }) {
   const JLPT_LEVELS = ["N5", "N4", "N3", "N2", "N1"];
 
   const TABS: [string, string][] = [
-    ["notizen", "📚 Lektionen"], ["lessons", "✨ Nützliches"], ["grammatik", "🔤 Grammatik"],
+    ["lessons", "✨ Nützliches"], ["notizen", "📚 Lektionen"], ["grammatik", "🔤 Grammatik"],
     ["partikel", "🔗 Partikel"], ["saetze", "💬 Sätze"], ["vokabeln", "📝 Vokabeln"], ["kanji", "漢 Kanji"],
   ];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
