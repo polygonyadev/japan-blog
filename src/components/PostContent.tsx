@@ -2,6 +2,7 @@
 import { PortableText } from "@portabletext/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { autolink } from "@/lib/markdown";
 import { useLanguage } from "@/components/LanguageProvider";
 
 // Plaintext aus Portable-Text-Blöcken rekonstruieren (für Markdown-Erkennung)
@@ -14,7 +15,7 @@ function blocksToText(value: any): string {
     .map((b: any) => (b.children ?? []).map((c: any) => c.text ?? "").join("")).join("\n\n");
 }
 function looksLikeMarkdown(s: string): boolean {
-  return /(\*\*[^*]+\*\*|(^|\n)\s*#{1,6}\s|(^|\n)\s*[-*]\s|(^|\n)\s*\d+\.\s)/.test(s);
+  return /(\*\*[^*]+\*\*|(^|\n)\s*#{1,6}\s|(^|\n)\s*[-*]\s|(^|\n)\s*\d+\.\s|\[[^\]]+\]\([^)]+\)|https?:\/\/|www\.|(?:[a-z0-9][a-z0-9-]*\.)+(?:com|net|org|io|dev|me|app|blog|ch|de|at|jp|co|xyz|info))/i.test(s);
 }
 
 const portableComponents = {
@@ -77,7 +78,7 @@ export default function PostContent({ content, contentEN, excerpt, excerptEN }: 
               ol: (p) => <ol className="list-decimal list-inside mb-4 space-y-1" {...p} />,
               blockquote: (p) => <blockquote className="pl-4 my-4 italic" style={{ borderLeft: "3px solid var(--accent-cyan)", color: "var(--text-secondary)" }} {...p} />,
               a: (p) => <a target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-cyan)" }} className="underline underline-offset-2" {...p} />,
-            }}>{raw}</ReactMarkdown>
+            }}>{autolink(raw)}</ReactMarkdown>
           </div>
         ) : (
           <PortableText value={activeContent} components={portableComponents as Parameters<typeof PortableText>[0]["components"]} />

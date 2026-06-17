@@ -5,6 +5,7 @@ import MiniMap from "@/components/MiniMap";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { PortableText } from "@portabletext/react";
+import { autolink } from "@/lib/markdown";
 import { useLanguage } from "@/components/LanguageProvider";
 
 interface Photo { url?: string; caption?: string }
@@ -1878,7 +1879,7 @@ function NipponPortableText({ value }: { value: any }) {
   const raw = (Array.isArray(value) ? value : []).filter((b: any) => b?._type === "block")
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map((b: any) => (b.children ?? []).map((c: any) => c.text ?? "").join("")).join("\n\n");
-  if (/(\*\*[^*]+\*\*|(^|\n)\s*#{1,6}\s|(^|\n)\s*[-*]\s|(^|\n)\s*\d+\.\s)/.test(raw)) {
+  if (/(\*\*[^*]+\*\*|(^|\n)\s*#{1,6}\s|(^|\n)\s*[-*]\s|(^|\n)\s*\d+\.\s|\[[^\]]+\]\([^)]+\)|https?:\/\/|www\.|(?:[a-z0-9][a-z0-9-]*\.)+(?:com|net|org|io|dev|me|app|blog|ch|de|at|jp|co|xyz|info))/i.test(raw)) {
     return <NipponMarkdown content={raw} />;
   }
   return (
@@ -1936,9 +1937,9 @@ function NipponMarkdown({ content }: { content: string }) {
         table: (p) => <div className="overflow-x-auto my-2"><table className="border-collapse text-xs w-full" {...p} /></div>,
         th: (p) => <th className="border px-1.5 py-1 text-left font-bold" style={{ borderColor: "#ccc", background: `${C.ochre}33`, color: C.ink }} {...p} />,
         td: (p) => <td className="border px-1.5 py-1 align-top" style={{ borderColor: "#ddd" }} {...p} />,
-        a: (p) => <a className="underline" style={{ color: C.pink }} {...p} />,
+        a: (p) => <a target="_blank" rel="noopener noreferrer" className="underline" style={{ color: C.pink }} {...p} />,
         hr: () => <hr className="my-2" style={{ borderColor: "#ddd" }} />,
-      }}>{content}</ReactMarkdown>
+      }}>{autolink(content)}</ReactMarkdown>
     </div>
   );
 }
