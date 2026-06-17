@@ -610,7 +610,7 @@ function WindowFrame({ win, data, settings, onOpenPost, onOpenApp, onClose, onFo
         {win.id === "map" && <MapApp data={data} onOpenPost={onOpenPost} />}
         {win.id === "clock" && <ClockApp />}
         {win.id === "cassette" && <CassetteApp settings={settings} onBeep={onBeep} />}
-        {win.id === "bucket" && <BucketApp onBeep={onBeep} />}
+        {win.id === "bucket" && <BucketApp onBeep={onBeep} onOpenApp={onOpenApp} />}
         {win.id === "paint" && <PaintApp />}
         {win.id === "gallery" && <GalleryApp />}
         {win.id === "files" && <FilesApp data={data} onOpenApp={onOpenApp} onBeep={onBeep} />}
@@ -2036,26 +2036,19 @@ function JapanischApp({ onBeep }: { onBeep: (f?: number) => void }) {
 }
 
 // ─── Bucket List (live aus Studio) ────────────────────────────────────────────
-function BucketApp({ onBeep }: { onBeep: (f?: number) => void }) {
+function BucketApp({ onBeep, onOpenApp }: { onBeep: (f?: number) => void; onOpenApp: (id: string) => void }) {
+  const { lang } = useLanguage();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
   interface Item { _id: string; title: string; description?: string; location?: string; done: boolean }
   const [items, setItems] = useState<Item[]>([]);
   const [loaded, setLoaded] = useState(false);
+  // Status (erledigt/offen) kommt nur aus dem Studio — Besucher können nicht abhaken
   useEffect(() => {
     fetch("/api/bucket").then(r => r.json()).then((d: Item[]) => {
-      let local: Record<string, boolean> = {};
-      try { local = JSON.parse(localStorage.getItem("nippon-bucket") ?? "{}"); } catch {}
-      setItems((Array.isArray(d) ? d : []).map(i => ({ ...i, done: local[i._id] ?? i.done })));
+      setItems(Array.isArray(d) ? d : []);
       setLoaded(true);
     }).catch(() => setLoaded(true));
   }, []);
-  function toggle(id: string) {
-    onBeep();
-    setItems(prev => {
-      const next = prev.map(i => i._id === id ? { ...i, done: !i.done } : i);
-      try { localStorage.setItem("nippon-bucket", JSON.stringify(Object.fromEntries(next.map(i => [i._id, i.done])))); } catch {}
-      return next;
-    });
-  }
   const done = items.filter(i => i.done).length;
   return (
     <div>
@@ -2070,17 +2063,25 @@ function BucketApp({ onBeep }: { onBeep: (f?: number) => void }) {
           </div>
           <div className="flex flex-col gap-1.5">
             {items.map(i => (
-              <button key={i._id} onClick={() => toggle(i._id)} className="p-2 text-left flex items-start gap-2" style={{ ...sunken, background: "#fff", opacity: i.done ? 0.6 : 1 }}>
+              <div key={i._id} className="p-2 text-left flex items-start gap-2" style={{ ...sunken, background: "#fff", opacity: i.done ? 0.6 : 1 }}>
                 <span className="term text-xl" style={{ color: i.done ? C.cyan : C.ink }}>{i.done ? "☑" : "☐"}</span>
                 <div className="min-w-0">
                   <div className="term text-lg" style={{ color: C.pink, textDecoration: i.done ? "line-through" : "none" }}>{i.title}</div>
                   {i.description && <div className="text-xs" style={{ color: C.ink }}>{i.description}</div>}
                   {i.location && <div className="term text-sm" style={{ color: C.ochre }}>📍 {i.location}</div>}
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         </>
+      )}
+
+      {/* Tipp-Hinweis → Gästebuch */}
+      {loaded && (
+        <div className="mt-4 p-3 text-center" style={{ ...sunken, background: "#fff" }}>
+          <p className="term text-base mb-2" style={{ color: C.ink }}>{L("Hast du einen Tipp für meine Liste? Etwas, das ich unbedingt machen sollte?", "Got a tip for my list? Something I absolutely should do?")}</p>
+          <button onClick={() => { onBeep(720); onOpenApp("guestbook"); }} className="nb pixel text-[9px] px-3 py-2" style={{ background: C.pink, color: C.cream, ...raised }}>📖 {L("Ab ins Gästebuch", "Tell me in the guestbook")}</button>
+        </div>
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { MapPin, CheckCircle2, Circle } from "lucide-react";
+import Link from "next/link";
+import { MapPin, CheckCircle2, Circle, BookMarked } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 
 interface BucketItem {
@@ -12,13 +13,10 @@ interface BucketItem {
 }
 
 export default function BucketListClient({ initialItems }: { initialItems: BucketItem[] }) {
-  const [items, setItems] = useState(initialItems);
+  // Status (erledigt/offen) wird nur im Studio gesetzt — Besucher können nicht abhaken
+  const [items] = useState(initialItems);
   const done = items.filter(i => i.done).length;
   const { t } = useLanguage();
-
-  function toggle(id: string) {
-    setItems(prev => prev.map(i => i._id === id ? { ...i, done: !i.done } : i));
-  }
 
   return (
     <div className="min-h-screen pt-14 max-w-4xl mx-auto px-4 py-10">
@@ -60,8 +58,7 @@ export default function BucketListClient({ initialItems }: { initialItems: Bucke
           {items.map(item => (
             <div
               key={item._id}
-              onClick={() => toggle(item._id)}
-              className="glass rounded-xl p-4 flex items-start gap-4 cursor-pointer transition-all duration-200 hover:scale-[1.01]"
+              className="glass rounded-xl p-4 flex items-start gap-4"
               style={{
                 border: `1px solid ${item.done ? "rgba(0,212,255,0.3)" : "var(--border)"}`,
                 opacity: item.done ? 0.7 : 1,
@@ -93,11 +90,14 @@ export default function BucketListClient({ initialItems }: { initialItems: Bucke
         </div>
       )}
 
-      {items.length > 0 && (
-        <p className="text-xs mt-6 text-center" style={{ color: "var(--text-secondary)" }}>
-          {t.clickToMark}
-        </p>
-      )}
+      {/* Tipp-Hinweis → Gästebuch */}
+      <div className="glass rounded-2xl p-5 mt-8 text-center" style={{ border: "1px solid var(--border)" }}>
+        <p className="text-sm mb-3" style={{ color: "var(--text-secondary)" }}>{t.bucketTip}</p>
+        <Link href="/guestbook" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all hover:scale-105"
+          style={{ background: "var(--accent-cyan)", color: "#0d1117" }}>
+          <BookMarked size={15} /> {t.bucketTipCta}
+        </Link>
+      </div>
     </div>
   );
 }
