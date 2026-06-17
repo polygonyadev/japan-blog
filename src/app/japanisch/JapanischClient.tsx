@@ -128,6 +128,7 @@ function LektionDetail({ lesson }: { lesson: any }) {
       <><SectionLabel>Phrasen</SectionLabel>
       <ExampleTable rows={(lesson.phrases ?? []).map((p: { jp: string; romaji: string; de: string }) => ({ japanisch: p.jp, kana: p.romaji, deutsch: p.de }))} /></>
     )}
+    {lesson.markdown && <><SectionLabel>Inhalt</SectionLabel><MarkdownContent content={lesson.markdown} /></>}
   </>
 }
 
