@@ -610,7 +610,7 @@ function WindowFrame({ win, data, settings, onOpenPost, onOpenApp, onClose, onFo
         {win.id === "map" && <MapApp data={data} onOpenPost={onOpenPost} />}
         {win.id === "clock" && <ClockApp />}
         {win.id === "cassette" && <CassetteApp settings={settings} onBeep={onBeep} />}
-        {win.id === "bucket" && <BucketApp onBeep={onBeep} />}
+        {win.id === "bucket" && <BucketApp onBeep={onBeep} onOpenApp={onOpenApp} />}
         {win.id === "paint" && <PaintApp />}
         {win.id === "gallery" && <GalleryApp />}
         {win.id === "files" && <FilesApp data={data} onOpenApp={onOpenApp} onBeep={onBeep} />}
@@ -2036,8 +2036,9 @@ function JapanischApp({ onBeep }: { onBeep: (f?: number) => void }) {
 }
 
 // ─── Bucket List (live aus Studio) ────────────────────────────────────────────
-function BucketApp({ onBeep }: { onBeep: (f?: number) => void }) {
-  void onBeep;
+function BucketApp({ onBeep, onOpenApp }: { onBeep: (f?: number) => void; onOpenApp: (id: string) => void }) {
+  const { lang } = useLanguage();
+  const L = (de: string, en: string) => (lang === "en" ? en : de);
   interface Item { _id: string; title: string; description?: string; location?: string; done: boolean }
   const [items, setItems] = useState<Item[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -2073,6 +2074,14 @@ function BucketApp({ onBeep }: { onBeep: (f?: number) => void }) {
             ))}
           </div>
         </>
+      )}
+
+      {/* Tipp-Hinweis → Gästebuch */}
+      {loaded && (
+        <div className="mt-4 p-3 text-center" style={{ ...sunken, background: "#fff" }}>
+          <p className="term text-base mb-2" style={{ color: C.ink }}>{L("Hast du einen Tipp für meine Liste? Etwas, das ich unbedingt machen sollte?", "Got a tip for my list? Something I absolutely should do?")}</p>
+          <button onClick={() => { onBeep(720); onOpenApp("guestbook"); }} className="nb pixel text-[9px] px-3 py-2" style={{ background: C.pink, color: C.cream, ...raised }}>📖 {L("Ab ins Gästebuch", "Tell me in the guestbook")}</button>
+        </div>
       )}
     </div>
   );

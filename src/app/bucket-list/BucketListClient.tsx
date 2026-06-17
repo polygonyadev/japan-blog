@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { MapPin, CheckCircle2, Circle } from "lucide-react";
+import Link from "next/link";
+import { MapPin, CheckCircle2, Circle, BookMarked } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 
 interface BucketItem {
@@ -89,11 +90,14 @@ export default function BucketListClient({ initialItems }: { initialItems: Bucke
         </div>
       )}
 
-      {items.length > 0 && (
-        <p className="text-xs mt-6 text-center" style={{ color: "var(--text-secondary)" }}>
-          {t.clickToMark}
-        </p>
-      )}
+      {/* Tipp-Hinweis → Gästebuch */}
+      <div className="glass rounded-2xl p-5 mt-8 text-center" style={{ border: "1px solid var(--border)" }}>
+        <p className="text-sm mb-3" style={{ color: "var(--text-secondary)" }}>{t.bucketTip}</p>
+        <Link href="/guestbook" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all hover:scale-105"
+          style={{ background: "var(--accent-cyan)", color: "#0d1117" }}>
+          <BookMarked size={15} /> {t.bucketTipCta}
+        </Link>
+      </div>
     </div>
   );
 }
