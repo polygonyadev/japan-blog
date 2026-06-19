@@ -13,6 +13,9 @@ export default function Navbar() {
   const { lang, toggle: toggleLang, t } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Navbar nicht im Sanity Studio anzeigen
+  if (path?.startsWith("/studio")) return null;
+
   function switchToOS() {
     // Auf nippondiary.com → zur NipponOS-Domain wechseln.
     if (typeof window !== "undefined" && window.location.hostname.includes("nippondiary")) {
