@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { MapPin, Calendar } from "lucide-react";
 import { getPostBySlug, getPosts } from "@/lib/fetchData";
 import BlogComments from "@/components/BlogComments";
+import Model3DLazy from "@/components/Model3DLazy";
 import { SEASON_INFO, WEATHER_INFO } from "@/lib/data";
 import LikeButton from "@/components/LikeButton";
 import PostContent from "@/components/PostContent";
@@ -77,6 +78,14 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
         {/* Photo gallery with lightbox */}
         <PostPhotos photos={post.photos ?? []} />
+
+        {/* 3D-Modell (cozy Gimmick) */}
+        {post.model3d && (
+          <div className="mt-8">
+            <h2 className="text-lg font-bold mb-3 flex items-center gap-2">🧊 3D-Modell</h2>
+            <Model3DLazy url={post.model3d} />
+          </div>
+        )}
 
         {/* YouTube */}
         {post.youtubeId && (

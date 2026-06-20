@@ -22,6 +22,7 @@ export interface Post {
   coverImage?: string;
   photos?: { url: string; caption?: string }[];
   youtubeId?: string;
+  model3d?: string;
   likes?: number;
 }
 

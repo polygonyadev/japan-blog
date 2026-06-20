@@ -121,6 +121,13 @@ export const postType = defineType({
       description: 'Nur die ID, z.B. "dQw4w9WgXcQ" aus youtube.com/watch?v=dQw4w9WgXcQ',
     }),
     defineField({
+      name: 'model3d',
+      title: '3D-Modell (.glb)',
+      type: 'file',
+      description: 'Optional — ein .glb-Modell (aus Blender: Export → glTF 2.0 .glb). Erscheint im Post als drehbare 3D-Vorschau.',
+      options: { accept: '.glb,.gltf,model/gltf-binary' },
+    }),
+    defineField({
       name: 'tags',
       title: 'Tags',
       type: 'array',

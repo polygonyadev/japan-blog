@@ -5,6 +5,7 @@ import MiniMap from "@/components/MiniMap";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { PortableText } from "@portabletext/react";
+import Model3DLazy from "@/components/Model3DLazy";
 import { autolink } from "@/lib/markdown";
 import { useLanguage } from "@/components/LanguageProvider";
 
@@ -12,7 +13,7 @@ interface Photo { url?: string; caption?: string }
 interface LabPost {
   _id: string; title: string; slug?: string; date?: string; location?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  lat?: number; lng?: number; excerpt?: string; excerptEN?: string; content?: any; contentEN?: any; tags?: string[]; youtubeId?: string;
+  lat?: number; lng?: number; excerpt?: string; excerptEN?: string; content?: any; contentEN?: any; tags?: string[]; youtubeId?: string; model3d?: string;
   cover?: string; coverImage?: string; photos?: Photo[];
 }
 
@@ -703,6 +704,12 @@ function PostDetailApp({ post }: { post?: LabPost }) {
       {post.lat && post.lng && (
         <div style={{ ...sunken, borderRadius: 12, overflow: "hidden", lineHeight: 0 }}>
           <MiniMap markers={[{ lat: post.lat, lng: post.lng, label: post.location ?? post.title }]} height="180px" zoom={11} />
+        </div>
+      )}
+      {post.model3d && (
+        <div className="mt-3">
+          <div className="pixel text-[9px] mb-2" style={{ color: C.pink }}>🧊 {lang === "en" ? "3D MODEL" : "3D-MODELL"}</div>
+          <Model3DLazy url={post.model3d} height={260} />
         </div>
       )}
       <PostComments postId={post._id} postTitle={post.title} />

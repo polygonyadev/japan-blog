@@ -17,6 +17,7 @@ export const allPostsQuery = groq`
     contentEN,
     tags,
     youtubeId,
+    "model3d": model3d.asset->url,
     "coverImage": photos[0].image.asset->url,
     "photos": photos[]{ "url": image.asset->url, caption },
     "likes": 0
@@ -40,6 +41,7 @@ export const postBySlugQuery = groq`
     contentEN,
     tags,
     youtubeId,
+    "model3d": model3d.asset->url,
     "photos": photos[]{
       "url": image.asset->url,
       caption
